@@ -358,7 +358,7 @@ class SimpointResource(AbstractResource):
         if self._warmup_interval != 0:
             self._warmup_list = self._set_warmup_list()
         else:
-            self._warmup_list = [0] * len(self.get_simpoint_start_insts)
+            self._warmup_list = [0] * len(self.get_simpoint_start_insts())
 
     def get_simpoint_list(self) -> List[int]:
         """Returns the a list containing all the Simpoints for the workload."""

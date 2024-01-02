@@ -46,6 +46,13 @@ from m5.objects.Prefetcher import BasePrefetcher
 from m5.objects.ReplacementPolicies import *
 from m5.objects.Tags import *
 
+#### My Code ####
+from m5.objects.TPCacheEvents import (
+    FlushEventHandler,
+    DecayEventHandler
+)
+#### EOF My Code ####
+
 # Enum for cache clusivity, currently mostly inclusive or mostly
 # exclusive.
 class Clusivity(Enum):
@@ -101,7 +108,7 @@ class BaseCache(ClockedObject):
     mshrs = Param.Unsigned("Number of MSHRs (max outstanding requests)")
     demand_mshr_reserve = Param.Unsigned(1, "MSHRs reserved for demand access")
     tgts_per_mshr = Param.Unsigned("Max number of accesses per MSHR")
-    write_buffers = Param.Unsigned(8, "Number of write buffers")
+    write_buffers = Param.Unsigned(2048, "Number of write buffers")
 
     is_read_only = Param.Bool(False, "Is this cache read only (e.g. inst)")
 
@@ -172,6 +179,10 @@ class BaseCache(ClockedObject):
     # in the current cache. Typically, this would be enabled in the
     # data cache.
     write_allocator = Param.WriteAllocator(NULL, "Write allocator")
+    #### My Code ####
+    flush_event_handler = Param.FlushEventHandler(NULL, "An event handler for flush operation")
+    decay_event_handler = Param.DecayEventHandler(NULL, "An event handler for decay operation")
+    #### EOF My Code ####
 
 
 class Cache(BaseCache):

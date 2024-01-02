@@ -145,6 +145,12 @@ class BaseSetAssoc : public BaseTags
             // Update number of references to accessed block
             blk->increaseRefCount();
 
+            //// MY CODE ////
+            // update tick of last hit of accessed block
+            blk->updateLastHitTick();
+            blk->resetDecayCounter(localDecayCounter);
+            //// EOF MY CODE ////
+
             // Update replacement data of accessed block
             replacementPolicy->touch(blk->replacementData, pkt);
         }

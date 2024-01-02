@@ -293,6 +293,14 @@ class CacheBlk : public TaggedEntry
     /** Get the number of references to this block since insertion. */
     void increaseRefCount() { _refCount++; }
 
+    //// MY CODE ////
+    void updateDecayCounter() { _decayCounter--; }
+    void resetDecayCounter(int max_decay) { _decayCounter = max_decay; }
+    int getDecayCounter() { return _decayCounter; }
+
+    void updateLastHitTick() { _tickLastHitted = curTick(); }	
+    //// EOF MY CODE ////
+
     /**
      * Get the block's age, that is, the number of ticks since its insertion.
      *
@@ -304,6 +312,25 @@ class CacheBlk : public TaggedEntry
         assert(_tickInserted <= curTick());
         return curTick() - _tickInserted;
     }
+
+    //// MY CODE ////
+    Tick
+    getLastHitTick() const
+    {
+        assert(_tickLastHitted <= curTick());
+        return _tickLastHitted;
+    }
+
+    void
+    powerOff() {
+        _poweredOff = true;
+    }
+
+    bool
+    isPoweredOff() {
+        return _poweredOff;
+    }
+    //// EOF MY CODE ////
 
     /**
      * Set member variables when a block insertion occurs. Resets reference
@@ -487,6 +514,13 @@ class CacheBlk : public TaggedEntry
      * meaningful if the block is valid.
      */
     Tick _tickInserted = 0;
+
+    //// MY CODE ////
+    Tick _tickLastHitted = 0;
+
+    int _decayCounter = 8;
+    bool _poweredOff = false;
+    //// EOF MY CODE ////
 
     /** Whether this block is an unaccessed hardware prefetch. */
     bool _prefetched = 0;

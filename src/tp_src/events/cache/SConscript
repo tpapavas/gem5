@@ -1,0 +1,10 @@
+Import("*")
+
+SimObject('TPCacheEvents.py', sim_objects=['FlushEventHandler', 'DecayEventHandler'])
+
+Source('flush_event_handler.cc')
+Source('decay_event_handler.cc')
+
+DebugFlag('TPIdle')
+DebugFlag('TPFaulty')
+DebugFlag('TPCacheDecay')

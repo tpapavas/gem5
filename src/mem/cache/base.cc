@@ -63,6 +63,13 @@
 #include "params/WriteAllocator.hh"
 #include "sim/cur_tick.hh"
 
+//// MY CODE ////
+#include "debug/TPHello.hh"
+#include "debug/TPIdle.hh"
+#include "debug/TPFaulty.hh"
+#include "debug/TPCacheDecay.hh"
+//// EOG MY CODE ////
+
 namespace gem5
 {
 
@@ -111,7 +118,9 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
       missCount(p.max_miss_count),
       addrRanges(p.addr_ranges.begin(), p.addr_ranges.end()),
       system(p.system),
-      stats(*this)
+      stats(*this),
+	  flushEventHandler(p.flush_event_handler), //my code
+      decayEventHandler(p.decay_event_handler) //my code
 {
     // the MSHR queue has no reserve entries as we check the MSHR
     // queue on every single allocation, whereas the write queue has
@@ -135,6 +144,20 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
         "Compressed cache %s does not have a compression algorithm", name());
     if (compressor)
         compressor->setCache(this);
+
+    //// MY CODE ////
+    if (flushEventHandler)
+        flushEventHandler->setCache(this);
+
+    if (decayEventHandler)
+        decayEventHandler->setCache(this);
+
+    numBlocks = p.size / blk_size;
+
+    if (name().find("l1dcache") != std::string::npos) {
+        printIdleTime = true;
+    }
+    //// MY CODE ////
 }
 
 BaseCache::~BaseCache()
@@ -224,7 +247,6 @@ BaseCache::inRange(Addr addr) const
 void
 BaseCache::handleTimingReqHit(PacketPtr pkt, CacheBlk *blk, Tick request_time)
 {
-
     // handle special cases for LockedRMW transactions
     if (pkt->isLockedRMW()) {
         Addr blk_addr = pkt->getBlockAddr(blkSize);
@@ -273,38 +295,38 @@ BaseCache::handleTimingReqHit(PacketPtr pkt, CacheBlk *blk, Tick request_time)
             PacketPtr resp_pkt =
                 new Packet(pkt->req, MemCmd::LockedRMWWriteResp);
             resp_pkt->senderState = mshr;
-            recvTimingResp(resp_pkt);
-        }
-    }
+		recvTimingResp(resp_pkt);
+	}
+}
 
-    if (pkt->needsResponse()) {
-        // These delays should have been consumed by now
-        assert(pkt->headerDelay == 0);
-        assert(pkt->payloadDelay == 0);
+if (pkt->needsResponse()) {
+	// These delays should have been consumed by now
+	assert(pkt->headerDelay == 0);
+	assert(pkt->payloadDelay == 0);
 
-        pkt->makeTimingResponse();
+	pkt->makeTimingResponse();
 
-        // In this case we are considering request_time that takes
-        // into account the delay of the xbar, if any, and just
-        // lat, neglecting responseLatency, modelling hit latency
-        // just as the value of lat overriden by access(), which calls
-        // the calculateAccessLatency() function.
-        cpuSidePort.schedTimingResp(pkt, request_time);
-    } else {
-        DPRINTF(Cache, "%s satisfied %s, no response needed\n", __func__,
-                pkt->print());
+	// In this case we are considering request_time that takes
+	// into account the delay of the xbar, if any, and just
+	// lat, neglecting responseLatency, modelling hit latency
+	// just as the value of lat overriden by access(), which calls
+	// the calculateAccessLatency() function.
+	cpuSidePort.schedTimingResp(pkt, request_time);
+} else {
+	DPRINTF(Cache, "%s satisfied %s, no response needed\n", __func__,
+			pkt->print());
 
-        // queue the packet for deletion, as the sending cache is
-        // still relying on it; if the block is found in access(),
-        // CleanEvict and Writeback messages will be deleted
-        // here as well
-        pendingDelete.reset(pkt);
-    }
+	// queue the packet for deletion, as the sending cache is
+	// still relying on it; if the block is found in access(),
+	// CleanEvict and Writeback messages will be deleted
+	// here as well
+	pendingDelete.reset(pkt);
+}
 }
 
 void
 BaseCache::handleTimingReqMiss(PacketPtr pkt, MSHR *mshr, CacheBlk *blk,
-                               Tick forward_time, Tick request_time)
+						   Tick forward_time, Tick request_time)
 {
     if (writeAllocator &&
         pkt && pkt->isWrite() && !pkt->req->isUncacheable()) {
@@ -945,7 +967,7 @@ BaseCache::handleEvictions(std::vector<CacheBlk*> &evict_blks,
     for (const auto& blk : evict_blks) {
         if (blk->isValid()) {
             replacement = true;
-
+            
             const MSHR* mshr =
                 mshrQueue.findMatch(regenerateBlkAddr(blk), blk->isSecure());
             if (mshr) {
@@ -966,6 +988,20 @@ BaseCache::handleEvictions(std::vector<CacheBlk*> &evict_blks,
         // Evict valid blocks associated to this victim block
         for (auto& blk : evict_blks) {
             if (blk->isValid()) {
+	            //// MY CODE ////
+    	        Tick block_idle_time = curTick() - blk->getLastHitTick();
+        	    if (printIdleTime) {
+                    DPRINTF(TPIdle, "Replaced block idle time: %d ticks | #replacements: %d | avg: %f | min: %ld | max: %ld\n", block_idle_time, stats.replacements.value(), stats.avgIdleTime.total(), stats.minIdleTime.value(), stats.maxIdleTime.value());
+                }
+        	    stats.totalIdleTime += block_idle_time;
+       		    if (block_idle_time < stats.minIdleTime.value() || stats.minIdleTime.value() == 0) { // added non zero check because I can't set an initial value
+            	    stats.minIdleTime = block_idle_time;
+        	    }
+        	    if (block_idle_time > stats.maxIdleTime.value()) {
+            	    stats.maxIdleTime = block_idle_time;
+        	    }
+        	    //// MY CODE ////
+
                 evictBlock(blk, writebacks);
             }
         }
@@ -1339,7 +1375,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
             }
 
             blk->setCoherenceBits(CacheBlk::ReadableBit);
-        } else if (compressor) {
+		} else if (compressor) {
             // This is an overwrite to an existing block, therefore we need
             // to check for data expansion (i.e., block was compressed with
             // a smaller size, and now it doesn't fit the entry anymore).
@@ -1656,6 +1692,15 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
         compressor->setSizeBits(victim, blk_size_bits);
         compressor->setDecompressionLatency(victim, decompression_lat);
     }
+
+    //// MY CODE ////
+    if (name().find("l1dcache") != std::string::npos) {
+        DPRINTF(TPFaulty, "* Faulty blocks at the moment *\n");
+        DPRINTF(TPFaulty, "%s\n", tags->findBlockBySetAndWay(1, 2)->print());
+        DPRINTF(TPFaulty, "%s\n", tags->findBlockBySetAndWay(3, 0)->print());
+        DPRINTF(TPFaulty, "%s\n", tags->findBlockBySetAndWay(5, 3)->print());
+    }
+    //// EOF MY CODE ////
 
     return victim;
 }
@@ -2058,7 +2103,7 @@ BaseCache::CacheCmdStats::CacheCmdStats(BaseCache &c,
                ("average " + name + " mshr miss latency").c_str()),
       ADD_STAT(avgMshrUncacheableLatency, statistics::units::Rate<
                     statistics::units::Tick, statistics::units::Count>::get(),
-               ("average " + name + " mshr uncacheable latency").c_str())
+               ("average " + name + " mshr uncacheable latency").c_str())      
 {
 }
 
@@ -2272,8 +2317,26 @@ BaseCache::CacheStats::CacheStats(BaseCache &c)
     ADD_STAT(dataExpansions, statistics::units::Count::get(),
              "number of data expansions"),
     ADD_STAT(dataContractions, statistics::units::Count::get(),
-             "number of data contractions"),
-    cmd(MemCmd::NUM_MEM_CMDS)
+              "number of data contractions"),
+    ADD_STAT(totalIdleTime, statistics::units::Tick::get(), // MY CODE
+	         "total idle time"),
+    ADD_STAT(minIdleTime, statistics::units::Tick::get(),
+             "min idle time"),
+    ADD_STAT(maxIdleTime, statistics::units::Tick::get(),
+             "max idle time"),
+    ADD_STAT(avgIdleTime, statistics::units::Rate<
+	            statistics::units::Tick, statistics::units::Count>::get(),
+             "average idle time"),
+    ADD_STAT(numOfDecayedBlks, statistics::units::Count::get(),
+             "number of decayed blocks"),
+    ADD_STAT(numOfDecayWindows, statistics::units::Count::get(),
+             "number of decay windows"),
+    ADD_STAT(decayedBlksWindowPercnt, statistics::units::Ratio::get(),
+             "decayed blocks window percentage"),
+    ADD_STAT(avgDecayPercentage, statistics::units::Rate<
+	            statistics::units::Count, statistics::units::Count>::get(),
+             "average decay percentage"), //EOF MY CODE
+	cmd(MemCmd::NUM_MEM_CMDS)
 {
     for (int idx = 0; idx < MemCmd::NUM_MEM_CMDS; ++idx)
         cmd[idx].reset(new CacheCmdStats(c, MemCmd(idx).toString()));
@@ -2502,6 +2565,18 @@ BaseCache::CacheStats::regStats()
 
     dataExpansions.flags(nozero | nonan);
     dataContractions.flags(nozero | nonan);
+
+    //// MY CODE ////    
+    totalIdleTime.flags(total | nozero | nonan);
+  	//minIdleTime.flags(total | nozero | nonan);
+    //minIdleTime.flags(total | nozero | nonan);
+    //maxIdleTime.flags(total | nozero | nonan);
+    avgIdleTime.flags(total | nozero | nonan);
+    avgIdleTime = totalIdleTime / replacements;
+
+    // decay stats;
+    avgDecayPercentage = decayedBlksWindowPercnt / numOfDecayWindows;
+    //// EOF MY CODE ////
 }
 
 void
@@ -2693,6 +2768,61 @@ BaseCache::MemSidePort::MemSidePort(const std::string &_name,
       _snoopRespQueue(*_cache, *this, true, _label), cache(_cache)
 {
 }
+
+//// MY CODE ////
+void
+BaseCache::flush(bool writebackOnFlush)
+{
+	if (writebackOnFlush) {
+		memWriteback();
+	}
+	memInvalidate();
+}
+
+void
+BaseCache::updateDecayAndPowerOff() { 
+    stats.numOfDecayWindows++;
+    int poweredOffCnt = 0;
+    int onBlksCnt = 0;
+
+    Tick forward_time = clockEdge(forwardLatency); 
+
+    tags->forEachBlk([this, &poweredOffCnt, &onBlksCnt, &forward_time](CacheBlk &blk) {
+        if (blk.isSet(CacheBlk::ReadableBit)) {
+            blk.updateDecayCounter();
+            if (blk.getDecayCounter() < 0) {
+                PacketList writebacks;
+                
+                blk.resetDecayCounter(tags->getLocalDecayCounter());
+                blk.powerOff();
+                DPRINTF(TPCacheDecay, "block %s evicted\n", blk.print());
+                // evict block from cache
+                evictBlock(&blk, writebacks);
+                
+                poweredOffCnt++;
+                stats.numOfDecayedBlks++;
+
+                // writeback block if necessary
+                doWritebacks(writebacks, 4*(++forward_time)); // what delay we need?
+                // it excecutes all writebacks at the same tick (I think).
+
+                //we need to mark cache block (#set,#assoc) as powered off.
+            } else if (blk.isPoweredOff()) {
+                poweredOffCnt++;
+                stats.numOfDecayedBlks++;
+            } else {
+                onBlksCnt++; //we should find a way to get number of cache block once
+            }
+        }
+    });
+   
+    stats.decayedBlksWindowPercnt += poweredOffCnt/(float)(poweredOffCnt+onBlksCnt);
+
+    DPRINTF(TPCacheDecay, "On/Off percentage: %f\n", poweredOffCnt/(float)(poweredOffCnt+onBlksCnt));
+
+}
+
+//// EOF MY CODE ////
 
 void
 WriteAllocator::updateMode(Addr write_addr, unsigned write_size,

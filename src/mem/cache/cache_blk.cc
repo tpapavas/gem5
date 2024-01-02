@@ -64,6 +64,10 @@ CacheBlk::insert(const Addr tag, const bool is_secure,
     // Set insertion tick as current tick
     setTickInserted();
 
+    //// MY CODE ////
+    updateLastHitTick();
+    //// EOF MY CODE ////
+
     // Insertion counts as a reference to the block
     increaseRefCount();
 }
