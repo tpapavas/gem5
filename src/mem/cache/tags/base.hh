@@ -102,6 +102,10 @@ class BaseTags : public ClockedObject
     /** The data blocks, 1 per cache block. */
     std::unique_ptr<uint8_t[]> dataBlks;
 
+    //// MY CODE ////
+    int localDecayCounter = 15;
+    //// EOF MY CODE ////
+
     /**
      * TODO: It would be good if these stats were acquired after warmup.
      */
@@ -348,6 +352,12 @@ class BaseTags : public ClockedObject
      * @param visitor Visitor to call on each block.
      */
     virtual bool anyBlk(std::function<bool(CacheBlk &)> visitor) = 0;
+
+    //// MY CODE ////
+    void setLocalDecayCounter(int max_decay) { localDecayCounter = max_decay; }
+
+    int getLocalDecayCounter() { return localDecayCounter; }
+    //// EOF MY CODE ////
 
   private:
     /**

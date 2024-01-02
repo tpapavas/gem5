@@ -77,6 +77,11 @@
 #include "sim/sim_exit.hh"
 #include "sim/system.hh"
 
+////MY INLCUDES////
+#include "tp_src/events/cache/flush_event_handler.hh"
+#include "tp_src/events/cache/decay_event_handler.hh"
+////EOF MY INCLUDES////
+
 namespace gem5
 {
 
@@ -399,6 +404,12 @@ class BaseCache : public ClockedObject
      * hold it for deletion until a subsequent call
      */
     std::unique_ptr<Packet> pendingDelete;
+
+    //// MY CODE ////
+    int numBlocks;
+    
+    int localDecayCounter = 15;
+    //// EOF MY CODE ////
 
     /**
      * Mark a request as in service (sent downstream in the memory
@@ -1036,7 +1047,7 @@ class BaseCache : public ClockedObject
         statistics::Formula avgMshrMissLatency;
         /** The average latency of an MSHR miss, per command and thread. */
         statistics::Formula avgMshrUncacheableLatency;
-    };
+	};
 
     struct CacheStats : public statistics::Group
     {
@@ -1139,7 +1150,20 @@ class BaseCache : public ClockedObject
          * Number of data contractions (blocks that had their compression
          * factor improved).
          */
-        statistics::Scalar dataContractions;
+        statistics::Scalar dataContractions;        
+
+        //// MY CODE ////
+    	statistics::Scalar numOfReplacements;
+		statistics::Scalar totalIdleTime;
+        statistics::Scalar minIdleTime;
+        statistics::Scalar maxIdleTime;
+        statistics::Formula avgIdleTime;
+        
+        statistics::Scalar numOfDecayedBlks;
+        statistics::Scalar numOfDecayWindows;
+        statistics::Scalar decayedBlksWindowPercnt;
+        statistics::Formula avgDecayPercentage;
+        //// EOF MY CODE ////
 
         /** Per-command statistics */
         std::vector<std::unique_ptr<CacheCmdStats>> cmd;
@@ -1360,6 +1384,20 @@ class BaseCache : public ClockedObject
      */
     void serialize(CheckpointOut &cp) const override;
     void unserialize(CheckpointIn &cp) override;
+
+////////--MY_CODE--////////
+  protected:
+    tp::FlushEventHandler *flushEventHandler;
+    tp::DecayEventHandler *decayEventHandler;
+
+    bool printIdleTime = false;
+  public:
+    void flush(bool writebackOnFlush);
+
+    void updateDecayAndPowerOff();
+
+    void setLocalDecayCounter(int max_decay) { tags->setLocalDecayCounter(max_decay); }
+////////--EOF_MY_CODE--////////
 };
 
 /**

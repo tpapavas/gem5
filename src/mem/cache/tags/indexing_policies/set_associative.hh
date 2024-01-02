@@ -90,6 +90,10 @@ class SetAssociative : public BaseIndexingPolicy
      */
     virtual uint32_t extractSet(const Addr addr) const;
 
+    //// MY CODE ////
+    std::vector<std::vector<int>> faultySets;
+    //// EOF MY CODE ////
+
   public:
     /**
      * Convenience typedef.
