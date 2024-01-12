@@ -262,6 +262,14 @@ class Queue : public Drainable, public Named
     {
         return allocated == 0 ? DrainState::Drained : DrainState::Draining;
     }
+
+    //// MY CODE ////
+    int
+    getFreeEntries() { return freeList.size(); }
+
+    int
+    getAllocatedEntries() { return allocatedList.size(); }
+    //// EOF MY CODE ////
 };
 
 } // namespace gem5
