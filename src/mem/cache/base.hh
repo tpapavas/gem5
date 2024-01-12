@@ -404,8 +404,10 @@ class BaseCache : public ClockedObject
 
     //// MY CODE ////
     int numBlocks;
-    
+
     int localDecayCounter = 15;
+
+    int writebackLimit; // arbitrarily set to write_buffers - 4
     //// EOF MY CODE ////
 
     /**
@@ -1147,7 +1149,7 @@ class BaseCache : public ClockedObject
          * Number of data contractions (blocks that had their compression
          * factor improved).
          */
-        statistics::Scalar dataContractions;        
+        statistics::Scalar dataContractions;
 
         //// MY CODE ////
     	statistics::Scalar numOfReplacements;
@@ -1155,7 +1157,7 @@ class BaseCache : public ClockedObject
         statistics::Scalar minIdleTime;
         statistics::Scalar maxIdleTime;
         statistics::Formula avgIdleTime;
-        
+
         statistics::Scalar numOfDecayedBlks;
         statistics::Scalar numOfDecayWindows;
         statistics::Scalar decayedBlksWindowPercnt;
@@ -1388,7 +1390,8 @@ class BaseCache : public ClockedObject
   public:
     void flush(bool writebackOnFlush);
 
-    void updateDecayAndPowerOff();
+    bool updateDecayAndPowerOff();
+    bool powerOffRemainingBlks();
 
     void setLocalDecayCounter(int max_decay) { tags->setLocalDecayCounter(max_decay); }
 ////////--EOF_MY_CODE--////////
