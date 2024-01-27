@@ -43,7 +43,6 @@ from m5.objects.ReplacementPolicies import *
 from m5.objects.Tags import *
 
 #### My Code ####
-#### My Code ####
 from m5.objects.TPCacheEvents import (
     DecayEventHandler,
     FlushEventHandler,
@@ -51,8 +50,6 @@ from m5.objects.TPCacheEvents import (
 from m5.params import *
 from m5.proxy import *
 from m5.SimObject import SimObject
-
-#### EOF My Code ####
 
 #### EOF My Code ####
 
@@ -112,7 +109,7 @@ class BaseCache(ClockedObject):
     mshrs = Param.Unsigned("Number of MSHRs (max outstanding requests)")
     demand_mshr_reserve = Param.Unsigned(1, "MSHRs reserved for demand access")
     tgts_per_mshr = Param.Unsigned("Max number of accesses per MSHR")
-    write_buffers = Param.Unsigned(2048, "Number of write buffers")
+    write_buffers = Param.Unsigned(8, "Number of write buffers")
 
     is_read_only = Param.Bool(False, "Is this cache read only (e.g. inst)")
 

@@ -149,6 +149,10 @@ class BaseSetAssoc : public BaseTags
             // update tick of last hit of accessed block
             blk->updateLastHitTick();
             blk->resetDecayCounter(localDecayCounter);
+
+            // for IATAC
+            //blk->getDecay()->handleHit();
+
             //// EOF MY CODE ////
 
             // Update replacement data of accessed block
