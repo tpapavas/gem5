@@ -93,6 +93,13 @@ class RequestPort;
 class QueueEntry;
 struct BaseCacheParams;
 
+//// MY CODE ////
+namespace tp
+{
+    class DecayEventHandler;
+}
+//// EOF MY CODE ////
+
 /**
  * A basic cache interface. Implements some common functions for speed.
  */
