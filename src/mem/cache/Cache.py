@@ -41,17 +41,21 @@ from m5.objects.Compressors import BaseCacheCompressor
 from m5.objects.Prefetcher import BasePrefetcher
 from m5.objects.ReplacementPolicies import *
 from m5.objects.Tags import *
+
+#### My Code ####
+#### My Code ####
+from m5.objects.TPCacheEvents import (
+    DecayEventHandler,
+    FlushEventHandler,
+)
 from m5.params import *
 from m5.proxy import *
 from m5.SimObject import SimObject
 
-
-#### My Code ####
-from m5.objects.TPCacheEvents import (
-    FlushEventHandler,
-    DecayEventHandler
-)
 #### EOF My Code ####
+
+#### EOF My Code ####
+
 
 # Enum for cache clusivity, currently mostly inclusive or mostly
 # exclusive.
@@ -173,8 +177,12 @@ class BaseCache(ClockedObject):
     # data cache.
     write_allocator = Param.WriteAllocator(NULL, "Write allocator")
     #### My Code ####
-    flush_event_handler = Param.FlushEventHandler(NULL, "An event handler for flush operation")
-    decay_event_handler = Param.DecayEventHandler(NULL, "An event handler for decay operation")
+    flush_event_handler = Param.FlushEventHandler(
+        NULL, "An event handler for flush operation"
+    )
+    decay_event_handler = Param.DecayEventHandler(
+        NULL, "An event handler for decay operation"
+    )
     #### EOF My Code ####
 
 
