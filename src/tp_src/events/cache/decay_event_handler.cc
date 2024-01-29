@@ -20,17 +20,21 @@ DecayEventHandler::DecayEventHandler(const DecayEventHandlerParams &params) :
     powerOffRemainingEvent(
             [this]{processPowerOffRemainingEvent();},
             "powerOffRemainingEvent"),
-    powerOffRemainingPeriod(this->cyclesToTicks(Cycles(100))),
+    powerOffRemainingPeriod(
+        this->cyclesToTicks(Cycles(params.post_decay_period))
+    ),
     timesRemainingFired(0),
     timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1)
 {
-	DPRINTF(TPCacheDecay, "Created the DecayEventHandler object with the name %s\n", name());
+    DPRINTF(TPCacheDecay,
+        "Created the DecayEventHandler object with the name %s\n",
+        name());
 }
 
 void
 DecayEventHandler::setCache(BaseCache *_cache)
 {
-	cache = _cache;
+    cache = _cache;
     cache->setLocalDecayCounter(localDecayCounter);
 }
 

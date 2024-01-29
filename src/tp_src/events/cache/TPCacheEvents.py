@@ -2,8 +2,9 @@ from m5.params import *
 from m5.SimObject import *
 from m5.objects.TPEvents import TimingEventHandler
 
+
 class FlushEventHandler(TimingEventHandler):
-    type = 'FlushEventHandler'
+    type = "FlushEventHandler"
     cxx_header = "tp_src/events/cache/flush_event_handler.hh"
     cxx_class = "gem5::tp::FlushEventHandler"
 
@@ -15,8 +16,9 @@ class FlushEventHandler(TimingEventHandler):
 
     is_on = Param.Bool(True, "Whether the event is doing its thing")
 
+
 class DecayEventHandler(TimingEventHandler):
-    type = 'DecayEventHandler'
+    type = "DecayEventHandler"
     cxx_header = "tp_src/events/cache/decay_event_handler.hh"
     cxx_class = "gem5::tp::DecayEventHandler"
 
@@ -24,8 +26,16 @@ class DecayEventHandler(TimingEventHandler):
     def enable():
         pass
 
-    decay_period = Param.Cycles(500, "the period (in cycles) of a decay window.")
-    
+    decay_period = Param.Cycles(
+        500, "the period (in cycles) of a decay window."
+    )
+
+    post_decay_period = Param.Cycles(
+        100,
+        "the period (in cycles) for trying to decay blocks "
+        "not decayed on time.",
+    )
+
     local_decay_counter = Param.Cycles(16, "the number of decay windows.")
-    
+
     is_on = Param.Bool(True, "Whether the event is doing its thing")
