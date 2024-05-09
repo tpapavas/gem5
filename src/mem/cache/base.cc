@@ -298,33 +298,33 @@ BaseCache::handleTimingReqHit(PacketPtr pkt, CacheBlk *blk, Tick request_time)
             PacketPtr resp_pkt =
                 new Packet(pkt->req, MemCmd::LockedRMWWriteResp);
             resp_pkt->senderState = mshr;
-        recvTimingResp(resp_pkt);
+            recvTimingResp(resp_pkt);
+        }
     }
-}
 
-if (pkt->needsResponse()) {
-    // These delays should have been consumed by now
-    assert(pkt->headerDelay == 0);
-    assert(pkt->payloadDelay == 0);
+    if (pkt->needsResponse()) {
+        // These delays should have been consumed by now
+        assert(pkt->headerDelay == 0);
+        assert(pkt->payloadDelay == 0);
 
-    pkt->makeTimingResponse();
+        pkt->makeTimingResponse();
 
-    // In this case we are considering request_time that takes
-    // into account the delay of the xbar, if any, and just
-    // lat, neglecting responseLatency, modelling hit latency
-    // just as the value of lat overriden by access(), which calls
-    // the calculateAccessLatency() function.
-    cpuSidePort.schedTimingResp(pkt, request_time);
-} else {
-    DPRINTF(Cache, "%s satisfied %s, no response needed\n", __func__,
-            pkt->print());
+        // In this case we are considering request_time that takes
+        // into account the delay of the xbar, if any, and just
+        // lat, neglecting responseLatency, modelling hit latency
+        // just as the value of lat overriden by access(), which calls
+        // the calculateAccessLatency() function.
+        cpuSidePort.schedTimingResp(pkt, request_time);
+    } else {
+        DPRINTF(Cache, "%s satisfied %s, no response needed\n", __func__,
+                pkt->print());
 
-    // queue the packet for deletion, as the sending cache is
-    // still relying on it; if the block is found in access(),
-    // CleanEvict and Writeback messages will be deleted
-    // here as well
-    pendingDelete.reset(pkt);
-}
+        // queue the packet for deletion, as the sending cache is
+        // still relying on it; if the block is found in access(),
+        // CleanEvict and Writeback messages will be deleted
+        // here as well
+        pendingDelete.reset(pkt);
+    }
 }
 
 void
@@ -2806,7 +2806,10 @@ BaseCache::updateDecayAndPowerOff() {
     DPRINTF(TPCacheDecayDebug,
         "On updateDecay: writebuffer empty positions: %d\tallocated: %d\n",
         writeBuffer.getFreeEntries(), writeBuffer.getAllocatedEntries());
-    writebackLimit = writeBuffer.getFreeEntries() - 5;
+    int tmpLimit = 8 - writeBuffer.getAllocatedEntries() - 1;
+    //writebackLimit = writeBuffer.getFreeEntries() - 1;//5;
+    // corner case: unsigned writebacks.size() > negative int writebackLimit.
+    writebackLimit = tmpLimit < 0 ? 0 : tmpLimit;
     tags->forEachBlk([this, &writebacks,
                     &poweredOffCnt,
                     &onBlksCnt,
@@ -2835,14 +2838,18 @@ BaseCache::updateDecayAndPowerOff() {
                     //onBlksCnt++;
                 }
             } else if (blk.isPoweredOff()) {
+                DPRINTF(TPCacheDecay,
+                    "TPCacheDecay: readable and powered off: %s",
+                    blk.print());
                 poweredOffCnt++;
                 stats.numOfDecayedBlks++;
             } //else {
               //  onBlksCnt++; //we should find a way
             //} //to get number of cache block once
-        } //else {
-          //  onBlksCnt++;
-        //}
+        } else if (blk.isPoweredOff()) {
+            poweredOffCnt++;
+        //    onBlksCnt++;
+        }
     });
 
     // writeback block if necessary
@@ -2874,7 +2881,9 @@ BaseCache::powerOffRemainingBlks() {
     DPRINTF(TPCacheDecayDebug,
         "remaining:: writebuffer empty positions: %d\tallocated: %d\n",
         writeBuffer.getFreeEntries(), writeBuffer.getAllocatedEntries());
-    writebackLimit = writeBuffer.getFreeEntries() - 5;
+    int tmpLimit = 8 - writeBuffer.getAllocatedEntries() - 1;
+    //writebackLimit = writeBuffer.getFreeEntries() - 5;
+    writebackLimit = tmpLimit < 0 ? 0 : tmpLimit;
     tags->forEachBlk(
             [this, &writebacks, &forward_time, &powerOffFinished]
             (CacheBlk &blk) {

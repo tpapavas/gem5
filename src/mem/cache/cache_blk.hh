@@ -295,10 +295,13 @@ class CacheBlk : public TaggedEntry
 
     //// MY CODE ////
     void updateDecayCounter() { _decayCounter--; }
-    void resetDecayCounter(int max_decay) { _decayCounter = max_decay; }
+    void resetDecayCounter(int max_decay) {
+        _decayCounter = max_decay;
+        _maxDecayCounter = max_decay;
+    }
     int getDecayCounter() { return _decayCounter; }
 
-    void updateLastHitTick() { _tickLastHitted = curTick(); }	
+    void updateLastHitTick() { _tickLastHitted = curTick(); }
     //// EOF MY CODE ////
 
     /**
@@ -519,6 +522,7 @@ class CacheBlk : public TaggedEntry
     Tick _tickLastHitted = 0;
 
     int _decayCounter = 8;
+    int _maxDecayCounter = 8;
     bool _poweredOff = false;
     //// EOF MY CODE ////
 
