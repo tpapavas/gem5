@@ -1697,6 +1697,12 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
     }
 
     // Insert new block at victimized entry
+    //// extra code ////
+    // if (onDecayPhase && victim->isPoweredOff()) {
+    //     assert(decayWBsLeft >= 0);
+    //     decayWBsLeft--;
+    // }
+    //// eof extra code ////
     tags->insertBlock(pkt, victim);
 
     // If using a compressor, set compression data. This must be done after
@@ -2794,6 +2800,15 @@ BaseCache::flush(bool writebackOnFlush)
 
 bool
 BaseCache::updateDecayAndPowerOff() {
+    //// extra code ////
+    assert(!onDecayPhase);
+    onDecayPhase = true;
+
+    // DPRINTF(TPCacheDecayDebug, "Decay State: %d\n", decayState);
+    assert(!isSetDecayState());
+    setDecayState();
+    //// eof extra code ////
+
     stats.numOfDecayWindows++;
     PacketList writebacks;
     int poweredOffCnt = 0;
@@ -2818,6 +2833,10 @@ BaseCache::updateDecayAndPowerOff() {
         if (blk.isSet(CacheBlk::ReadableBit)) {
             blk.updateDecayCounter();
             if (blk.getDecayCounter() < 0) {
+                //// extra code ////
+                // decayWBsLeft++;
+                //// eof extra code ////
+
                 // do not writeback more than it can handle
                 if (writebacks.size() < writebackLimit) {
                     blk.resetDecayCounter(tags->getLocalDecayCounter());
@@ -2852,6 +2871,17 @@ BaseCache::updateDecayAndPowerOff() {
         }
     });
 
+    //// extra code ////
+    decayPowerOffFinished = powerOffFinished;
+
+    // no block is decayed.
+    if (writebacks.empty()) {
+        onDecayPhase = false;
+
+        clearDecayState();
+    }
+    //// eof extra code ////
+
     // writeback block if necessary
     doWritebacks(writebacks, forward_time); // what delay we need?
 
@@ -2872,6 +2902,13 @@ BaseCache::updateDecayAndPowerOff() {
 
 bool
 BaseCache::powerOffRemainingBlks() {
+    //// extra code ////
+    assert(onDecayPhase);
+
+    assert(isSetDecayState());
+    // assert()
+    //// eof extra code ////
+
     PacketList writebacks;
 
     Tick forward_time = clockEdge(forwardLatency);
@@ -2904,6 +2941,19 @@ BaseCache::powerOffRemainingBlks() {
             }
         }
     });
+
+    //// extra code ////
+    decayPowerOffFinished = powerOffFinished;
+
+    // no remaining decayed blocks. There may got populated
+    // during wait-for-writeback period.
+    if (writebacks.empty()) {
+        clearBlocked(Blocked_HaveDecay);
+        onDecayPhase = false;
+
+        clearDecayState();
+    }
+    //// eof extra code ////
 
     // writeback block if necessary
     doWritebacks(writebacks, forward_time); // what delay we need?

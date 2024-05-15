@@ -124,8 +124,17 @@ class BaseCache : public ClockedObject
         Blocked_NoMSHRs = MSHRQueue_MSHRs,
         Blocked_NoWBBuffers = MSHRQueue_WriteBuffer,
         Blocked_NoTargets,
+        Blocked_HaveDecay, // extra code
         NUM_BLOCKED_CAUSES
     };
+
+    //// extra code ////
+    enum DecayMode
+    {
+        // Decay_Simple,
+        Decay_WBPhase
+    };
+    //// eof extra code ////
 
     /**
      * A data contents update is composed of the updated block's address,
@@ -415,6 +424,17 @@ class BaseCache : public ClockedObject
     int localDecayCounter = 15;
 
     int writebackLimit; // arbitrarily set to write_buffers - 4
+
+    bool onDecayPhase = false;
+    bool decayPowerOffFinished = false;
+    int64_t decayWBsLeft = 0;
+
+    //// extra code ////
+    uint8_t decayMode = DecayMode::Decay_WBPhase;
+    uint8_t decayMask = 1 << decayMode;
+    uint8_t decayState = 0;
+    //// eof extra code ////
+
     //// EOF MY CODE ////
 
     /**
@@ -1245,6 +1265,12 @@ class BaseCache : public ClockedObject
             setBlocked((BlockedCause)MSHRQueue_WriteBuffer);
         }
 
+        //// MY CODE ////
+        if (onDecayPhase && !isBlocked()) {
+            setBlocked(Blocked_HaveDecay);
+        }
+        //// EOF MY CODE ////
+
         // schedule the send
         schedMemSideSendEvent(time);
     }
@@ -1291,6 +1317,22 @@ class BaseCache : public ClockedObject
             cpuSidePort.clearBlocked();
         }
     }
+
+    //// extra code ////
+    bool isSetDecayState() const {
+        return decayState != 0;
+    }
+
+    void setDecayState()
+    {
+        decayState |= decayMask;
+    }
+
+    void clearDecayState()
+    {
+        decayState &= ~decayMask;
+    }
+    //// eof extra code ////
 
     /**
      * Schedule a send event for the memory-side port. If already
