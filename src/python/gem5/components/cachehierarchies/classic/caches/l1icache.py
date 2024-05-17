@@ -48,7 +48,7 @@ class L1ICache(Cache):
         response_latency: int = 1,
         mshrs: int = 16,
         tgts_per_mshr: int = 20,
-        writeback_clean: bool = True,
+        writeback_clean: bool = False,  # True,
         PrefetcherCls: Type[BasePrefetcher] = StridePrefetcher,
     ):
         super().__init__()

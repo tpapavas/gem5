@@ -2875,7 +2875,7 @@ BaseCache::updateDecayAndPowerOff() {
     decayPowerOffFinished = powerOffFinished;
 
     // no block is decayed.
-    if (writebacks.empty()) {
+    if (writebacks.empty() && decayPowerOffFinished) {
         onDecayPhase = false;
 
         clearDecayState();
@@ -2947,9 +2947,12 @@ BaseCache::powerOffRemainingBlks() {
 
     // no remaining decayed blocks. There may got populated
     // during wait-for-writeback period.
-    if (writebacks.empty()) {
+    if (writebacks.empty() && decayPowerOffFinished) {
         clearBlocked(Blocked_HaveDecay);
         onDecayPhase = false;
+
+        DPRINTF(TPCacheDecayDebug, "%s powerOffFinished: %s\n",
+            __func__, powerOffFinished ? "true" : "false");
 
         clearDecayState();
     }
