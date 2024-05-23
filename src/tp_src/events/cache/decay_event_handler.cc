@@ -24,7 +24,8 @@ DecayEventHandler::DecayEventHandler(const DecayEventHandlerParams &params) :
         this->cyclesToTicks(Cycles(params.post_decay_period))
     ),
     timesRemainingFired(0),
-    timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1)
+    timesRemainingLimit(INT_MAX)  // extra code
+    // timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1)
 {
     DPRINTF(TPCacheDecay,
         "Created the DecayEventHandler object with the name %s\n",
@@ -53,9 +54,7 @@ DecayEventHandler::processEvent()
         timesFired);
     if (!cache->updateDecayAndPowerOff()) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
-    }
-
-    if (tillSimEnd || timesFired < numOfFires) {
+    } else if (tillSimEnd || timesFired < numOfFires) {
         schedule(event, curTick() + decayPeriod);
     } else {
         DPRINTF(TPCacheDecay, "Done firing!\n");
@@ -72,6 +71,8 @@ DecayEventHandler::processPowerOffRemainingEvent()
     if (!cache->powerOffRemainingBlks() &&
         timesRemainingFired < timesRemainingLimit) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
+    } else {
+        schedule(event, curTick() + decayPeriod);
     }
 }
 
