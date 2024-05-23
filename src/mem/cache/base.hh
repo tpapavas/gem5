@@ -430,6 +430,8 @@ class BaseCache : public ClockedObject
     int64_t decayWBsLeft = 0;
 
     //// extra code ////
+    int writeBuffersSize;
+
     uint8_t decayMode = DecayMode::Decay_WBPhase;
     uint8_t decayMask = 1 << decayMode;
     uint8_t decayState = 0;
@@ -1266,7 +1268,8 @@ class BaseCache : public ClockedObject
         }
 
         //// MY CODE ////
-        if (onDecayPhase && !isBlocked()) {
+        // add check for decay mode
+        if (onDecayPhase && !isBlocked(Blocked_HaveDecay)) {
             setBlocked(Blocked_HaveDecay);
         }
         //// EOF MY CODE ////
@@ -1274,6 +1277,14 @@ class BaseCache : public ClockedObject
         // schedule the send
         schedMemSideSendEvent(time);
     }
+
+    //// extra code ////
+    bool isBlocked(BlockedCause cause)
+    {
+        uint8_t flag = 1 << cause;
+        return (blocked & flag) != 0;
+    }
+    //// eof extra code ////
 
     /**
      * Returns true if the cache is blocked for accesses.
