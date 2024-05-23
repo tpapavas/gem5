@@ -135,6 +135,11 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
 
     tempBlock = new TempCacheBlk(blkSize);
 
+    //// extra code ////
+    if (decayEventHandler)
+        decayEventHandler->setCache(this);
+    //// extra code ////
+
     tags->tagsInit();
     if (prefetcher)
         prefetcher->setCache(this);
@@ -151,8 +156,9 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
     if (flushEventHandler)
         flushEventHandler->setCache(this);
 
-    if (decayEventHandler)
-        decayEventHandler->setCache(this);
+    //// extra code ////
+    writeBuffersSize = p.write_buffers;
+    //// eof extra code ////
 
     numBlocks = p.size / blk_size;
     DPRINTF(TPCacheDecay, "number of cache blocks %d\n", numBlocks);
@@ -2821,7 +2827,7 @@ BaseCache::updateDecayAndPowerOff() {
     DPRINTF(TPCacheDecayDebug,
         "On updateDecay: writebuffer empty positions: %d\tallocated: %d\n",
         writeBuffer.getFreeEntries(), writeBuffer.getAllocatedEntries());
-    int tmpLimit = 8 - writeBuffer.getAllocatedEntries() - 1;
+    int tmpLimit = writeBuffersSize - writeBuffer.getAllocatedEntries() - 1;
     //writebackLimit = writeBuffer.getFreeEntries() - 1;//5;
     // corner case: unsigned writebacks.size() > negative int writebackLimit.
     writebackLimit = tmpLimit < 0 ? 0 : tmpLimit;
@@ -2918,7 +2924,7 @@ BaseCache::powerOffRemainingBlks() {
     DPRINTF(TPCacheDecayDebug,
         "remaining:: writebuffer empty positions: %d\tallocated: %d\n",
         writeBuffer.getFreeEntries(), writeBuffer.getAllocatedEntries());
-    int tmpLimit = 8 - writeBuffer.getAllocatedEntries() - 1;
+    int tmpLimit = writeBuffersSize - writeBuffer.getAllocatedEntries() - 1;
     //writebackLimit = writeBuffer.getFreeEntries() - 5;
     writebackLimit = tmpLimit < 0 ? 0 : tmpLimit;
     tags->forEachBlk(

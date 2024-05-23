@@ -301,6 +301,10 @@ class CacheBlk : public TaggedEntry
     }
     int getDecayCounter() { return _decayCounter; }
 
+    //// extra code ////
+    int getMaxDecayCounter() { return _maxDecayCounter; }
+    //// eof extra code ////
+
     void updateLastHitTick() { _tickLastHitted = curTick(); }
     //// EOF MY CODE ////
 

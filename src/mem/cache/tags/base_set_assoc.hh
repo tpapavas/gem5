@@ -204,6 +204,10 @@ class BaseSetAssoc : public BaseTags
         // Insert block
         BaseTags::insertBlock(pkt, blk);
 
+        //// extra code ////
+        // blk->resetDecayCounter(localDecayCounter);
+        //// eof extra code ////
+
         // Increment tag counter
         stats.tagsInUse++;
 

@@ -82,6 +82,11 @@ BaseSetAssoc::tagsInit()
 
         // Associate a replacement data entry to the block
         blk->replacementData = replacementPolicy->instantiateEntry();
+
+        //// extra code ////
+        // Set the local decay counter for the block
+        blk->resetDecayCounter(localDecayCounter);
+        //// extra code ////
     }
 }
 
