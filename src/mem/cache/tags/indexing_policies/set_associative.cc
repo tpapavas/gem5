@@ -85,7 +85,7 @@ std::vector<ReplaceableEntry*>
 SetAssociative::getPossibleEntries(const Addr addr) const
 {
     //// MY CODE ////
-    int set_index = extractSet(addr);
+    /*int set_index = extractSet(addr);
     int faulty_set_size = faultySets[set_index].size();
 
     // faulty sets are only for l1d caches and must have at least 1 element
@@ -111,7 +111,7 @@ SetAssociative::getPossibleEntries(const Addr addr) const
 
     return set; // */
     //// MY CODE ////
-    //return sets[extractSet(addr)]; // old code
+    return sets[extractSet(addr)]; // old code
 }
 
 } // namespace gem5

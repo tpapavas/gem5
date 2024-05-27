@@ -59,6 +59,11 @@
 #include "mem/request.hh"
 #include "sim/cur_tick.hh"
 
+//// MY CODE ////
+#include "tp_src/mem/cache/decay/iatac.hh"
+
+//// EOF MY CODE ////
+
 namespace gem5
 {
 
@@ -199,7 +204,13 @@ class CacheBlk : public TaggedEntry
      */
     virtual void invalidate() override
     {
-        TaggedEntry::invalidate();
+        //// MY CODE ////
+        // if (!_onIATACDecayProc) {
+            TaggedEntry::invalidate();
+        // } else {
+            // _onIATACDecayProc = false;
+        // }
+        //// EOF MY CODE ////
 
         clearPrefetched();
         clearCoherenceBits(AllBits);
@@ -337,6 +348,72 @@ class CacheBlk : public TaggedEntry
     isPoweredOff() {
         return _poweredOff;
     }
+
+    // bool
+    // hasDecayMech() {
+    //     return _iatac.isOn();
+    // }
+
+    void
+    decayMechHandleHit(tp::IATACdata *iatac) {
+        _iatac.handleHit(iatac);
+    }
+
+    void
+    decayMechHandleMiss(tp::IATACdata *iatac) {
+        _iatac.handleMiss(iatac);
+    }
+
+    void
+    decayMechUpdate() {
+        _iatac.updateDecay();
+    }
+
+    void
+    decayMechPowerOff() {
+        assert(!_onIATACDecayProc);
+        assert(!isDecayMechPoweredOff());
+
+        _onIATACDecayProc = true;
+        _iatac.setPower(false);
+    }
+
+    void
+    decayMechPowerOn() {
+        _iatac.setPower(true);
+    }
+
+    bool
+    isDecayable() {
+        return !_iatac.getWrong();
+    }
+
+    bool
+    isDecayMechPoweredOff() {
+        return _iatac.isPoweredOff();
+    }
+
+    bool
+    hasDecayMechDecayElapsed() {
+        return _iatac.decayElapsed();
+    }
+
+    int
+    getDecayMechCounter() {
+        return _iatac.getDecay();
+    }
+
+    void
+    decayMechSetDecayedHit(bool b) { _decayedHit = b; }
+
+    bool
+    hasDecayMechDecayedHit() { return _decayedHit; }
+
+    bool
+    isOnIATACDecayProc() { return _onIATACDecayProc; }
+
+    void
+    setOnIATACDecayProc(bool state) { _onIATACDecayProc = state; }
     //// EOF MY CODE ////
 
     /**
@@ -438,6 +515,15 @@ class CacheBlk : public TaggedEntry
             wasPrefetched(), TaggedEntry::print());
     }
 
+    //// MY CODE ////
+    std::string
+    printIATAC() const
+    {
+        return csprintf("%s | %s",
+            TaggedEntry::print(), _iatac.print());
+    }
+    //// EOF MY CODE ////
+
     /**
      * Handle interaction of load-locked operations and stores.
      * @return True if write should proceed, false otherwise.  Returns
@@ -528,6 +614,10 @@ class CacheBlk : public TaggedEntry
     int _decayCounter = 8;
     int _maxDecayCounter = 8;
     bool _poweredOff = false;
+
+    tp::IATAC _iatac;
+    bool _onIATACDecayProc = false;
+    bool _decayedHit = false;
     //// EOF MY CODE ////
 
     /** Whether this block is an unaccessed hardware prefetch. */
