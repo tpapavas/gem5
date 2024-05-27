@@ -24,31 +24,48 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from gem5.components.cachehierarchies.abstract_cache_hierarchy import AbstractCacheHierarchy
-from gem5.components.cachehierarchies.classic.abstract_classic_cache_hierarchy import AbstractClassicCacheHierarchy
-from gem5.components.cachehierarchies.abstract_three_level_cache_hierarchy import AbstractThreeLevelCacheHierarchy
+from gem5.components.cachehierarchies.abstract_cache_hierarchy import (
+    AbstractCacheHierarchy,
+)
+from gem5.components.cachehierarchies.classic.abstract_classic_cache_hierarchy import (
+    AbstractClassicCacheHierarchy,
+)
+from gem5.components.cachehierarchies.abstract_three_level_cache_hierarchy import (
+    AbstractThreeLevelCacheHierarchy,
+)
 from gem5.components.cachehierarchies.classic.caches.l1dcache import L1DCache
 from gem5.components.cachehierarchies.classic.caches.l1icache import L1ICache
 from gem5.components.cachehierarchies.classic.caches.l2cache import L2Cache
 from gem5.components.cachehierarchies.classic.caches.mmu_cache import MMUCache
 from gem5.components.boards.abstract_board import AbstractBoard
 from gem5.isas import ISA
-from m5.objects import Cache, BasePrefetcher, StridePrefetcher, L2XBar, BaseXBar, SystemXBar, BadAddr, Port
+from m5.objects import (
+    Cache,
+    BasePrefetcher,
+    StridePrefetcher,
+    L2XBar,
+    BaseXBar,
+    SystemXBar,
+    BadAddr,
+    Port,
+)
 from m5.objects.TPCacheEvents import (
     FlushEventHandler,
-    DecayEventHandler
+    DecayEventHandler,
+    IATACDecayEventHandler,
 )
 
 from gem5.utils.override import *
 
 from typing import Type
 
+
 class PrivateL1PrivateL2SharedL3CacheHierarchy(
     AbstractClassicCacheHierarchy, AbstractThreeLevelCacheHierarchy
 ):
     """
-    A cache setup where each core has a private L1 Data and Instruction Cache and 
-    a private L2 Cache and an L3 Cache is shared with all cores. 
+    A cache setup where each core has a private L1 Data and Instruction Cache and
+    a private L2 Cache and an L3 Cache is shared with all cores.
     """
 
     @staticmethod
@@ -90,6 +107,12 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
         l1i_decay_event_handler: Type[DecayEventHandler] = None,
         l2_decay_event_handler: Type[DecayEventHandler] = None,
         l3_decay_event_handler: Type[DecayEventHandler] = None,
+        l1d_iatac_decay_event_handler: Type[
+            IATACDecayEventHandler
+        ] = None,  # new code for IATAC
+        l2_iatac_decay_event_handler: Type[
+            IATACDecayEventHandler
+        ] = None,  # new code for IATAC
         membus: BaseXBar = _get_default_membus.__func__(),
     ) -> None:
         """
@@ -114,7 +137,7 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
 
         :type membus: BaseXBar
         """
-        
+
         AbstractClassicCacheHierarchy.__init__(self=self)
         AbstractThreeLevelCacheHierarchy.__init__(
             self,
@@ -145,7 +168,11 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
         self._l1d_decay_event_handler = l1d_decay_event_handler
         self._l2_decay_event_handler = l2_decay_event_handler
         self._l3_decay_event_handler = l3_decay_event_handler
-        
+
+        # new code for IATAC
+        self._l1d_iatac_decay_event_handler = l1d_iatac_decay_event_handler
+        self._l2_iatac_decay_event_handler = l2_iatac_decay_event_handler
+
         self.membus = membus
 
     @overrides(AbstractClassicCacheHierarchy)
@@ -158,7 +185,7 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
 
     @overrides(AbstractCacheHierarchy)
     def incorporate_cache(self, board: AbstractBoard) -> None:
-        #Set up the system port for functional access from the simulator.
+        # Set up the system port for functional access from the simulator.
         board.connect_system_port(self.membus.cpu_side_ports)
 
         for cntr in board.get_memory().get_memory_controllers():
@@ -175,25 +202,41 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
         ]
         if self._l1i_flush_event_handler is not None:
             for i in range(board.get_processor().get_num_cores()):
-                self.l1icaches[i].flush_event_handler=self._l1i_flush_event_handler
+                self.l1icaches[
+                    i
+                ].flush_event_handler = self._l1i_flush_event_handler
         if self._l1i_decay_event_handler is not None:
             for i in range(board.get_processor().get_num_cores()):
-                self.l1icaches[i].decay_event_handler=self._l1i_decay_event_handler
+                self.l1icaches[
+                    i
+                ].decay_event_handler = self._l1i_decay_event_handler
         self.l1dcaches = [
             L1DCache(
                 size=self._l1d_size,
                 tag_latency=self._l1d_latency,
                 data_latency=self._l1d_latency,
-                PrefetcherCls=self._L1DPrefetcherCls
+                PrefetcherCls=self._L1DPrefetcherCls,
             )
             for i in range(board.get_processor().get_num_cores())
         ]
         if self._l1d_flush_event_handler is not None:
             for i in range(board.get_processor().get_num_cores()):
-                self.l1dcaches[i].flush_event_handler=self._l1d_flush_event_handler
+                self.l1dcaches[
+                    i
+                ].flush_event_handler = self._l1d_flush_event_handler
         if self._l1d_decay_event_handler is not None:
             for i in range(board.get_processor().get_num_cores()):
-                self.l1dcaches[i].decay_event_handler=self._l1d_decay_event_handler
+                self.l1dcaches[
+                    i
+                ].decay_event_handler = self._l1d_decay_event_handler
+        # new code for IATAC
+        if self._l1d_iatac_decay_event_handler is not None:
+            for i in range(board.get_processor().get_num_cores()):
+                self.l1dcaches[
+                    i
+                ].iatac_decay_event_handler = (
+                    self._l1d_iatac_decay_event_handler
+                )
         self.l2buses = [
             L2XBar() for i in range(board.get_processor().get_num_cores())
         ]
@@ -202,28 +245,37 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
                 size=self._l2_size,
                 tag_latency=self._l2_latency,
                 data_latency=self._l2_latency,
-                PrefetcherCls=self._L2PrefetcherCls
+                PrefetcherCls=self._L2PrefetcherCls,
             )
             for i in range(board.get_processor().get_num_cores())
         ]
         if self._l2_decay_event_handler is not None:
             for i in range(board.get_processor().get_num_cores()):
-                self.l2caches[i].decay_event_handler=self._l2_decay_event_handler
+                self.l2caches[
+                    i
+                ].decay_event_handler = self._l2_decay_event_handler
+        if self._l2_iatac_decay_event_handler is not None:
+            for i in range(board.get_processor().get_num_cores()):
+                self.l2caches[
+                    i
+                ].iatac_decay_event_handler = (
+                    self._l2_iatac_decay_event_handler
+                )
         self.l3bus = L2XBar()
         self.l3cache = L2Cache(
             size=self._l3_size,
             tag_latency=self._l3_latency,
             data_latency=self._l3_latency,
-            PrefetcherCls=self._L3PrefetcherCls
+            PrefetcherCls=self._L3PrefetcherCls,
         )
         if self._l3_decay_event_handler is not None:
-            self.l3cache.decay_event_handler=self._l3_decay_event_handler
+            self.l3cache.decay_event_handler = self._l3_decay_event_handler
         # ITLB Page walk caches
         self.iptw_caches = [
             MMUCache(size="8KiB", writeback_clean=False)
             for _ in range(board.get_processor().get_num_cores())
         ]
-        #DTLB Page walk caches
+        # DTLB Page walk caches
         self.dptw_caches = [
             MMUCache(size="8KiB", writeback_clean=False)
             for _ in range(board.get_processor().get_num_cores())
@@ -240,9 +292,9 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
             self.l1dcaches[i].mem_side = self.l2buses[i].cpu_side_ports
             self.iptw_caches[i].mem_side = self.l2buses[i].cpu_side_ports
             self.dptw_caches[i].mem_side = self.l2buses[i].cpu_side_ports
-            
+
             self.l2buses[i].mem_side_ports = self.l2caches[i].cpu_side
-            self.l2caches[i].mem_side = self.l3bus.cpu_side_ports           
+            self.l2caches[i].mem_side = self.l3bus.cpu_side_ports
 
             cpu.connect_walker_ports(
                 self.iptw_caches[i].cpu_side, self.dptw_caches[i].cpu_side

@@ -47,7 +47,11 @@ from m5.objects.ReplacementPolicies import *
 from m5.objects.Tags import *
 
 #### My Code ####
-from m5.objects.TPCacheEvents import FlushEventHandler, DecayEventHandler
+from m5.objects.TPCacheEvents import (
+    FlushEventHandler,
+    DecayEventHandler,
+    IATACDecayEventHandler,
+)
 
 #### EOF My Code ####
 
@@ -183,6 +187,9 @@ class BaseCache(ClockedObject):
     )
     decay_event_handler = Param.DecayEventHandler(
         NULL, "An event handler for decay operation"
+    )
+    iatac_decay_event_handler = Param.IATACDecayEventHandler(
+        NULL, "An event handler for IATAC decay operation"
     )
     #### EOF My Code ####
 
