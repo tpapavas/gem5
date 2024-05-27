@@ -48,6 +48,11 @@
 #include <cassert>
 
 #include "base/types.hh"
+
+//// MY CODE ////
+#include "debug/Cache.hh"
+
+//// EOF MY CODE ////
 #include "mem/cache/replacement_policies/replaceable_entry.hh"
 #include "mem/cache/tags/indexing_policies/base.hh"
 #include "mem/request.hh"
@@ -77,7 +82,7 @@ BaseTags::findBlockBySetAndWay(int set, int way) const
 }
 
 CacheBlk*
-BaseTags::findBlock(Addr addr, bool is_secure) const
+BaseTags::findBlock(Addr addr, bool is_secure, CallerID caller_id) const
 {
     // Extract block tag
     Addr tag = extractTag(addr);
@@ -93,6 +98,76 @@ BaseTags::findBlock(Addr addr, bool is_secure) const
             return blk;
         }
     }
+
+    std::string callerMsg;
+
+    switch (caller_id)
+    {
+        case RecvTimingReq:
+            callerMsg = "recvTimingReq";
+            break;
+
+        case RecvTimingResp:
+            callerMsg = "recvTimingResp";
+            break;
+
+        case FunctionalAccess:
+            callerMsg = "functionalAccess";
+            break;
+
+        case GetNextQueueEntry:
+            callerMsg = "getNextQueueEntry";
+            break;
+
+        case AllocateBlock:
+            callerMsg = "allocateBlock";
+            break;
+
+        case SendMSHRQueuePacket:
+            callerMsg = "sendMSHRQueuePacket";
+            break;
+
+        case InCache:
+            callerMsg = "inCache";
+            break;
+
+        case HasBeenPrefetched:
+            callerMsg = "hasBeenPrefetched";
+            break;
+
+        case CacheAccess:
+            callerMsg = "cacheAccess";
+            break;
+
+        case CacheRecvTimingSnoopReq:
+            callerMsg = "cacheRecvTimingSnoopReq";
+            break;
+
+        case CacheRecvAtomicSnoop:
+            callerMsg = "cacheRecvAtomicSnoop";
+            break;
+
+        case CacheSendMSHRQueuePacket:
+            callerMsg = "cacheSendMSHRQueuePacket";
+            break;
+
+        case AccessBlock:
+            callerMsg = "accessBlock";
+            break;
+
+        case SectorTagsAccessBlock:
+            callerMsg = "sectorTagsAccessBlock";
+            break;
+
+        case FALRUAccessBlock:
+            callerMsg = "FALRUAccessBlock";
+            break;
+
+        default:
+            break;
+    }
+
+    DPRINTF(Cache, "%s: called by %s\n", __func__, callerMsg);
 
     // Did not find block
     return nullptr;

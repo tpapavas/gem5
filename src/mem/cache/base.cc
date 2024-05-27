@@ -66,9 +66,14 @@
 //// MY CODE ////
 #include "debug/TPCacheDecay.hh"
 #include "debug/TPCacheDecayDebug.hh"
+#include "debug/TPCacheIATAC.hh"
+#include "debug/TPCacheIATACDebug.hh"
+#include "debug/TPExplain.hh"
+#include "debug/TPExplainVerbose.hh"
 #include "debug/TPFaulty.hh"
 #include "debug/TPHello.hh"
 #include "debug/TPIdle.hh"
+
 //// EOF MY CODE ////
 
 namespace gem5
@@ -122,7 +127,8 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
       stats(*this),
       writebackLimit(p.write_buffers), //my code
       flushEventHandler(p.flush_event_handler), //my code
-      decayEventHandler(p.decay_event_handler) //my code
+      decayEventHandler(p.decay_event_handler), //my code
+      iatacDecayEventHandler(p.iatac_decay_event_handler) //my code
 {
     // the MSHR queue has no reserve entries as we check the MSHR
     // queue on every single allocation, whereas the write queue has
@@ -159,6 +165,15 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
     //// extra code ////
     writeBuffersSize = p.write_buffers;
     //// eof extra code ////
+
+    if (iatacDecayEventHandler) {
+        iatacDecayEventHandler->setCache(this);
+        iatacData = new tp::IATACdata();
+        if (iatacDecayEventHandler->isMechOn()) {
+            decayOn = true;
+        }
+        // tp::IATAC::setOn();
+    }
 
     numBlocks = p.size / blk_size;
     DPRINTF(TPCacheDecay, "number of cache blocks %d\n", numBlocks);
@@ -352,11 +367,20 @@ BaseCache::handleTimingReqMiss(PacketPtr pkt, MSHR *mshr, CacheBlk *blk,
 
         // Coalesce unless it was a software prefetch (see above).
         if (pkt) {
+            //// MY DEBUG CODE ////
+            DPRINTF(TPExplain, "%s mshrHit: %s\n", __func__, pkt->print());
+            //// EOF MY DEBUG CODE ////
             assert(!pkt->isWriteback());
             // CleanEvicts corresponding to blocks which have
             // outstanding requests in MSHRs are simply sunk here
             if (pkt->cmd == MemCmd::CleanEvict) {
                 pendingDelete.reset(pkt);
+
+                //// MY CODE ////
+                if (name().find("l1dcache") != std::string::npos) {
+                    DPRINTF(TPCacheDecayDebug, "ReqMiss: CleanEvict");
+                }
+                //// EOF MY CODE ////
             } else if (pkt->cmd == MemCmd::WriteClean) {
                 // A WriteClean should never coalesce with any
                 // outstanding cache maintenance requests.
@@ -364,6 +388,12 @@ BaseCache::handleTimingReqMiss(PacketPtr pkt, MSHR *mshr, CacheBlk *blk,
                 // We use forward_time here because there is an
                 // uncached memory write, forwarded to WriteBuffer.
                 allocateWriteBuffer(pkt, forward_time);
+
+                //// MY CODE ////
+                if (name().find("l1dcache") != std::string::npos) {
+                    DPRINTF(TPCacheDecayDebug, "ReqMiss: WriteClean");
+                }
+                //// EOF MY CODE ////
             } else {
                 DPRINTF(Cache, "%s coalescing MSHR for %s\n", __func__,
                         pkt->print());
@@ -391,6 +421,12 @@ BaseCache::handleTimingReqMiss(PacketPtr pkt, MSHR *mshr, CacheBlk *blk,
             }
         }
     } else {
+        if (name().find("l1dcache") != std::string::npos ||
+            name().find("l1icache") != std::string::npos) {
+            DPRINTF(TPExplainVerbose,
+                "mshrMiss: %s, packet_id: %d, blk_addr: %s\n",
+                pkt->print(), pkt->id, pkt->getAddr());
+        }
         // no MSHR
         assert(pkt->req->requestorId() < system->maxRequestors());
         stats.cmdStats(pkt).mshrMisses[pkt->req->requestorId()]++;
@@ -444,7 +480,14 @@ BaseCache::recvTimingReq(PacketPtr pkt)
         // Now that the write is here, mark it accessible again, so the
         // write will succeed.  LockedRMWReadReq brings the block in in
         // exclusive mode, so we know it was previously writable.
-        CacheBlk *blk = tags->findBlock(pkt->getAddr(), pkt->isSecure());
+        CacheBlk *blk = tags->findBlock(pkt->getAddr(), pkt->isSecure(),
+            BaseTags::CallerID::RecvTimingReq);
+        //// MY CODE ////
+        if (blk->isDecayMechPoweredOff()) {
+            DPRINTF(TPCacheIATACDebug, "IATAC: decayed hit %s on %s\n",
+                blk->print(), __func__);
+        }
+        //// EOF MY CODE ////
         assert(blk && blk->isValid());
         assert(!blk->isSet(CacheBlk::WritableBit) &&
                !blk->isSet(CacheBlk::ReadableBit));
@@ -578,7 +621,17 @@ BaseCache::recvTimingResp(PacketPtr pkt)
     // the response is an invalidation
     assert(!mshr->wasWholeLineWrite || pkt->isInvalidate());
 
-    CacheBlk *blk = tags->findBlock(pkt->getAddr(), pkt->isSecure());
+    CacheBlk *blk = tags->findBlock(pkt->getAddr(), pkt->isSecure(),
+        BaseTags::CallerID::RecvTimingResp);
+
+    //// MY CODE ////
+    // in case there is a decayed hit, suppress hit.
+    if (blk && blk->isDecayMechPoweredOff()) {
+        DPRINTF(TPCacheIATACDebug, "IATAC: decayed hit %s on %s\n",
+            blk->print(), __func__);
+        blk = nullptr;
+    }
+    //// EOF MY CODE ////
 
     if (is_fill && !is_error) {
         DPRINTF(Cache, "Block for addr %#llx being updated in Cache\n",
@@ -590,6 +643,8 @@ BaseCache::recvTimingResp(PacketPtr pkt)
         assert(blk != nullptr);
         ppFill->notify(pkt);
     }
+
+
 
     // Don't want to promote the Locked RMW Read until
     // the locked write comes in
@@ -747,7 +802,18 @@ BaseCache::functionalAccess(PacketPtr pkt, bool from_cpu_side)
 {
     Addr blk_addr = pkt->getBlockAddr(blkSize);
     bool is_secure = pkt->isSecure();
-    CacheBlk *blk = tags->findBlock(pkt->getAddr(), is_secure);
+    CacheBlk *blk = tags->findBlock(pkt->getAddr(), is_secure,
+        BaseTags::CallerID::FunctionalAccess);
+
+    //// MY CODE ////
+    // Maybe it is needed to add decayed hit check here.
+    if (blk && blk->isDecayMechPoweredOff()) {
+        DPRINTF(TPCacheIATACDebug, "IATAC: decayed hit %s on %s\n",
+            blk->print(), __func__);
+        // blk = nullptr;
+    }
+    //// EOF MY CODE ////
+
     MSHR *mshr = mshrQueue.findMatch(blk_addr, is_secure);
 
     pkt->pushLabel(name());
@@ -933,10 +999,23 @@ BaseCache::getNextQueueEntry()
         PacketPtr pkt = prefetcher->getPacket();
         if (pkt) {
             Addr pf_addr = pkt->getBlockAddr(blkSize);
-            if (tags->findBlock(pf_addr, pkt->isSecure())) {
+            if (tags->findBlock(pf_addr, pkt->isSecure(),
+                BaseTags::CallerID::GetNextQueueEntry)) {
                 DPRINTF(HWPrefetch, "Prefetch %#x has hit in cache, "
                         "dropped.\n", pf_addr);
                 prefetcher->pfHitInCache();
+
+                //// MY CODE ////
+                CacheBlk *blk = tags->findBlock(pf_addr, pkt->isSecure(),
+                    BaseTags::CallerID::GetNextQueueEntry);
+                if (blk && blk->isDecayMechPoweredOff()) {
+                    DPRINTF(TPCacheIATACDebug,
+                        "IATAC: decayed hit %s on %s\n",
+                        blk->print(), __func__);
+                    // blk = nullptr;
+                }
+                //// EOF MY CODE ////
+
                 // free the request and packet
                 delete pkt;
             } else if (mshrQueue.findMatch(pf_addr, pkt->isSecure())) {
@@ -980,12 +1059,23 @@ BaseCache::handleEvictions(std::vector<CacheBlk*> &evict_blks,
             const MSHR* mshr =
                 mshrQueue.findMatch(regenerateBlkAddr(blk), blk->isSecure());
             if (mshr) {
+                //// MY DEBUG CODE ////
+                stats.handleEvictionsMshrHits++;
+                //// EOF MY DEBUG CODE ////
                 // Must be an outstanding upgrade or clean request on a block
                 // we're about to replace
                 assert((!blk->isSet(CacheBlk::WritableBit) &&
                     mshr->needsWritable()) || mshr->isCleaning());
                 return false;
             }
+        } else if (blk && !blk->isValid()) {
+            //// MY DEBUG CODE ////
+            stats.invBlksMshrMisses++;
+            //// EOF MY DEBUG CODE ////
+        } else if (!blk) {
+            //// MY DEBUG CODE ////
+            stats.noBlksMshrMisses++;
+            //// EOF MY DEBUG CODE ////
         }
     }
 
@@ -1292,14 +1382,46 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                 "Should never see a write in a read-only cache %s\n",
                 name());
 
+    //// MY DEBUG CODE ////
+    if (pkt->isUpgrade()) {
+        // DPRINTF(TPExplain,
+        //      "accessStart on %s: UpgradeReq hits: %d\n",
+        //      pkt->print(), stats.cmdStats(pkt).hits.total());
+    }
+    //// EOF MY DEBUG CODE ////
+
     // Access block in the tags
     Cycles tag_latency(0);
     blk = tags->accessBlock(pkt, tag_latency);
+
+    //// MY CODE ////
+    // for IATAC
+    if (blk != nullptr && iatacData != nullptr && decayOn) {
+        if (blk->isDecayMechPoweredOff()) {
+            // On decayed hit, create a virtual miss.
+            DPRINTF(TPCacheIATACDebug, "IATAC: decayed hit %s\n",
+                blk->print());
+            // iatacDecayedBlk = blk;
+            // iatacDecayedHit = true;
+            blk->decayMechSetDecayedHit(true);
+            // blk->invalidate(); // invalidate only tag and valid bit.
+            blk = nullptr;
+        } else {
+            DPRINTF(TPCacheIATACDebug, "IATAC: regular hit\n");
+            // DPRINTF(TPCacheDecay, "%s\n", blk->printIATAC());
+            blk->decayMechHandleHit(iatacData);
+        }
+    }
+    //// EOF MY CODE ////
 
     DPRINTF(Cache, "%s for %s %s\n", __func__, pkt->print(),
             blk ? "hit " + blk->print() : "miss");
 
     if (pkt->req->isCacheMaintenance()) {
+        //// MY DEBUG CODE ////
+        stats.accessCacheMaintenance++;
+        //// EOF MY DEBUG CODE ////
+
         // A cache maintenance operation is always forwarded to the
         // memory below even if the block is found in dirty state.
 
@@ -1315,6 +1437,10 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
     }
 
     if (pkt->isEviction()) {
+        //// MY DEBUG CODE ////
+        stats.accessEviction++;
+        //// EOF MY DEBUG CODE ////
+
         // We check for presence of block in above caches before issuing
         // Writeback or CleanEvict to write buffer. Therefore the only
         // possible cases can be of a CleanEvict packet coming from above
@@ -1358,12 +1484,20 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
 
     // The critical latency part of a write depends only on the tag access
     if (pkt->isWrite()) {
+        //// MY DEBUG CODE ////
+        stats.accessWrite++;
+        //// EOF MY DEBUG CODE ////
+
         lat = calculateTagOnlyLatency(pkt->headerDelay, tag_latency);
     }
 
     // Writeback handling is special case.  We can write the block into
     // the cache without having a writeable copy (or any copy at all).
     if (pkt->isWriteback()) {
+        //// MY DEBUG CODE ////
+        stats.accessWriteback++;
+        //// EOF MY DEBUG CODE ////
+
         assert(blkSize == pkt->getSize());
 
         // we could get a clean writeback while we are having
@@ -1388,6 +1522,12 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
             // need to do a replacement
             blk = allocateBlock(pkt, writebacks);
             if (!blk) {
+                //// MY CODE ////
+                // DPRINTF(TPCacheDecayDebug,
+                //      "MissingMiss: On writeback: "
+                //      "No replaceable block available.\n");
+                //// EOF MY CODE ////
+
                 // no replaceable block available: give up, fwd to next level.
                 incMissCount(pkt);
                 return false;
@@ -1433,6 +1573,10 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
 
         return true;
     } else if (pkt->cmd == MemCmd::CleanEvict) {
+        //// MY DEBUG CODE ////
+        stats.accessCleanEvict++;
+        //// EOF MY DEBUG CODE ////
+
         // A CleanEvict does not need to access the data array
         lat = calculateTagOnlyLatency(pkt->headerDelay, tag_latency);
 
@@ -1449,6 +1593,10 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         // go to next level.
         return false;
     } else if (pkt->cmd == MemCmd::WriteClean) {
+        //// MY DEBUG CODE ////
+        stats.accessWriteClean++;
+        //// EOF MY DEBUG CODE ////
+
         // WriteClean handling is a special case. We can allocate a
         // block directly if it doesn't exist and we can update the
         // block immediately. The WriteClean transfers the ownership
@@ -1465,6 +1613,11 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                 // a writeback that misses needs to allocate a new block
                 blk = allocateBlock(pkt, writebacks);
                 if (!blk) {
+                    //// MY CODE ////
+                    // DPRINTF(TPCacheDecayDebug,
+                    //      "MissingMiss: On writeclean: "
+                    //      "No replaceable block available.\n");
+                    //// EOF MY CODE ////
                     // no replaceable block available: give up, fwd to
                     // next level.
                     incMissCount(pkt);
@@ -1512,6 +1665,10 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
     } else if (blk && (pkt->needsWritable() ?
             blk->isSet(CacheBlk::WritableBit) :
             blk->isSet(CacheBlk::ReadableBit))) {
+        //// MY DEBUG CODE ////
+        stats.accessReadableWriteable++;
+        //// EOF MY DEBUG CODE ////
+
         // OK to satisfy access
         incHitCount(pkt);
 
@@ -1528,6 +1685,15 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
             lat = calculateTagOnlyLatency(pkt->headerDelay, tag_latency);
         }
 
+        //// MY DEBUG CODE ////
+        if (pkt->isUpgrade()) {
+            // DPRINTF(TPExplain,
+            //      "accessFinish on %s: UpgradeReq hits: %d\n",
+            //      pkt->print(), stats.cmdStats(pkt).hits.total());
+        }
+        //// EOF MY DEBUG CODE ////
+
+
         satisfyRequest(pkt, blk);
         maintainClusivity(pkt->fromCache(), blk);
 
@@ -1537,11 +1703,19 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
     // Can't satisfy access normally... either no block (blk == nullptr)
     // or have block but need writable
 
+    //// MY CODE ////
+    // DPRINTF(TPCacheDecayDebug,
+    //      "MissingMiss: Can't satisfy access normally.\n");
+    //// EOF MY CODE ////
     incMissCount(pkt);
 
     lat = calculateAccessLatency(blk, pkt->headerDelay, tag_latency);
 
     if (!blk && pkt->isLLSC() && pkt->isWrite()) {
+        //// MY DEBUG CODE ////
+        stats.accessFail++;
+        //// EOF MY DEBUG CODE ////
+
         // complete miss on store conditional... just give up now
         pkt->req->setExtraData(0);
         return true;
@@ -1566,6 +1740,10 @@ CacheBlk*
 BaseCache::handleFill(PacketPtr pkt, CacheBlk *blk, PacketList &writebacks,
                       bool allocate)
 {
+    //// MY CODE ////
+    stats.recvTimingRespCalls++;
+    //// EOF MY CODE ////
+
     assert(pkt->isResponse());
     Addr addr = pkt->getAddr();
     bool is_secure = pkt->isSecure();
@@ -1584,6 +1762,15 @@ BaseCache::handleFill(PacketPtr pkt, CacheBlk *blk, PacketList &writebacks,
         // with the temporary storage
         blk = allocate ? allocateBlock(pkt, writebacks) : nullptr;
 
+        //// MY CODE ////
+        stats.recvTimingRespReplacements++;
+        if (name().find("l1dcache") != std::string::npos) {
+            DPRINTF(TPExplainVerbose,
+                "handleFillAlloc: %s, packet_id: %d, blk: %s\n",
+                pkt->print(), pkt->id, blk->print());
+        }
+        //// EOF MY CODE ////
+
         if (!blk) {
             // No replaceable block or a mostly exclusive
             // cache... just use temporary storage to complete the
@@ -1594,6 +1781,14 @@ BaseCache::handleFill(PacketPtr pkt, CacheBlk *blk, PacketList &writebacks,
                     is_secure ? "s" : "ns");
         }
     } else {
+        //// MY DEBUG CODE ////
+        stats.handleFillNoAllocation++;
+        if (name().find("l1dcache") != std::string::npos) {
+            DPRINTF(TPExplainVerbose,
+                "handleFillNo: %s, packet_id: %d, blk: %s\n",
+                pkt->print(), pkt->id, blk->print());
+        }
+        //// EOF MY DEBUG CODE ////
         // existing block... probably an upgrade
         // don't clear block status... if block is already dirty we
         // don't want to lose that
@@ -1687,8 +1882,37 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
 
     // Find replacement victim
     std::vector<CacheBlk*> evict_blks;
-    CacheBlk *victim = tags->findVictim(addr, is_secure, blk_size_bits,
+    CacheBlk *victim; // = tags->findVictim(addr, is_secure, blk_size_bits,
+                                        // evict_blks);
+
+    //// MY CODE ////
+    CacheBlk *decayedHitBlk = tags->findBlock(pkt->getAddr(), pkt->isSecure(),
+        BaseTags::CallerID::AllocateBlock);
+    if (decayedHitBlk && decayedHitBlk->hasDecayMechDecayedHit()) {
+        // we set our decayed hitted block as victim.
+        DPRINTF(TPCacheIATACDebug, "IATAC: find victim on decayed hit.\n");
+        decayedHitBlk->decayMechSetDecayedHit(false);
+        victim = decayedHitBlk;
+
+        // I think invalidation must be tagwise
+        tags->invalidate(decayedHitBlk);
+
+        // decayedHitBlk->invalidate(); // temporarily
+        // evict_blks.push_back(victim);
+        // iatacDecayedHit = false;
+    } else {
+        // find victim for regular misses.
+        DPRINTF(TPCacheIATACDebug, "IATAC: find victim on regular miss.\n");
+        victim = tags->findVictim(addr, is_secure, blk_size_bits,
                                         evict_blks);
+
+        // in case the victim is a decayed block
+        if (victim->isDecayMechPoweredOff()) {
+            tags->invalidate(victim);
+            evict_blks.clear();
+        }
+    }
+    //// EOF MY CODE ////
 
     // It is valid to return nullptr if there is no victim
     if (!victim)
@@ -1719,6 +1943,11 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
     }
 
     //// MY CODE ////
+    if (iatacData != nullptr && decayOn) {
+        DPRINTF(TPCacheIATACDebug, "IATAC: on miss check\n");
+        victim->decayMechHandleMiss(iatacData);
+    }
+
     if (name().find("l1dcache") != std::string::npos) {
         DPRINTF(TPFaulty, "* Faulty blocks at the moment *\n");
         DPRINTF(TPFaulty, "%s\n", tags->findBlockBySetAndWay(1, 2)->print());
@@ -1740,6 +1969,13 @@ BaseCache::invalidateBlock(CacheBlk *blk)
 
     // Notify that the data contents for this address are no longer present
     updateBlockData(blk, nullptr, blk->isValid());
+
+    //// MY CODE ////
+    if (blk->isOnIATACDecayProc()) {
+        blk->setOnIATACDecayProc(false);
+        return;
+    }
+    //// EOF MY CODE ////
 
     // If handling a block present in the Tags, let it do its invalidation
     // process, which will update stats and invalidate the block itself
@@ -1768,6 +2004,11 @@ BaseCache::writebackBlk(CacheBlk *blk)
         (blk->isSet(CacheBlk::DirtyBit) || writebackClean));
 
     stats.writebacks[Request::wbRequestorId]++;
+    //// MY CODE ////
+    // if (name().find("l1dcache") != std::string::npos) {
+    //     DPRINTF(TPCacheDecayDebug, "MyWritebacks: count\n");
+    // }
+    //// EOF MY CODE ////
 
     RequestPtr req = std::make_shared<Request>(
         regenerateBlkAddr(blk), blkSize, 0, Request::wbRequestorId);
@@ -1966,7 +2207,15 @@ BaseCache::sendMSHRQueuePacket(MSHR* mshr)
         }
     }
 
-    CacheBlk *blk = tags->findBlock(mshr->blkAddr, mshr->isSecure);
+    CacheBlk *blk = tags->findBlock(mshr->blkAddr, mshr->isSecure,
+        BaseTags::CallerID::SendMSHRQueuePacket);
+
+    //// MY CODE ////
+    if (blk && blk->isDecayMechPoweredOff()) {
+        DPRINTF(TPCacheIATACDebug, "IATAC: on mshr: %s\n", blk->print());
+        blk = nullptr;
+    }
+    //// EOF MY CODE ////
 
     // either a prefetch that is not present upstream, or a normal
     // MSHR request, proceed to get the packet to send downstream
@@ -2007,6 +2256,9 @@ BaseCache::sendMSHRQueuePacket(MSHR* mshr)
         // it gets retried
         return true;
     } else {
+        //// MY DEBUG CODE ////
+        stats.sendMSHRQueuePacketElse++;
+        //// EOF MY DEBUG CODE ////
         // As part of the call to sendTimingReq the packet is
         // forwarded to all neighbouring caches (and any caches
         // above them) as a snoop. Thus at this point we know if
@@ -2048,6 +2300,10 @@ BaseCache::sendWriteQueuePacket(WriteQueueEntry* wq_entry)
 
     // forward as is, both for evictions and uncacheable writes
     if (!memSidePort.sendTimingReq(tgt_pkt)) {
+        //// MY DEBUG CODE ////
+        stats.sendWriteQueuePacketFails++;
+        //// EOF MY DEBUG CODE ////
+
         // note that we have now masked any requestBus and
         // schedSendEvent (we will wait for a retry before
         // doing anything), and this is so even if we do not
@@ -2055,6 +2311,7 @@ BaseCache::sendWriteQueuePacket(WriteQueueEntry* wq_entry)
         // it gets retried
         return true;
     } else {
+        stats.sendWriteQueuePacketSuccess++;
         markInService(wq_entry);
         return false;
     }
@@ -2360,7 +2617,54 @@ BaseCache::CacheStats::CacheStats(BaseCache &c)
              "decayed blocks window percentage"),
     ADD_STAT(avgDecayPercentage, statistics::units::Rate<
                 statistics::units::Count, statistics::units::Count>::get(),
-             "average decay percentage"), //EOF MY CODE
+             "average decay percentage"),
+    ADD_STAT(recvTimingRespCalls, statistics::units::Count::get(),
+             "number of recvTimingResp function calls"),
+    ADD_STAT(recvTimingRespReplacements, statistics::units::Count::get(),
+             "number of replacements during recvTimingResp"),
+    ADD_STAT(sendWriteQueuePacketFails, statistics::units::Count::get(),
+             "number of fails during sendWriteQueuePacket"),
+    ADD_STAT(accessCacheMaintenance, statistics::units::Count::get(),
+             "number of successes during sendWriteQueuePacket"),
+    ADD_STAT(accessEviction, statistics::units::Count::get(),
+             "number of successes during sendWriteQueuePacket"),
+    ADD_STAT(accessWrite, statistics::units::Count::get(),
+             "number of successes during sendWriteQueuePacket"),
+    ADD_STAT(accessWriteback, statistics::units::Count::get(),
+             "number of successes during sendWriteQueuePacket"),
+    ADD_STAT(accessCleanEvict, statistics::units::Count::get(),
+             "number of successes during sendWriteQueuePacket"),
+    ADD_STAT(accessWriteClean, statistics::units::Count::get(),
+             "number of successes during sendWriteQueuePacket"),
+    ADD_STAT(accessReadableWriteable, statistics::units::Count::get(),
+             "number of successes during sendWriteQueuePacket"),
+    ADD_STAT(accessFail, statistics::units::Count::get(),
+             "number of successes during sendWriteQueuePacket"),
+    ADD_STAT(doWritebacksIsCachedAbove, statistics::units::Count::get(),
+             "number of doWritebacksIsCachedAbove"),
+    ADD_STAT(doWritebacksNotCachedAbove, statistics::units::Count::get(),
+             "number of doWritebacksNotCachedAbove"),
+    ADD_STAT(doWritebacksIsCachedAboveCleanEvict,
+        statistics::units::Count::get(),
+             "number of doWritebacksIsCachedAboveCleanEvict"),
+    ADD_STAT(doWritebacksIsCachedAboveWritebackClean,
+        statistics::units::Count::get(),
+             "number of doWritebacksIsCachedAboveWritebackClean"),
+    ADD_STAT(doWritebacksIsCachedAboveWritebacks,
+        statistics::units::Count::get(),
+             "number of doWritebacksIsCachedAboveWritebacks"),
+    ADD_STAT(sendMSHRQueuePacketElse, statistics::units::Count::get(),
+             "number of sendMSHRQueuePacketElse"),
+    ADD_STAT(allocateWriteBufferMerge, statistics::units::Count::get(),
+             "number of allocateWriteBufferMerge"),
+    ADD_STAT(handleFillNoAllocation, statistics::units::Count::get(),
+             "number of invBlksMshrHits"),
+    ADD_STAT(handleEvictionsMshrHits, statistics::units::Count::get(),
+             "number of noBlksMshrHits"),
+    ADD_STAT(invBlksMshrMisses, statistics::units::Count::get(),
+             "number of invBlksMshrMisses"),
+    ADD_STAT(noBlksMshrMisses, statistics::units::Count::get(),
+             "number of noBlksMshrMisses"), //EOF MY CODE
     cmd(MemCmd::NUM_MEM_CMDS)
 {
     for (int idx = 0; idx < MemCmd::NUM_MEM_CMDS; ++idx)
@@ -2654,12 +2958,17 @@ BaseCache::CpuSidePort::recvTimingReq(PacketPtr pkt)
     assert(pkt->isRequest());
 
     if (cache.system->bypassCaches()) {
+        //// MY DEBUG CODE ////
+        DPRINTF(TPExplain, "%s bypassing cache %s\n", __func__, pkt->print());
+        //// EOF MY DEBUG CODE ////
         // Just forward the packet if caches are disabled.
         // @todo This should really enqueue the packet rather
         [[maybe_unused]] bool success = cache.memSidePort.sendTimingReq(pkt);
         assert(success);
         return true;
     } else if (tryTiming(pkt)) {
+        DPRINTF(TPExplain, "%s inserting in cache %s\n",
+            __func__, pkt->print());
         cache.recvTimingReq(pkt);
         return true;
     }
@@ -2805,6 +3114,118 @@ BaseCache::flush(bool writebackOnFlush)
 }
 
 bool
+BaseCache::iatacUpdateDecay() {
+    stats.numOfDecayWindows++;
+    PacketList writebacks;
+
+    int poweredOffCnt = 0;
+    int onBlksCnt = 0;
+
+    Tick forward_time = clockEdge(forwardLatency);
+
+    bool powerOffFinished = true;
+
+    int tmpLimit = 8 - writeBuffer.getAllocatedEntries() - 1;
+    // writebackLimit = writeBuffer.getFreeEntries() - 1;//5;
+    // corner case: unsigned writebacks.size() > negative int writebackLimit.
+    writebackLimit = tmpLimit < 0 ? 0 : tmpLimit;
+    tags->forEachBlk([this,
+                    &writebacks,
+                    &poweredOffCnt,
+                    &powerOffFinished](CacheBlk &blk) {
+        if (blk.isSet(CacheBlk::ReadableBit)) {
+            // DPRINTF(TPCacheDecay, "%s\n", blk.printIATAC());
+            // DPRINTF(TPCacheDecayDebug, "before decayMechUpdate\n");
+            blk.decayMechUpdate();
+            if (blk.hasDecayMechDecayElapsed() && blk.isDecayable()) {
+                if (writebacks.size() < writebackLimit) {
+                    blk.decayMechPowerOff();
+
+                    // writeback dirty decayed block.
+                    writebackOnIATACDecay(&blk, writebacks);
+                    // evictBlock(&blk, writebacks);
+
+                    DPRINTF(TPCacheDecayDebug, "block %s got powered off\n",
+                        blk.print());
+
+                    poweredOffCnt++;
+                    stats.numOfDecayedBlks++;
+                } else {
+                    powerOffFinished = false;
+                }
+            } else if (blk.isDecayMechPoweredOff()) {
+                poweredOffCnt++;
+                // stats.numOfDecayedBlks++;
+            }
+        } else if (blk.isDecayMechPoweredOff()) {
+                poweredOffCnt++;
+                // stats.numOfDecayedBlks++;
+        }
+    });
+
+    doWritebacks(writebacks, forward_time);
+
+    stats.decayedBlksWindowPercnt += poweredOffCnt/(float)numBlocks;
+
+    DPRINTF(TPCacheDecay, "Powered-off percentage: %f\n",
+        poweredOffCnt/(float)numBlocks);
+    // DPRINTF(TPCacheDecay,
+        // "Powered-off percentage: %f\t num of powered off: %d\n",
+        // poweredOffCnt/(float)numBlocks, poweredOffCnt);
+        //(poweredOffCnt+onBlksCnt));
+
+    // iatacData->printGlobals();
+
+    return powerOffFinished;
+}
+
+bool
+BaseCache::iatacPowerOffRemainingBlks() {
+    PacketList writebacks;
+
+    Tick forward_time = clockEdge(forwardLatency);
+
+    bool powerOffFinished = true;
+
+    int tmpLimit = 8 - writeBuffer.getAllocatedEntries() - 1;
+    //writebackLimit = writeBuffer.getFreeEntries() - 1;//5;
+    // corner case: unsigned writebacks.size() > negative int writebackLimit.
+    writebackLimit = tmpLimit < 0 ? 0 : tmpLimit;
+    // DPRINTF(TPCacheIATACDebug,
+        // "remaining:: writebuffer empty positions: %d\tallocated: %d\n",
+        // writeBuffer.getFreeEntries(), writeBuffer.getAllocatedEntries());
+    // writebackLimit = writeBuffer.getFreeEntries() - 5;
+    tags->forEachBlk(
+            [this, &writebacks, &forward_time, &powerOffFinished]
+            (CacheBlk &blk) {
+        if (blk.isSet(CacheBlk::ReadableBit)) {
+            if (blk.hasDecayMechDecayElapsed() && blk.isDecayable()) {
+                // do not writeback more than it can handle
+                if (writebacks.size() < writebackLimit) {
+                    blk.decayMechPowerOff();
+
+                    DPRINTF(TPCacheDecayDebug,
+                        "iatac rem: block %s got powered off\n",
+                        blk.print());
+                    // evict block from cache
+                    evictBlock(&blk, writebacks);
+                } else {
+                    powerOffFinished = false;
+                }
+            }
+        }
+    });
+
+    // writeback block if necessary
+    doWritebacks(writebacks, forward_time); // what delay we need?
+    DPRINTF(TPCacheDecayDebug,
+        "remaining:: writebuffer empty positions: %d\tallocated: %d\n\n",
+        writeBuffer.getFreeEntries(), writeBuffer.getAllocatedEntries());
+
+    return powerOffFinished;
+}
+
+bool
 BaseCache::updateDecayAndPowerOff() {
     //// extra code ////
     assert(!onDecayPhase);
@@ -2825,7 +3246,8 @@ BaseCache::updateDecayAndPowerOff() {
     bool powerOffFinished = true;
 
     DPRINTF(TPCacheDecayDebug,
-        "On updateDecay: writebuffer empty positions: %d\tallocated: %d\n",
+        "TPCacheDecay: On updateDecay: "
+        "writebuffer empty positions: %d\tallocated: %d\n",
         writeBuffer.getFreeEntries(), writeBuffer.getAllocatedEntries());
     int tmpLimit = writeBuffersSize - writeBuffer.getAllocatedEntries() - 1;
     //writebackLimit = writeBuffer.getFreeEntries() - 1;//5;
@@ -2848,10 +3270,13 @@ BaseCache::updateDecayAndPowerOff() {
                     blk.resetDecayCounter(tags->getLocalDecayCounter());
                     blk.powerOff();
 
-                    DPRINTF(TPCacheDecayDebug, "block %s evicted\n",
+                    DPRINTF(TPCacheDecayDebug,
+                        "TPCacheDecay: block %s evicted\n",
                         blk.print());
                     // evict block from cache
                     evictBlock(&blk, writebacks);
+
+                    // doWritebacks(writebacks, forward_time);
 
                     poweredOffCnt++;
                     stats.numOfDecayedBlks++;
@@ -2900,7 +3325,8 @@ BaseCache::updateDecayAndPowerOff() {
         // poweredOffCnt/(float)numBlocks, poweredOffCnt);
         //(poweredOffCnt+onBlksCnt));
     DPRINTF(TPCacheDecayDebug,
-        "updateDecay:: writebuffer empty positions: %d\tallocated: %d\n\n",
+        "TPCacheDecay: updateDecay: "
+        "writebuffer empty positions: %d\tallocated: %d\n\n",
         writeBuffer.getFreeEntries(), writeBuffer.getAllocatedEntries());
 
     return powerOffFinished;
@@ -2922,7 +3348,8 @@ BaseCache::powerOffRemainingBlks() {
     bool powerOffFinished = true;
 
     DPRINTF(TPCacheDecayDebug,
-        "remaining:: writebuffer empty positions: %d\tallocated: %d\n",
+        "TPCacheDecay: remaining: writebuffer empty positions: %d\t"
+        "allocated: %d\n",
         writeBuffer.getFreeEntries(), writeBuffer.getAllocatedEntries());
     int tmpLimit = writeBuffersSize - writeBuffer.getAllocatedEntries() - 1;
     //writebackLimit = writeBuffer.getFreeEntries() - 5;
@@ -2937,7 +3364,8 @@ BaseCache::powerOffRemainingBlks() {
                     blk.resetDecayCounter(tags->getLocalDecayCounter());
                     blk.powerOff();
 
-                    DPRINTF(TPCacheDecayDebug, "block %s evicted\n",
+                    DPRINTF(TPCacheDecayDebug,
+                        "TPCacheDecay: block %s evicted\n",
                         blk.print());
                     // evict block from cache
                     evictBlock(&blk, writebacks);
@@ -2967,7 +3395,8 @@ BaseCache::powerOffRemainingBlks() {
     // writeback block if necessary
     doWritebacks(writebacks, forward_time); // what delay we need?
     DPRINTF(TPCacheDecayDebug,
-        "remaining:: writebuffer empty positions: %d\tallocated: %d\n\n",
+        "TPCacheDecay: remaining: writebuffer empty positions: %d\t"
+        "allocated: %d\n\n",
         writeBuffer.getFreeEntries(), writeBuffer.getAllocatedEntries());
 
     return powerOffFinished;

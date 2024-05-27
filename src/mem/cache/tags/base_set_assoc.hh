@@ -53,6 +53,7 @@
 
 #include "base/logging.hh"
 #include "base/types.hh"
+#include "debug/TPCacheDecay.hh"
 #include "mem/cache/base.hh"
 #include "mem/cache/cache_blk.hh"
 #include "mem/cache/replacement_policies/base.hh"
@@ -126,7 +127,8 @@ class BaseSetAssoc : public BaseTags
      */
     CacheBlk* accessBlock(const PacketPtr pkt, Cycles &lat) override
     {
-        CacheBlk *blk = findBlock(pkt->getAddr(), pkt->isSecure());
+        CacheBlk *blk = findBlock(pkt->getAddr(), pkt->isSecure(),
+            BaseTags::CallerID::AccessBlock);
 
         // Access all tags in parallel, hence one in each way.  The data side
         // either accesses all blocks in parallel, or one block sequentially on
@@ -141,7 +143,7 @@ class BaseSetAssoc : public BaseTags
         }
 
         // If a cache hit
-        if (blk != nullptr) {
+        if (blk != nullptr && !blk->isDecayMechPoweredOff()) {
             // Update number of references to accessed block
             blk->increaseRefCount();
 
@@ -149,9 +151,6 @@ class BaseSetAssoc : public BaseTags
             // update tick of last hit of accessed block
             blk->updateLastHitTick();
             blk->resetDecayCounter(localDecayCounter);
-
-            // for IATAC
-            //blk->getDecay()->handleHit();
 
             //// EOF MY CODE ////
 
@@ -161,6 +160,10 @@ class BaseSetAssoc : public BaseTags
 
         // The tag lookup latency is the same for a hit or a miss
         lat = lookupLatency;
+
+        //// MY CODE ////
+        // add +1 on tag latency for hitted decayed blocks.
+        //// EOF MY CODE ////
 
         return blk;
     }

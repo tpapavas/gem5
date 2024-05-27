@@ -162,6 +162,27 @@ class BaseTags : public ClockedObject
     } stats;
 
   public:
+    //// MY CODE ////
+    enum CallerID
+    {
+        RecvTimingReq,
+        RecvTimingResp,
+        FunctionalAccess,
+        GetNextQueueEntry,
+        AllocateBlock,
+        SendMSHRQueuePacket,
+        InCache,
+        HasBeenPrefetched,
+        CacheAccess,
+        CacheRecvTimingSnoopReq,
+        CacheRecvAtomicSnoop,
+        CacheSendMSHRQueuePacket,
+        AccessBlock,
+        SectorTagsAccessBlock,
+        FALRUAccessBlock
+    };
+    //// EOF MY CODE ////
+
     typedef BaseTagsParams Params;
     BaseTags(const Params &p);
 
@@ -200,7 +221,8 @@ class BaseTags : public ClockedObject
      * @param is_secure True if the target memory space is secure.
      * @return Pointer to the cache block.
      */
-    virtual CacheBlk *findBlock(Addr addr, bool is_secure) const;
+    virtual CacheBlk *findBlock(Addr addr, bool is_secure,
+        CallerID caller_id) const;
 
     /**
      * Find a block given set and way.

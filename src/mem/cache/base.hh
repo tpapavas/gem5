@@ -77,8 +77,11 @@
 #include "sim/system.hh"
 
 ////MY INLCUDES////
-#include "tp_src/events/cache/flush_event_handler.hh"
 #include "tp_src/events/cache/decay_event_handler.hh"
+#include "tp_src/events/cache/flush_event_handler.hh"
+#include "tp_src/events/cache/iatac_decay_event_handler.hh"
+#include "tp_src/mem/cache/decay/iatac.hh"
+
 ////EOF MY INCLUDES////
 
 namespace gem5
@@ -97,6 +100,7 @@ struct BaseCacheParams;
 namespace tp
 {
     class DecayEventHandler;
+    class IATACDecayEventHandler;
 }
 //// EOF MY CODE ////
 
@@ -1191,6 +1195,37 @@ class BaseCache : public ClockedObject
         statistics::Scalar numOfDecayWindows;
         statistics::Scalar decayedBlksWindowPercnt;
         statistics::Formula avgDecayPercentage;
+
+        // misses debugging counters
+        statistics::Scalar recvTimingRespCalls;
+        statistics::Scalar recvTimingRespReplacements;
+
+        statistics::Scalar sendWriteQueuePacketFails;
+        statistics::Scalar sendWriteQueuePacketSuccess;
+
+        statistics::Scalar accessCacheMaintenance;
+        statistics::Scalar accessEviction;
+        statistics::Scalar accessWrite;
+        statistics::Scalar accessWriteback;
+        statistics::Scalar accessCleanEvict;
+        statistics::Scalar accessWriteClean;
+        statistics::Scalar accessReadableWriteable;
+        statistics::Scalar accessFail;
+
+        statistics::Scalar doWritebacksIsCachedAbove;
+        statistics::Scalar doWritebacksNotCachedAbove;
+        statistics::Scalar doWritebacksIsCachedAboveCleanEvict;
+        statistics::Scalar doWritebacksIsCachedAboveWritebackClean;
+        statistics::Scalar doWritebacksIsCachedAboveWritebacks;
+
+        statistics::Scalar sendMSHRQueuePacketElse;
+
+        statistics::Scalar allocateWriteBufferMerge;
+
+        statistics::Scalar handleEvictionsMshrHits;
+        statistics::Scalar handleFillNoAllocation;
+        statistics::Scalar noBlksMshrMisses;
+        statistics::Scalar invBlksMshrMisses;
         //// EOF MY CODE ////
 
         /** Per-command statistics */
@@ -1258,6 +1293,9 @@ class BaseCache : public ClockedObject
         WriteQueueEntry *wq_entry =
             writeBuffer.findMatch(blk_addr, pkt->isSecure());
         if (wq_entry && !wq_entry->inService) {
+            //// MY DEBUG CODE ////
+            stats.allocateWriteBufferMerge++;
+            //// EOF MY DEBUG CODE ////
             DPRINTF(Cache, "Potential to merge writeback %s", pkt->print());
         }
 
@@ -1359,11 +1397,12 @@ class BaseCache : public ClockedObject
     }
 
     bool inCache(Addr addr, bool is_secure) const {
-        return tags->findBlock(addr, is_secure);
+        return tags->findBlock(addr, is_secure, BaseTags::CallerID::InCache);
     }
 
     bool hasBeenPrefetched(Addr addr, bool is_secure) const {
-        CacheBlk *block = tags->findBlock(addr, is_secure);
+        CacheBlk *block = tags->findBlock(addr, is_secure,
+            BaseTags::CallerID::HasBeenPrefetched);
         if (block) {
             return block->wasPrefetched();
         } else {
@@ -1445,10 +1484,21 @@ class BaseCache : public ClockedObject
   protected:
     tp::FlushEventHandler *flushEventHandler;
     tp::DecayEventHandler *decayEventHandler;
+    tp::IATACDecayEventHandler *iatacDecayEventHandler;
+    tp::IATACdata *iatacData = nullptr;
+    CacheBlk *iatacDecayedBlk = nullptr;
+    bool iatacDecayedHit = false;
+    bool decayOn = false;
+
+    virtual void writebackOnIATACDecay(CacheBlk*, PacketList&) {}
 
     bool printIdleTime = false;
   public:
     void flush(bool writebackOnFlush);
+
+    bool iatacUpdateDecay();
+    bool iatacPowerOffRemainingBlks();
+    void setDecayOn(bool on) { decayOn = on; }
 
     bool updateDecayAndPowerOff();
     bool powerOffRemainingBlks();

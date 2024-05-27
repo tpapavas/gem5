@@ -141,7 +141,8 @@ SectorTags::invalidate(CacheBlk *blk)
 CacheBlk*
 SectorTags::accessBlock(const PacketPtr pkt, Cycles &lat)
 {
-    CacheBlk *blk = findBlock(pkt->getAddr(), pkt->isSecure());
+    CacheBlk *blk = findBlock(pkt->getAddr(), pkt->isSecure(),
+        CallerID::SectorTagsAccessBlock);
 
     // Access all tags in parallel, hence one in each way.  The data side
     // either accesses all blocks in parallel, or one block sequentially on
@@ -247,7 +248,7 @@ SectorTags::moveBlock(CacheBlk *src_blk, CacheBlk *dest_blk)
 }
 
 CacheBlk*
-SectorTags::findBlock(Addr addr, bool is_secure) const
+SectorTags::findBlock(Addr addr, bool is_secure, CallerID caller_id) const
 {
     // Extract sector tag
     const Addr tag = extractTag(addr);

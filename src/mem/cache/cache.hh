@@ -157,6 +157,13 @@ class Cache : public BaseCache
      */
     bool isCachedAbove(PacketPtr pkt, bool is_timing = true);
 
+    //// MY CODE ////
+    /**
+     * Like evictBlock but without invalidation.
+     */
+    void writebackOnIATACDecay(CacheBlk*, PacketList&) override;
+    //// EOF MY CODE ////
+
   public:
     /** Instantiates a basic cache object. */
     Cache(const CacheParams &p);
