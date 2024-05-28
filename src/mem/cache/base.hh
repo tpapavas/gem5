@@ -1196,38 +1196,6 @@ class BaseCache : public ClockedObject
         statistics::Scalar decayedBlksWindowPercnt;
         statistics::Formula avgDecayPercentage;
 
-        // misses debugging counters
-        statistics::Scalar recvTimingRespCalls;
-        statistics::Scalar recvTimingRespReplacements;
-
-        statistics::Scalar sendWriteQueuePacketFails;
-        statistics::Scalar sendWriteQueuePacketSuccess;
-
-        statistics::Scalar accessCacheMaintenance;
-        statistics::Scalar accessEviction;
-        statistics::Scalar accessWrite;
-        statistics::Scalar accessWriteback;
-        statistics::Scalar accessCleanEvict;
-        statistics::Scalar accessWriteClean;
-        statistics::Scalar accessReadableWriteable;
-        statistics::Scalar accessFail;
-
-        statistics::Scalar doWritebacksIsCachedAbove;
-        statistics::Scalar doWritebacksNotCachedAbove;
-        statistics::Scalar doWritebacksIsCachedAboveCleanEvict;
-        statistics::Scalar doWritebacksIsCachedAboveWritebackClean;
-        statistics::Scalar doWritebacksIsCachedAboveWritebacks;
-
-        statistics::Scalar sendMSHRQueuePacketElse;
-
-        statistics::Scalar allocateWriteBufferMerge;
-
-        statistics::Scalar handleEvictionsMshrHits;
-        statistics::Scalar handleFillNoAllocation;
-        statistics::Scalar noBlksMshrMisses;
-        statistics::Scalar invBlksMshrMisses;
-        //// EOF MY CODE ////
-
         /** Per-command statistics */
         std::vector<std::unique_ptr<CacheCmdStats>> cmd;
     } stats;
@@ -1293,9 +1261,6 @@ class BaseCache : public ClockedObject
         WriteQueueEntry *wq_entry =
             writeBuffer.findMatch(blk_addr, pkt->isSecure());
         if (wq_entry && !wq_entry->inService) {
-            //// MY DEBUG CODE ////
-            stats.allocateWriteBufferMerge++;
-            //// EOF MY DEBUG CODE ////
             DPRINTF(Cache, "Potential to merge writeback %s", pkt->print());
         }
 
@@ -1397,12 +1362,11 @@ class BaseCache : public ClockedObject
     }
 
     bool inCache(Addr addr, bool is_secure) const {
-        return tags->findBlock(addr, is_secure, BaseTags::CallerID::InCache);
+        return tags->findBlock(addr, is_secure);
     }
 
     bool hasBeenPrefetched(Addr addr, bool is_secure) const {
-        CacheBlk *block = tags->findBlock(addr, is_secure,
-            BaseTags::CallerID::HasBeenPrefetched);
+        CacheBlk *block = tags->findBlock(addr, is_secure);
         if (block) {
             return block->wasPrefetched();
         } else {

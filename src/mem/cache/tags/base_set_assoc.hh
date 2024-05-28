@@ -53,7 +53,6 @@
 
 #include "base/logging.hh"
 #include "base/types.hh"
-#include "debug/TPCacheDecay.hh"
 #include "mem/cache/base.hh"
 #include "mem/cache/cache_blk.hh"
 #include "mem/cache/replacement_policies/base.hh"
@@ -127,8 +126,7 @@ class BaseSetAssoc : public BaseTags
      */
     CacheBlk* accessBlock(const PacketPtr pkt, Cycles &lat) override
     {
-        CacheBlk *blk = findBlock(pkt->getAddr(), pkt->isSecure(),
-            BaseTags::CallerID::AccessBlock);
+        CacheBlk *blk = findBlock(pkt->getAddr(), pkt->isSecure());
 
         // Access all tags in parallel, hence one in each way.  The data side
         // either accesses all blocks in parallel, or one block sequentially on

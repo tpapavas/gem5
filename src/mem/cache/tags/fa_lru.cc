@@ -142,8 +142,7 @@ FALRU::accessBlock(const PacketPtr pkt, Cycles &lat,
 {
     CachesMask mask = 0;
     FALRUBlk* blk =
-        static_cast<FALRUBlk*>(findBlock(pkt->getAddr(), pkt->isSecure(),
-            CallerID::FALRUAccessBlock));
+        static_cast<FALRUBlk*>(findBlock(pkt->getAddr(), pkt->isSecure()));
 
     // If a cache hit
     if (blk && blk->isValid()) {
@@ -165,7 +164,7 @@ FALRU::accessBlock(const PacketPtr pkt, Cycles &lat,
 }
 
 CacheBlk*
-FALRU::findBlock(Addr addr, bool is_secure, CallerID caller_id) const
+FALRU::findBlock(Addr addr, bool is_secure) const
 {
     FALRUBlk* blk = nullptr;
 

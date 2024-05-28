@@ -175,14 +175,10 @@ Cache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                     "Should never see a write in a read-only cache %s\n",
                     name());
 
-        //// MY DEBUG CODE ////
-        DPRINTF(TPExplain, "%s uncachable %s\n",__func__, pkt->print());
-        //// EOF MY DEBUG CODE ////
         DPRINTF(Cache, "%s for %s\n", __func__, pkt->print());
 
         // flush and invalidate any existing block
-        CacheBlk *old_blk(tags->findBlock(pkt->getAddr(), pkt->isSecure(),
-            BaseTags::CallerID::CacheAccess));
+        CacheBlk *old_blk(tags->findBlock(pkt->getAddr(), pkt->isSecure()));
         if (old_blk && old_blk->isValid()) {
             BaseCache::evictBlock(old_blk, writebacks);
         }
@@ -207,28 +203,18 @@ Cache::doWritebacks(PacketList& writebacks, Tick forward_time)
         // Call isCachedAbove for Writebacks, CleanEvicts and
         // WriteCleans to discover if the block is cached above.
         if (isCachedAbove(wbPkt)) {
-            //// MY DEBUG CODE ////
-            stats.doWritebacksIsCachedAbove++;
-            //// EOF MY DEBUG CODE ////
             if (wbPkt->cmd == MemCmd::CleanEvict) {
-                //// MY DEBUG CODE ////
-                stats.doWritebacksIsCachedAboveCleanEvict++;
-                //// EOF MY DEBUG CODE ////
                 // Delete CleanEvict because cached copies exist above. The
                 // packet destructor will delete the request object because
                 // this is a non-snoop request packet which does not require a
                 // response.
                 delete wbPkt;
             } else if (wbPkt->cmd == MemCmd::WritebackClean) {
-                stats.doWritebacksIsCachedAboveWritebackClean++;
                 // clean writeback, do not send since the block is
                 // still cached above
                 assert(writebackClean);
                 delete wbPkt;
             } else {
-                //// MY DEBUG CODE ////
-                stats.doWritebacksIsCachedAboveWritebacks++;
-                //// EOF MY DEBUG CODE ////
                 assert(wbPkt->cmd == MemCmd::WritebackDirty ||
                        wbPkt->cmd == MemCmd::WriteClean);
                 // Set BLOCK_CACHED flag in Writeback and send below, so that
@@ -238,7 +224,6 @@ Cache::doWritebacks(PacketList& writebacks, Tick forward_time)
                 allocateWriteBuffer(wbPkt, forward_time);
             }
         } else {
-            stats.doWritebacksNotCachedAbove++;
             // If the block is not cached above, send packet below. Both
             // CleanEvict and Writeback with BLOCK_CACHED flag cleared will
             // reset the bit corresponding to this address in the snoop filter
@@ -1270,10 +1255,6 @@ Cache::handleSnoop(PacketPtr pkt, CacheBlk *blk, bool is_timing,
     // Do this last in case it deallocates block data or something
     // like that
     if (blk_valid && invalidate) {
-        //// MY DEBUG CODE ////
-        DPRINTF(TPExplain, "%s: blk %s invalidated during snoop.\n",
-            pkt->print(), blk->print());
-        //// EOF MY DEBUG CODE ////
         invalidateBlock(blk);
         DPRINTF(Cache, "new state is %s\n", blk->print());
     }
@@ -1293,8 +1274,7 @@ Cache::recvTimingSnoopReq(PacketPtr pkt)
     }
 
     bool is_secure = pkt->isSecure();
-    CacheBlk *blk = tags->findBlock(pkt->getAddr(), is_secure,
-        BaseTags::CallerID::CacheRecvTimingSnoopReq);
+    CacheBlk *blk = tags->findBlock(pkt->getAddr(), is_secure);
 
     Addr blk_addr = pkt->getBlockAddr(blkSize);
     MSHR *mshr = mshrQueue.findMatch(blk_addr, is_secure);
@@ -1409,8 +1389,7 @@ Cache::recvAtomicSnoop(PacketPtr pkt)
         return 0;
     }
 
-    CacheBlk *blk = tags->findBlock(pkt->getAddr(), pkt->isSecure(),
-        BaseTags::CallerID::CacheRecvAtomicSnoop);
+    CacheBlk *blk = tags->findBlock(pkt->getAddr(), pkt->isSecure());
     uint32_t snoop_delay = handleSnoop(pkt, blk, false, false, false);
     return snoop_delay + lookupLatency * clockPeriod();
 }
@@ -1456,8 +1435,7 @@ Cache::sendMSHRQueuePacket(MSHR* mshr)
 
         // we should never have hardware prefetches to allocated
         // blocks
-        assert(!tags->findBlock(mshr->blkAddr, mshr->isSecure,
-            BaseTags::CallerID::CacheSendMSHRQueuePacket));
+        assert(!tags->findBlock(mshr->blkAddr, mshr->isSecure));
 
         // We need to check the caches above us to verify that
         // they don't have a copy of this block in the dirty state
