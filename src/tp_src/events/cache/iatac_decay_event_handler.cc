@@ -23,7 +23,12 @@ IATACDecayEventHandler::IATACDecayEventHandler(
         this->cyclesToTicks(Cycles(params.post_decay_period))
     ),
     timesRemainingFired(0),
-    timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1)
+    timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1),
+    globalCounter(params.init_global_counter),
+    initDecay(params.init_local_counter),
+    letOverflow(params.let_overflow),
+    resetCounterOnHit(params.reset_on_decay_hit)
+    // timesRemainingLimit(INT_MAX)
 {
     DPRINTF(TPCacheDecay,
         "Created the IATACDecayEventHandler object with the name %s\n",
@@ -34,6 +39,14 @@ void
 IATACDecayEventHandler::setCache(BaseCache *_cache)
 {
     cache = _cache;
+
+    //// extra code ////
+    // cache->getIATACdata()->setGlobal(globalCounter);
+    // cache->setIATACInitDecay(initDecay);
+
+    cache->setIATACdata(globalCounter, initDecay,
+        letOverflow, resetCounterOnHit);
+    //// eof extra code ////
 }
 
 void
@@ -68,10 +81,13 @@ IATACDecayEventHandler::processPowerOffRemainingEvent()
 
     DPRINTF(TPCacheDecayDebug, "process remaining blks\n");
 
-    if (!cache->powerOffRemainingBlks() &&
+    if (!cache->iatacPowerOffRemainingBlks() &&
         timesRemainingFired < timesRemainingLimit) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
     }
+    // else {
+    //     schedule(event, curTick() + decayPeriod);
+    // }
 }
 
 void

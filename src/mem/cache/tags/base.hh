@@ -60,6 +60,11 @@
 #include "params/BaseTags.hh"
 #include "sim/clocked_object.hh"
 
+//// extra code ////
+#include "tp_src/mem/cache/decay/iatac.hh"
+
+//// eof extra code ////
+
 namespace gem5
 {
 
@@ -105,6 +110,12 @@ class BaseTags : public ClockedObject
     //// MY CODE ////
     int localDecayCounter = 15;
     //// EOF MY CODE ////
+
+    //// extra code ////
+    int initIATACDecay = 8192;
+
+    tp::IATACdata *iatacData;
+    //// eof extra code ////
 
     /**
      * TODO: It would be good if these stats were acquired after warmup.
@@ -358,6 +369,10 @@ class BaseTags : public ClockedObject
     void setLocalDecayCounter(int max_decay) { localDecayCounter = max_decay; }
 
     int getLocalDecayCounter() { return localDecayCounter; }
+
+    // void setIATACInitDecay(int init_decay) { initIATACDecay = init_decay; }
+
+    void setIATACdata(tp::IATACdata *iatac_data) { iatacData = iatac_data; }
     //// EOF MY CODE ////
 
   private:

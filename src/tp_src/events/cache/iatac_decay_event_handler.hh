@@ -30,6 +30,16 @@ class IATACDecayEventHandler : public TimingEventHandler
 
         const int timesRemainingLimit;
 
+        //// extra code ////
+        int globalCounter = 1;
+
+        int initDecay = 8192;
+
+        bool letOverflow = false;
+
+        bool resetCounterOnHit = false;
+        //// eof extra code ////
+
         void processPowerOffRemainingEvent();
 
     public:

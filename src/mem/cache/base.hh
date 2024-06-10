@@ -1462,12 +1462,33 @@ class BaseCache : public ClockedObject
 
     bool iatacUpdateDecay();
     bool iatacPowerOffRemainingBlks();
+
+    //// extra code ////
+    tp::IATACdata *getIATACdata() { return iatacData; }
+    //// eof extra code ////
+
     void setDecayOn(bool on) { decayOn = on; }
 
     bool updateDecayAndPowerOff();
     bool powerOffRemainingBlks();
 
-    void setLocalDecayCounter(int max_decay) { tags->setLocalDecayCounter(max_decay); }
+    void setLocalDecayCounter(int max_decay)
+    {
+        tags->setLocalDecayCounter(max_decay);
+    }
+    // void setIATACInitDecay(int init_decay)
+    // {
+    //     tags->setIATACInitDecay(init_decay);
+    // }
+
+    void setIATACdata(int global_counter=1, int init_decay=8192,
+        bool let_overflow=false, bool reset_counter_on_hit=false)
+    {
+        iatacData->setGlobal(global_counter);
+        iatacData->setInitLocalDecay(init_decay);
+        iatacData->setLetOverflow(let_overflow);
+        iatacData->setResetCounterOnHit(reset_counter_on_hit);
+    }
 ////////--EOF_MY_CODE--////////
 };
 

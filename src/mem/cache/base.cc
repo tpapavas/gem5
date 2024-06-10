@@ -142,10 +142,27 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
     tempBlock = new TempCacheBlk(blkSize);
 
     //// extra code ////
+    DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, before decay\n", __func__);
     if (decayEventHandler)
         decayEventHandler->setCache(this);
     //// extra code ////
 
+    //// extra code ////
+    DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, before iatac\n", __func__);
+    if (iatacDecayEventHandler) {
+        iatacData = new tp::IATACdata();
+        tags->setIATACdata(iatacData);
+
+        // set cache and iatacData parameters
+        iatacDecayEventHandler->setCache(this);
+        if (iatacDecayEventHandler->isMechOn()) {
+            decayOn = true;
+        }
+        // tp::IATAC::setOn();
+    }
+    //// eof extra code ////
+    DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, before tagsInit\n",
+        __func__);
     tags->tagsInit();
     if (prefetcher)
         prefetcher->setCache(this);
@@ -165,15 +182,6 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
     //// extra code ////
     writeBuffersSize = p.write_buffers;
     //// eof extra code ////
-
-    if (iatacDecayEventHandler) {
-        iatacDecayEventHandler->setCache(this);
-        iatacData = new tp::IATACdata();
-        if (iatacDecayEventHandler->isMechOn()) {
-            decayOn = true;
-        }
-        // tp::IATAC::setOn();
-    }
 
     numBlocks = p.size / blk_size;
     DPRINTF(TPCacheDecay, "number of cache blocks %d\n", numBlocks);
@@ -1377,6 +1385,13 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
             // iatacDecayedBlk = blk;
             // iatacDecayedHit = true;
             blk->decayMechSetDecayedHit(true);
+
+            //// extra code ////
+            if (blk->getIATAC()->doResetCounterOnDecayedHit()) {
+                blk->resetIATACDecayCounter();
+            }
+            //// eof extra code ////
+
             // blk->invalidate(); // invalidate only tag and valid bit.
             blk = nullptr;
         } else {
@@ -2984,7 +2999,7 @@ BaseCache::iatacUpdateDecay() {
 
     bool powerOffFinished = true;
 
-    int tmpLimit = 8 - writeBuffer.getAllocatedEntries() - 1;
+    int tmpLimit = writeBuffersSize - writeBuffer.getAllocatedEntries() - 1;
     // writebackLimit = writeBuffer.getFreeEntries() - 1;//5;
     // corner case: unsigned writebacks.size() > negative int writebackLimit.
     writebackLimit = tmpLimit < 0 ? 0 : tmpLimit;
@@ -3046,7 +3061,7 @@ BaseCache::iatacPowerOffRemainingBlks() {
 
     bool powerOffFinished = true;
 
-    int tmpLimit = 8 - writeBuffer.getAllocatedEntries() - 1;
+    int tmpLimit = writeBuffersSize - writeBuffer.getAllocatedEntries() - 1;
     //writebackLimit = writeBuffer.getFreeEntries() - 1;//5;
     // corner case: unsigned writebacks.size() > negative int writebackLimit.
     writebackLimit = tmpLimit < 0 ? 0 : tmpLimit;

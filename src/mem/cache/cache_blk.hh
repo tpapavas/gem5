@@ -316,6 +316,10 @@ class CacheBlk : public TaggedEntry
     int getMaxDecayCounter() { return _maxDecayCounter; }
     //// eof extra code ////
 
+    //// extra code ////
+    tp::IATAC *getIATAC() { return &_iatac; }
+    //// eof extra code ////
+
     void updateLastHitTick() { _tickLastHitted = curTick(); }
     //// EOF MY CODE ////
 
@@ -389,7 +393,7 @@ class CacheBlk : public TaggedEntry
     }
 
     bool
-    isDecayMechPoweredOff() {
+    isDecayMechPoweredOff() const {
         return _iatac.isPoweredOff();
     }
 
@@ -414,6 +418,11 @@ class CacheBlk : public TaggedEntry
 
     void
     setOnIATACDecayProc(bool state) { _onIATACDecayProc = state; }
+
+    //// extra code ////
+    void
+    resetIATACDecayCounter() { _iatac.resetDecayCounter(); }
+    //// eof extra code ////
     //// EOF MY CODE ////
 
     /**
@@ -510,9 +519,9 @@ class CacheBlk : public TaggedEntry
           default:    s = 'T'; break; // @TODO add other types
         }
         return csprintf("state: %x (%c) writable: %d readable: %d "
-            "dirty: %d prefetched: %d | %s", coherence, s,
+            "dirty: %d prefetched: %d decayed: %d | %s", coherence, s,
             isSet(WritableBit), isSet(ReadableBit), isSet(DirtyBit),
-            wasPrefetched(), TaggedEntry::print());
+            wasPrefetched(), isDecayMechPoweredOff(), TaggedEntry::print());
     }
 
     //// MY CODE ////

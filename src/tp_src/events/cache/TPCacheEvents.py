@@ -61,3 +61,16 @@ class IATACDecayEventHandler(TimingEventHandler):
     )
 
     is_on = Param.Bool(True, "Whether the event is doing its thing")
+
+    init_global_counter = Param.Int(1, "Initial value for global counters.")
+
+    init_local_counter = Param.Int(8192, "Initial value for local counter.")
+
+    let_overflow = Param.Bool(
+        False, "Whether we let counters increment after MAX_ACCESSES reached"
+    )
+
+    reset_on_decay_hit = Param.Bool(
+        False,
+        "Whether we reset local counter of a decayed block when it gets hit.",
+    )

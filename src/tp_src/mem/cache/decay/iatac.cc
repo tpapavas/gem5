@@ -45,7 +45,7 @@ IATAC::handleHit(IATACdata *iatac)
 {
     // DPRINTF(TPCacheDecay,
     //      "On hit; counter: %d elapsed: %d\n", _counter, _elapsed);
-    if (_counter >= _MAX_ACCESS - 1) {
+    if (!_letOverflow && _counter >= _MAX_ACCESS - 1) {
         _accessOverflow = true;
         _wrongBit = true;
         return;
@@ -176,6 +176,14 @@ IATACdata::checkAcumOverflow(int p)
             _acumcounter[i] = _acumcounter[i] >> 1;
         }
         updateMaxGlobals(_MAX_ACCESS-1); // update all maxima.
+    }
+}
+
+void
+IATACdata::setGlobal(int val)
+{
+    for (int i = 0; i < _MAX_ACCESS; i++) {
+        setGlobal(i, val);
     }
 }
 

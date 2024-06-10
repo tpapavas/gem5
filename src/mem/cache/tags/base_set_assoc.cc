@@ -84,9 +84,21 @@ BaseSetAssoc::tagsInit()
         blk->replacementData = replacementPolicy->instantiateEntry();
 
         //// extra code ////
+        // if (iatacData != nullptr) {
+        //     printf("%s %d\n", __func__, iatacData->getInitLocalDecay());
+        // }
         // Set the local decay counter for the block
         blk->resetDecayCounter(localDecayCounter);
         //// extra code ////
+
+        //// extra code ////
+        if (iatacData != nullptr) {
+            blk->getIATAC()->setDecay(iatacData->getInitLocalDecay());
+            blk->getIATAC()->setLetOverflow(iatacData->doLetOverflow());
+            blk->getIATAC()->setResetCounterOnHit(
+                iatacData->doResetCounterOnHit());
+        }
+        //// eof extra code ////
     }
 }
 

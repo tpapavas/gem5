@@ -73,6 +73,10 @@ BaseTags::BaseTags(const Params &p)
       stats(*this)
 {
     registerExitCallback([this]() { cleanupRefs(); });
+
+    //// extra code ////
+    iatacData = nullptr;
+    //// eof extra code ////
 }
 
 ReplaceableEntry*
