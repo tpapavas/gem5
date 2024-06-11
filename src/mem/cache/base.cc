@@ -2989,6 +2989,15 @@ BaseCache::flush(bool writebackOnFlush)
 
 bool
 BaseCache::iatacUpdateDecay() {
+    //// extra code ////
+    assert(!onDecayPhase);
+    onDecayPhase = true;
+
+    // DPRINTF(TPCacheDecayDebug, "Decay State: %d\n", decayState);
+    assert(!isSetDecayState());
+    setDecayState();
+    //// eof extra code ////
+
     stats.numOfDecayWindows++;
     PacketList writebacks;
 
@@ -3037,6 +3046,17 @@ BaseCache::iatacUpdateDecay() {
         }
     });
 
+    //// extra code ////
+    decayPowerOffFinished = powerOffFinished;
+
+    // no block is decayed.
+    if (writebacks.empty() && decayPowerOffFinished) {
+        onDecayPhase = false;
+
+        clearDecayState();
+    }
+    //// eof extra code ////
+
     doWritebacks(writebacks, forward_time);
 
     stats.decayedBlksWindowPercnt += poweredOffCnt/(float)numBlocks;
@@ -3055,6 +3075,13 @@ BaseCache::iatacUpdateDecay() {
 
 bool
 BaseCache::iatacPowerOffRemainingBlks() {
+    //// extra code ////
+    assert(onDecayPhase);
+
+    assert(isSetDecayState());
+    // assert()
+    //// eof extra code ////
+
     PacketList writebacks;
 
     Tick forward_time = clockEdge(forwardLatency);
@@ -3089,6 +3116,22 @@ BaseCache::iatacPowerOffRemainingBlks() {
             }
         }
     });
+
+    //// extra code ////
+    decayPowerOffFinished = powerOffFinished;
+
+    // no remaining decayed blocks. There may got populated
+    // during wait-for-writeback period.
+    if (writebacks.empty() && decayPowerOffFinished) {
+        clearBlocked(Blocked_HaveDecay);
+        onDecayPhase = false;
+
+        DPRINTF(TPCacheDecayDebug, "%s powerOffFinished: %s\n",
+            __func__, powerOffFinished ? "true" : "false");
+
+        clearDecayState();
+    }
+    //// eof extra code ////
 
     // writeback block if necessary
     doWritebacks(writebacks, forward_time); // what delay we need?
