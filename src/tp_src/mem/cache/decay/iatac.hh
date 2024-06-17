@@ -4,6 +4,11 @@
 //#include "params/IATAC.hh"
 #include "sim/clocked_object.hh"
 
+//// decay refactor code ////
+#include "tp_src/mem/cache/decay/base.hh"
+
+//// eof decay refactor code ////
+
 namespace gem5
 {
 
@@ -12,13 +17,10 @@ namespace tp
 
 class IATAC;
 
-class IATACdata
+class IATACdata : public GlobalDecayData
 {
   public:
     IATACdata();
-
-    bool isOn() { return _on; }
-    void setOn(bool onoff) { _on = onoff;}
 
     void updateMaxGlobals(int);
 
@@ -49,7 +51,7 @@ class IATACdata
 
     void printGlobals();
 
-  private:
+  protected:
     static const int _MAX_ACCESS = 32;
 
     static const int _MIN_COUNT = 8;
@@ -60,8 +62,6 @@ class IATACdata
     int _maxGlobalDecay[_MAX_ACCESS];
 
     bool _isMax[_MAX_ACCESS];
-
-    bool _on;
 
     //// extra code ////
     int _initLocalDecay = 8192;
@@ -74,7 +74,7 @@ class IATACdata
   friend IATAC;
 };
 
-class IATAC
+class IATAC : public BaseDecay
 {
   public:
     IATAC();
@@ -86,16 +86,13 @@ class IATAC
     // static void printGlobals();
 
     void updateDecay();
-    int getDecay() { return _decay; }
+    // int getDecay() { return _decay; }
 
     int getElapsed() { return _elapsed; }
 
-    int getCounter() { return _counter; }
+    // int getCounter() { return _counter; }
 
     bool getWrong() { return _wrongBit; }
-
-    void setPower(bool onoff) { _onoff = onoff; }
-    bool isPoweredOff() const { return !_onoff; }
 
     //// extra code ////
     void setDecay(int decay_interval) { _decay = decay_interval; }
@@ -113,7 +110,7 @@ class IATAC
 
     std::string print() const;
 
-  private:
+  protected:
     static const int _MAX_ACCESS = 32;
 
     // static int _acumcounter[];
@@ -126,10 +123,10 @@ class IATAC
     bool _wrongBit = false;
 
     /** if the block is on or off */
-    bool _onoff = true;
+    // bool _onoff = true;
 
     /** decay interval that has to elapse. */
-    int _decay = 8192;
+    // int _decay = 8192;
 
     /** max interaccess interval. */
     int _thits = 0;
@@ -138,7 +135,7 @@ class IATAC
     int _elapsed = 0;
 
     /** access counter */
-    int _counter = 1;
+    // int _counter = 1;
 
     bool _accessOverflow = false;
 

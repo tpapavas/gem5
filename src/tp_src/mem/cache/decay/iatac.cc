@@ -24,6 +24,7 @@ namespace tp
 // int IATAC::_maxGlobalDecay[_MAX_ACCESS];
 
 IATAC::IATAC()
+    : BaseDecay()
 {
     // if (_first_iatac_obj) {
     //     _setupGlobalStructs();
