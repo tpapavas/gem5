@@ -47,10 +47,13 @@
 
 #include <string>
 
+#include "base/statistics.hh"
 #include "base/types.hh"
 #include "mem/cache/mshr.hh"
 #include "mem/cache/queue.hh"
 #include "mem/packet.hh"
+
+class BaseCache;
 
 namespace gem5
 {
@@ -161,6 +164,36 @@ class MSHRQueue : public Queue<MSHR>
         // keep regressions unchanged
         return (allocated < numEntries - (numReserve + 1 + demandReserve));
     }
+
+    //// mlp code ////
+    // void regStats() override;
+
+    void updateMLPCost();
+
+    void setCache(BaseCache* cache) { this->cache = cache;}
+
+
+
+    //// eof mlp code ////
+
+  //// mlp code ////
+  protected:
+    Tick lastMLPCheck; // keeps the tick of last MLP update.
+
+    BaseCache *cache;
+
+    // struct MSHRQueueStats : public statistics::Group
+    // {
+    //   MSHRQueueStats(MSHRQueue &c);
+
+    //   void regStats() override;
+
+    //   const MSHRQueue &mshrQueue;
+
+    //   statistics::Vector mshrMLPCosts;
+
+    //   } stats;
+  //// eof mlp code ////
 };
 
 } // namespace gem5

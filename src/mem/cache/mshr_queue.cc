@@ -48,6 +48,14 @@
 
 #include "debug/MSHR.hh"
 #include "mem/cache/mshr.hh"
+#include "mshr_queue.hh"
+
+//// mlp code ////
+#include "debug/TPDebugMLP.hh"
+#include "mem/cache/base.hh"
+#include "sim/system.hh"
+
+//// eof mlp code ////
 
 namespace gem5
 {
@@ -57,7 +65,18 @@ MSHRQueue::MSHRQueue(const std::string &_label,
                      int demand_reserve, std::string cache_name = "")
     : Queue<MSHR>(_label, num_entries, reserve, cache_name + ".mshr_queue"),
       demandReserve(demand_reserve)
-{}
+{
+    //// mlp code ////
+
+
+    // using namespace statistics;
+
+    // // statistics::Group::regStats();
+
+
+    //// eof mlp code ////
+
+}
 
 MSHR *
 MSHRQueue::allocate(Addr blk_addr, unsigned blk_size, PacketPtr pkt,
@@ -68,6 +87,15 @@ MSHRQueue::allocate(Addr blk_addr, unsigned blk_size, PacketPtr pkt,
     assert(mshr->getNumTargets() == 0);
     freeList.pop_front();
 
+    //// mlp code ////
+    // check if this is the first time mshr_queue is populated
+    // if (lastMLPCheck == 0) {
+    //     lastMLPCheck = curTick() - 1;
+    // }
+    mshr->resetMLPCost();
+    updateMLPCost();
+    //// eof mlp code ////
+
     DPRINTF(MSHR, "Allocating new MSHR. Number in use will be %lu/%lu\n",
             allocatedList.size() + 1, numEntries);
 
@@ -76,12 +104,30 @@ MSHRQueue::allocate(Addr blk_addr, unsigned blk_size, PacketPtr pkt,
     mshr->readyIter = addToReadyList(mshr);
 
     allocated += 1;
+
     return mshr;
 }
 
 void
 MSHRQueue::deallocate(MSHR* mshr)
 {
+    //// mlp code ////
+    updateMLPCost();
+    if (cache->name().find("l2cache") != std::string::npos) {
+        // int32_t thisMlpCost = static_cast<int32_t>(mshr->getMLPCost())/60;
+
+        DPRINTF(TPDebugMLP, "MLP cost for %s: %d\n", mshr->print(),
+            mshr->getMLPCostQuantized() );
+                    // mshr->getMLPCost());
+
+        // DPRINTF(TPDebugMLP, "Size: %d\n", stats.mshrMLPCosts.size() );
+
+        // if (bucketId < stats.mshrMLPCosts.size()) {
+            // stats.mshrMLPCosts[0]++;
+        // }
+    }
+    // mshr->resetMLPCost();
+    //// eof mlp code ////
 
     DPRINTF(MSHR, "Deallocating all targets: %s", mshr->print());
     Queue<MSHR>::deallocate(mshr);
@@ -142,10 +188,83 @@ MSHRQueue::forceDeallocateTarget(MSHR *mshr)
     // Delete mshr if no remaining targets
     if (!mshr->hasTargets() && !mshr->promoteDeferredTargets()) {
         deallocate(mshr);
+
+        //// mlp code ////
+        mshr->resetMLPCost();
+
+        DPRINTF(TPDebugMLP, "forced Deallocation\n");
+        //// eof mlp code ////
     }
 
     // Notify if MSHR queue no longer full
     return was_full && !isFull();
 }
+
+//// mlp code ////
+void MSHRQueue::updateMLPCost()
+{
+    uint64_t numAllocatedEntries = allocatedList.size();
+
+    numAllocatedEntries = allocated;
+
+    // just a clocked object to get ticks2cycles functionality
+
+    Cycles timePassed = cache->ticksToCycles(curTick() - lastMLPCheck);
+
+    for (MSHR *mshr : allocatedList)
+    {
+        mshr->increaseMLPCost(timePassed * (1.0/numAllocatedEntries));
+    }
+
+    lastMLPCheck = curTick();
+}
+
+
+// MSHRQueue::MSHRQueueStats::MSHRQueueStats(MSHRQueue &c)
+//     : statistics::Group(&c), mshrQueue(c),
+//     ADD_STAT(mshrMLPCosts, statistics::units::Count::get(),
+//             (""))
+// {
+//     printf("inside mshrQueueStats constructor\n");
+// }
+
+// void
+// MSHRQueue::regStats()
+// {
+//     using namespace statistics;
+
+//     printf("inside mshrQueue regStats\n");
+
+//     statistics::Group::regStats();
+// }
+
+// void
+// MSHRQueue::MSHRQueueStats::regStats()
+// {
+//     using namespace statistics;
+
+//     printf("inside mshrQueueStats regStats\n");
+
+//     statistics::Group::regStats();
+
+//     // System *system = cache.system;
+//     // const auto max_requestors = system->maxRequestors();
+
+//     // for (auto &cs : cmd)
+//     //     cs->regStatsFromParent();
+
+//     printf("inside mshrQueue regStats\n");
+
+//     mshrMLPCosts
+//         .init(1024)
+//         .flags(total | nozero | nonan)
+//         ;
+
+//     for (int i = 0; i < 8; i++) {
+//         mshrMLPCosts.subname(i, "bucket" + std::to_string(i));
+//     }
+// }
+
+//// eof mlp code ////
 
 } // namespace gem5
