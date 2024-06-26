@@ -1196,6 +1196,11 @@ class BaseCache : public ClockedObject
         statistics::Scalar decayedBlksWindowPercnt;
         statistics::Formula avgDecayPercentage;
 
+        //// mlp code ////
+        statistics::Distribution mshrMLPCosts;
+        // statistics::Scalar numMshrMLPBlks;
+        //// eof mlp code ////
+
         /** Per-command statistics */
         std::vector<std::unique_ptr<CacheCmdStats>> cmd;
     } stats;

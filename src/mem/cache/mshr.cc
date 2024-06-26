@@ -68,6 +68,9 @@ MSHR::MSHR(const std::string &name)
         targets(name + ".targets"),
         deferredTargets(name + ".deferredTargets")
 {
+    //// mlp code ////
+    mlpCost = 0;
+    //// eof mlp code ////
 }
 
 MSHR::TargetList::TargetList(const std::string &name)
@@ -800,5 +803,11 @@ MSHR::hasLockedRMWReadTarget()
     return false;
 }
 
+//// mlp code ////
+void MSHR::increaseMLPCost(double additionalCost)
+{
+    mlpCost += additionalCost;
+}
+//// eof mlp code ////
 
 } // namespace gem5

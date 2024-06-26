@@ -395,6 +395,10 @@ class MSHR : public QueueEntry, public Printable
 
     TargetList deferredTargets;
 
+    //// mlp code ////
+    double mlpCost = 0;
+    //// eof mlp code ////
+
   public:
     /**
      * Check if this MSHR contains only compatible writes, and if they
@@ -536,6 +540,19 @@ class MSHR : public QueueEntry, public Printable
     bool matchBlockAddr(const Addr addr, const bool is_secure) const override;
     bool matchBlockAddr(const PacketPtr pkt) const override;
     bool conflictAddr(const QueueEntry* entry) const override;
+
+    //// mlp code ////
+    void resetMLPCost() { mlpCost = 0; }
+    void increaseMLPCost(double additionalCost);
+
+    int32_t getMLPCost() { return static_cast<int32_t>(mlpCost); }
+    int32_t getMLPCostQuantized()
+    {
+        int32_t mlpCostQuantized = static_cast<int32_t>(mlpCost) / 35;
+
+        return  mlpCostQuantized > 8 ? 8 : mlpCostQuantized;
+    }
+    //// eof mlp code ////
 };
 
 } // namespace gem5

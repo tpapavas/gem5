@@ -190,6 +190,10 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
         printIdleTime = true;
     }
     //// MY CODE ////
+
+    //// mlp code ////
+    mshrQueue.setCache(this);
+    //// eof mlp code ////
 }
 
 BaseCache::~BaseCache()
@@ -691,6 +695,13 @@ BaseCache::recvTimingResp(PacketPtr pkt)
             // have been using the reserved entries already
             const bool was_full = mshrQueue.isFull();
             mshrQueue.deallocate(mshr);
+
+            //// mlp code ////
+            // stats.mshrMLPCosts[mshr->getMLPCostQuantized()]++;
+            stats.mshrMLPCosts.sample(mshr->getMLPCost());
+            mshr->resetMLPCost();
+            //// eof mlp code ////
+
             if (was_full && !mshrQueue.isFull()) {
                 clearBlocked(Blocked_NoMSHRs);
             }
@@ -2542,6 +2553,8 @@ BaseCache::CacheStats::CacheStats(BaseCache &c)
     ADD_STAT(avgDecayPercentage, statistics::units::Rate<
                 statistics::units::Count, statistics::units::Count>::get(),
              "average decay percentage"), //EOF MY CODE
+    ADD_STAT(mshrMLPCosts,
+            "mlp costs of mshr blocks"), //eof mlp code
     cmd(MemCmd::NUM_MEM_CMDS)
 {
     for (int idx = 0; idx < MemCmd::NUM_MEM_CMDS; ++idx)
@@ -2783,6 +2796,17 @@ BaseCache::CacheStats::regStats()
     // decay stats;
     avgDecayPercentage = decayedBlksWindowPercnt / numOfDecayWindows;
     //// EOF MY CODE ////
+
+    //// mlp code ////
+    mshrMLPCosts
+        .init(0, 244, 35)
+        .flags(statistics::nozero)
+        ;
+
+    // for (int i = 0; i < 8; i++) {
+    //     mshrMLPCosts.subname(i, "bucket" + std::to_string(i));
+    // }
+    //// eof mlp code ////
 }
 
 void
