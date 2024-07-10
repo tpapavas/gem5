@@ -1,8 +1,7 @@
 #ifndef __TP_DECAY_MECHANISM_IATAC_HH__
 #define __TP_DECAY_MECHANISM_IATAC_HH__
 
-//#include "params/IATAC.hh"
-#include "sim/clocked_object.hh"
+#include "params/IATAC.hh"
 
 //// decay refactor code ////
 #include "tp_src/mem/cache/decay/base.hh"
@@ -13,6 +12,9 @@ namespace gem5
 {
 
 namespace tp
+{
+
+namespace decay_policy
 {
 
 class IATAC;
@@ -74,13 +76,13 @@ class IATACdata : public GlobalDecayData
   friend IATAC;
 };
 
-class IATAC : public BaseDecay
+class IATAC : public Base
 {
   public:
-    IATAC();
+    IATAC(const IATACParams &p);
 
-    void handleHit(IATACdata*);
-    void handleMiss(IATACdata*);
+    void handleHit(std::shared_ptr<GlobalDecayData>&) override;
+    void handleMiss(std::shared_ptr<GlobalDecayData>&) override;
 
     bool decayElapsed() { return (_elapsed >= _decay) && _onoff; }
     // static void printGlobals();
@@ -146,6 +148,8 @@ class IATAC : public BaseDecay
     //// eof extra code ////
     // void _setupGlobalStructs();
 };
+
+} // decay_policy
 
 } // namespace tp
 

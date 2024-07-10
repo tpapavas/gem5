@@ -1,4 +1,10 @@
 Import("*")
 
+SimObject('DecayPolicies.py',
+          sim_objects=['BaseDecayPolicy',
+                       'IATAC'])
+
 Source('base.cc')
 Source('iatac.cc')
+
+DebugFlag('TPDecayPolicies')

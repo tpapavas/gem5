@@ -317,7 +317,7 @@ class CacheBlk : public TaggedEntry
     //// eof extra code ////
 
     //// extra code ////
-    tp::IATAC *getIATAC() { return &_iatac; }
+    tp::decay_policy::IATAC *getIATAC() { return &_iatac; }
     //// eof extra code ////
 
     void updateLastHitTick() { _tickLastHitted = curTick(); }
@@ -359,12 +359,12 @@ class CacheBlk : public TaggedEntry
     // }
 
     void
-    decayMechHandleHit(tp::IATACdata *iatac) {
+    decayMechHandleHit(tp::decay_policy::IATACdata *iatac) {
         _iatac.handleHit(iatac);
     }
 
     void
-    decayMechHandleMiss(tp::IATACdata *iatac) {
+    decayMechHandleMiss(tp::decay_policy::IATACdata *iatac) {
         _iatac.handleMiss(iatac);
     }
 
@@ -624,7 +624,7 @@ class CacheBlk : public TaggedEntry
     int _maxDecayCounter = 8;
     bool _poweredOff = false;
 
-    tp::IATAC _iatac;
+    tp::decay_policy::IATAC _iatac;
     bool _onIATACDecayProc = false;
     bool _decayedHit = false;
     //// EOF MY CODE ////
