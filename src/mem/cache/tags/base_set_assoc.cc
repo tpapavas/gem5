@@ -89,6 +89,7 @@ BaseSetAssoc::tagsInit()
         // }
         // Set the local decay counter for the block
         blk->resetDecayCounter(localDecayCounter);
+        blk->constDecayMechResetDecayCounter(localDecayCounter);
         //// extra code ////
 
         //// extra code ////

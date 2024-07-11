@@ -1449,7 +1449,7 @@ class BaseCache : public ClockedObject
     tp::FlushEventHandler *flushEventHandler;
     tp::DecayEventHandler *decayEventHandler;
     tp::IATACDecayEventHandler *iatacDecayEventHandler;
-    tp::IATACdata *iatacData = nullptr;
+    std::shared_ptr<tp::decay_policy::GlobalDecayData> iatacData = nullptr;
     CacheBlk *iatacDecayedBlk = nullptr;
     bool iatacDecayedHit = false;
     bool decayOn = false;
@@ -1464,7 +1464,11 @@ class BaseCache : public ClockedObject
     bool iatacPowerOffRemainingBlks();
 
     //// extra code ////
-    tp::IATACdata *getIATACdata() { return iatacData; }
+    std::shared_ptr<tp::decay_policy::IATACdata> getIATACdata()
+    {
+        return std::static_pointer_cast<tp::decay_policy::IATACdata>(
+            iatacData);
+    }
     //// eof extra code ////
 
     void setDecayOn(bool on) { decayOn = on; }
@@ -1484,10 +1488,14 @@ class BaseCache : public ClockedObject
     void setIATACdata(int global_counter=1, int init_decay=8192,
         bool let_overflow=false, bool reset_counter_on_hit=false)
     {
-        iatacData->setGlobal(global_counter);
-        iatacData->setInitLocalDecay(init_decay);
-        iatacData->setLetOverflow(let_overflow);
-        iatacData->setResetCounterOnHit(reset_counter_on_hit);
+        std::static_pointer_cast<tp::decay_policy::IATACdata>(iatacData)
+            ->setGlobal(global_counter);
+        std::static_pointer_cast<tp::decay_policy::IATACdata>(iatacData)
+            ->setInitLocalDecay(init_decay);
+        std::static_pointer_cast<tp::decay_policy::IATACdata>(iatacData)
+            ->setLetOverflow(let_overflow);
+        std::static_pointer_cast<tp::decay_policy::IATACdata>(iatacData)
+            ->setResetCounterOnHit(reset_counter_on_hit);
     }
 ////////--EOF_MY_CODE--////////
 };

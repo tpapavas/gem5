@@ -1,5 +1,7 @@
 #include "tp_src/mem/cache/decay/iatac.hh"
 
+#include "base/cprintf.hh"
+#include "base/trace.hh"
 #include "debug/TPDecayPolicies.hh"
 
 namespace gem5
@@ -26,8 +28,8 @@ namespace decay_policy
 // int IATAC::_globalDecay[_MAX_ACCESS];
 // int IATAC::_maxGlobalDecay[_MAX_ACCESS];
 
-IATAC::IATAC(const IATACParams &p)
-    : Base(p)
+IATAC::IATAC()
+    : Base()
 {
     // if (_first_iatac_obj) {
     //     _setupGlobalStructs();
@@ -79,7 +81,7 @@ IATAC::handleMiss(std::shared_ptr<GlobalDecayData>& iatac)
         //           _counter, _thits);
         if (_thits > std::static_pointer_cast<IATACdata>(iatac)->
                 _globalDecay[_counter]) {
-            DPRINTF(TPCacheDecay, "thits greater than global\n");
+            DPRINTF(TPDecayPolicies, "thits greater than global\n");
             std::static_pointer_cast<IATACdata>(iatac)
                 ->_globalDecay[_counter] =
                     std::static_pointer_cast<IATACdata>(iatac)
@@ -89,7 +91,7 @@ IATAC::handleMiss(std::shared_ptr<GlobalDecayData>& iatac)
                 ->updateMaxGlobals(_counter);
         } else if (_thits * 2 < std::static_pointer_cast<IATACdata>(iatac)
                 ->_globalDecay[_counter]) {
-            DPRINTF(TPCacheDecay, "thits smaller than global/2\n");
+            DPRINTF(TPDecayPolicies, "thits smaller than global/2\n");
             std::static_pointer_cast<IATACdata>(iatac)
                 ->_globalDecay[_counter] =
                     std::static_pointer_cast<IATACdata>(iatac)

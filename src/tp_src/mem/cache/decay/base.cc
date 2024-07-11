@@ -11,8 +11,7 @@ namespace tp
 namespace decay_policy
 {
 
-Base::Base(const BaseDecayPolicyParams &p)
-    : ClockedObject(p)
+Base::Base()
 {
 }
 
@@ -34,8 +33,8 @@ Base::Base(const BaseDecayPolicyParams &p)
 std::string
 Base::print() const
 {
-    return csprintf("thits: %d elapsed: %d counter: %d ",
-        _thits, _elapsed, _counter);
+    // return csprintf("thits: %d elapsed: %d counter: %d ",
+    //     _thits, _elapsed, _counter);
 }
 
 void

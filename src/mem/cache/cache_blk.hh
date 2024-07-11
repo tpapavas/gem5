@@ -60,6 +60,7 @@
 #include "sim/cur_tick.hh"
 
 //// MY CODE ////
+#include "tp_src/mem/cache/decay/constant_dp.hh"
 #include "tp_src/mem/cache/decay/iatac.hh"
 
 //// EOF MY CODE ////
@@ -306,11 +307,19 @@ class CacheBlk : public TaggedEntry
 
     //// MY CODE ////
     void updateDecayCounter() { _decayCounter--; }
+    void constDecayMechUpdate() { _constantDecay.updateDecay(); }
+
     void resetDecayCounter(int max_decay) {
         _decayCounter = max_decay;
         _maxDecayCounter = max_decay;
     }
+    void constDecayMechResetDecayCounter(int max_decay) {
+        _constantDecay.setDecay(max_decay);
+        _maxDecayCounter = max_decay;
+    }
+
     int getDecayCounter() { return _decayCounter; }
+    int constDecayMechGetDecayCounter() { return _constantDecay.getDecay(); }
 
     //// extra code ////
     int getMaxDecayCounter() { return _maxDecayCounter; }
@@ -359,12 +368,14 @@ class CacheBlk : public TaggedEntry
     // }
 
     void
-    decayMechHandleHit(tp::decay_policy::IATACdata *iatac) {
+    decayMechHandleHit(std::shared_ptr<tp::decay_policy::GlobalDecayData>&
+        iatac) {
         _iatac.handleHit(iatac);
     }
 
     void
-    decayMechHandleMiss(tp::decay_policy::IATACdata *iatac) {
+    decayMechHandleMiss(std::shared_ptr<tp::decay_policy::GlobalDecayData>&
+        iatac) {
         _iatac.handleMiss(iatac);
     }
 
@@ -625,6 +636,7 @@ class CacheBlk : public TaggedEntry
     bool _poweredOff = false;
 
     tp::decay_policy::IATAC _iatac;
+    tp::decay_policy::Constant _constantDecay;
     bool _onIATACDecayProc = false;
     bool _decayedHit = false;
     //// EOF MY CODE ////

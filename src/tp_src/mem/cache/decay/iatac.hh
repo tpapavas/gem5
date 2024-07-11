@@ -1,8 +1,6 @@
 #ifndef __TP_DECAY_MECHANISM_IATAC_HH__
 #define __TP_DECAY_MECHANISM_IATAC_HH__
 
-#include "params/IATAC.hh"
-
 //// decay refactor code ////
 #include "tp_src/mem/cache/decay/base.hh"
 
@@ -28,8 +26,11 @@ class IATACdata : public GlobalDecayData
 
     void checkAcumOverflow(int);
 
-    void setGlobal(int val);
+    virtual void setGlobal(int val);
     void setGlobal(int i, int val) { _globalDecay[i] = val; }
+
+    // TODO
+    virtual int getGlobal() override { return -1; };
 
     //// extra code ////
     int getInitLocalDecay() { return _initLocalDecay; }
@@ -79,7 +80,7 @@ class IATACdata : public GlobalDecayData
 class IATAC : public Base
 {
   public:
-    IATAC(const IATACParams &p);
+    IATAC();
 
     void handleHit(std::shared_ptr<GlobalDecayData>&) override;
     void handleMiss(std::shared_ptr<GlobalDecayData>&) override;

@@ -150,7 +150,8 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
     //// extra code ////
     DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, before iatac\n", __func__);
     if (iatacDecayEventHandler) {
-        iatacData = new tp::IATACdata();
+        iatacData = std::shared_ptr<tp::decay_policy::GlobalDecayData>(
+            new tp::decay_policy::IATACdata());
         tags->setIATACdata(iatacData);
 
         // set cache and iatacData parameters
@@ -3177,7 +3178,9 @@ BaseCache::updateDecayAndPowerOff() {
                     &powerOffFinished](CacheBlk &blk) {
         if (blk.isSet(CacheBlk::ReadableBit)) {
             blk.updateDecayCounter();
-            if (blk.getDecayCounter() < 0) {
+            blk.constDecayMechUpdate();
+            if (blk.getDecayCounter() < 0 &&
+                blk.constDecayMechGetDecayCounter() < 0) {
                 //// extra code ////
                 // decayWBsLeft++;
                 //// eof extra code ////
@@ -3185,6 +3188,8 @@ BaseCache::updateDecayAndPowerOff() {
                 // do not writeback more than it can handle
                 if (writebacks.size() < writebackLimit) {
                     blk.resetDecayCounter(tags->getLocalDecayCounter());
+                    blk.constDecayMechResetDecayCounter(
+                        tags->getLocalDecayCounter());
                     blk.powerOff();
 
                     DPRINTF(TPCacheDecayDebug,
@@ -3275,10 +3280,13 @@ BaseCache::powerOffRemainingBlks() {
             [this, &writebacks, &forward_time, &powerOffFinished]
             (CacheBlk &blk) {
         if (blk.isSet(CacheBlk::ReadableBit)) {
-            if (blk.getDecayCounter() < 0) {
+            if (blk.getDecayCounter() < 0 &&
+                blk.constDecayMechGetDecayCounter() < 0) {
                 // do not writeback more than it can handle
                 if (writebacks.size() < writebackLimit) {
                     blk.resetDecayCounter(tags->getLocalDecayCounter());
+                    blk.constDecayMechResetDecayCounter(
+                        tags->getLocalDecayCounter());
                     blk.powerOff();
 
                     DPRINTF(TPCacheDecayDebug,

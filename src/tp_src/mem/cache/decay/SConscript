@@ -1,10 +1,11 @@
 Import("*")
 
-SimObject('DecayPolicies.py',
-          sim_objects=['BaseDecayPolicy',
-                       'IATAC'])
+#SimObject('DecayPolicies.py',
+#          sim_objects=['BaseDecayPolicy',
+#                       'IATAC'])
 
 Source('base.cc')
 Source('iatac.cc')
+Source('constant_dp.cc')
 
 DebugFlag('TPDecayPolicies')

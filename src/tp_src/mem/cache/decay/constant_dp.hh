@@ -16,6 +16,9 @@ class Constant;
 
 class ConstantDecayData : public GlobalDecayData
 {
+  protected:
+    int _globalCounter;
+
   public:
     ConstantDecayData();
 
@@ -26,10 +29,12 @@ class ConstantDecayData : public GlobalDecayData
 
     virtual void checkAcumOverflow(int) override {};
 
-    virtual void setGlobal(int val) override {};
+    virtual void setGlobal(int val) override { _globalCounter = val; }
+    virtual int getGlobal() { return _globalCounter; }
     // void setGlobal(int i, int val) { _globalDecay[i] = val; }
 
     virtual void printGlobals() override {};
+
 
   friend Constant;
 };
@@ -42,7 +47,7 @@ class Constant : public Base
     virtual void handleHit(std::shared_ptr<GlobalDecayData>&) override {};
     virtual void handleMiss(std::shared_ptr<GlobalDecayData>&) override {};
 
-    virtual void updateDecay() override {};
+    virtual void updateDecay() override;
 
   protected:
 };

@@ -114,7 +114,7 @@ class BaseTags : public ClockedObject
     //// extra code ////
     int initIATACDecay = 8192;
 
-    tp::IATACdata *iatacData;
+    std::shared_ptr<tp::decay_policy::IATACdata> iatacData;
     //// eof extra code ////
 
     /**
@@ -372,7 +372,12 @@ class BaseTags : public ClockedObject
 
     // void setIATACInitDecay(int init_decay) { initIATACDecay = init_decay; }
 
-    void setIATACdata(tp::IATACdata *iatac_data) { iatacData = iatac_data; }
+    void setIATACdata(std::shared_ptr<tp::decay_policy::GlobalDecayData>
+        iatac_data)
+    {
+        iatacData = std::static_pointer_cast<tp::decay_policy::IATACdata>(
+            iatac_data);
+    }
     //// EOF MY CODE ////
 
   private:
