@@ -68,7 +68,7 @@ CacheBlk::insert(const Addr tag, const bool is_secure,
     updateLastHitTick();
 
     _poweredOff = false; // On insertion, power on the block
-    resetDecayCounter(_maxDecayCounter); // restart counting intervals
+    // resetDecayCounter(_maxDecayCounter); // restart counting intervals
     constDecayMechResetDecayCounter(_maxDecayCounter);
     //// EOF MY CODE ////
 

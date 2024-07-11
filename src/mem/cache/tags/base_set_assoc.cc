@@ -88,7 +88,7 @@ BaseSetAssoc::tagsInit()
         //     printf("%s %d\n", __func__, iatacData->getInitLocalDecay());
         // }
         // Set the local decay counter for the block
-        blk->resetDecayCounter(localDecayCounter);
+        // blk->resetDecayCounter(localDecayCounter);
         blk->constDecayMechResetDecayCounter(localDecayCounter);
         //// extra code ////
 

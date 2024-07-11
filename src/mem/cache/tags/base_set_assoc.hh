@@ -148,7 +148,7 @@ class BaseSetAssoc : public BaseTags
             //// MY CODE ////
             // update tick of last hit of accessed block
             blk->updateLastHitTick();
-            blk->resetDecayCounter(localDecayCounter);
+            // blk->resetDecayCounter(localDecayCounter);
             blk->constDecayMechResetDecayCounter(localDecayCounter);
 
             //// EOF MY CODE ////

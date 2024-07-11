@@ -3177,17 +3177,17 @@ BaseCache::updateDecayAndPowerOff() {
                     &forward_time,
                     &powerOffFinished](CacheBlk &blk) {
         if (blk.isSet(CacheBlk::ReadableBit)) {
-            blk.updateDecayCounter();
+            // blk.updateDecayCounter();
             blk.constDecayMechUpdate();
-            if (blk.getDecayCounter() < 0 &&
-                blk.constDecayMechGetDecayCounter() < 0) {
+            // if (blk.getDecayCounter() < 0) {
+            if (blk.constDecayMechGetDecayCounter() < 0) {
                 //// extra code ////
                 // decayWBsLeft++;
                 //// eof extra code ////
 
                 // do not writeback more than it can handle
                 if (writebacks.size() < writebackLimit) {
-                    blk.resetDecayCounter(tags->getLocalDecayCounter());
+                    // blk.resetDecayCounter(tags->getLocalDecayCounter());
                     blk.constDecayMechResetDecayCounter(
                         tags->getLocalDecayCounter());
                     blk.powerOff();
@@ -3280,11 +3280,11 @@ BaseCache::powerOffRemainingBlks() {
             [this, &writebacks, &forward_time, &powerOffFinished]
             (CacheBlk &blk) {
         if (blk.isSet(CacheBlk::ReadableBit)) {
-            if (blk.getDecayCounter() < 0 &&
-                blk.constDecayMechGetDecayCounter() < 0) {
+            // if (blk.getDecayCounter() < 0) {
+            if (blk.constDecayMechGetDecayCounter() < 0) {
                 // do not writeback more than it can handle
                 if (writebacks.size() < writebackLimit) {
-                    blk.resetDecayCounter(tags->getLocalDecayCounter());
+                    // blk.resetDecayCounter(tags->getLocalDecayCounter());
                     blk.constDecayMechResetDecayCounter(
                         tags->getLocalDecayCounter());
                     blk.powerOff();
