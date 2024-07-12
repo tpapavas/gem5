@@ -61,6 +61,7 @@
 #include "sim/clocked_object.hh"
 
 //// extra code ////
+#include "tp_src/mem/cache/decay/dueling.hh"
 #include "tp_src/mem/cache/decay/iatac.hh"
 
 //// eof extra code ////
@@ -115,6 +116,8 @@ class BaseTags : public ClockedObject
     int initIATACDecay = 8192;
 
     std::shared_ptr<tp::decay_policy::IATACdata> iatacData;
+
+    tp::DecayDuelingMonitor* decayDuelingMonitor;
     //// eof extra code ////
 
     /**
@@ -377,6 +380,11 @@ class BaseTags : public ClockedObject
     {
         iatacData = std::static_pointer_cast<tp::decay_policy::IATACdata>(
             iatac_data);
+    }
+
+    void setDecayDuelingMonitor(tp::DecayDuelingMonitor* monitor)
+    {
+        decayDuelingMonitor = monitor;
     }
     //// EOF MY CODE ////
 

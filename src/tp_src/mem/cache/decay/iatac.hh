@@ -15,68 +15,6 @@ namespace tp
 namespace decay_policy
 {
 
-class IATAC;
-
-class IATACdata : public GlobalDecayData
-{
-  public:
-    IATACdata();
-
-    void updateMaxGlobals(int);
-
-    void checkAcumOverflow(int);
-
-    virtual void setGlobal(int val);
-    void setGlobal(int i, int val) { _globalDecay[i] = val; }
-
-    // TODO
-    virtual int getGlobal() override { return -1; };
-
-    //// extra code ////
-    int getInitLocalDecay() { return _initLocalDecay; }
-    void setInitLocalDecay(int init_local_decay)
-    {
-      _initLocalDecay = init_local_decay;
-    }
-
-    bool doLetOverflow() { return _letOverflow; }
-    void setLetOverflow(bool letOverflow)
-    {
-      _letOverflow = letOverflow;
-    }
-
-    bool doResetCounterOnHit() { return _resetCounterOnHit; }
-    void setResetCounterOnHit(bool reset_counter_on_hit)
-    {
-      _resetCounterOnHit = reset_counter_on_hit;
-    }
-    //// eof extra code ////
-
-    void printGlobals();
-
-  protected:
-    static const int _MAX_ACCESS = 32;
-
-    static const int _MIN_COUNT = 8;
-    static const int _MAX_COUNT = 1024;
-
-    int _acumcounter[_MAX_ACCESS];
-    int _globalDecay[_MAX_ACCESS];
-    int _maxGlobalDecay[_MAX_ACCESS];
-
-    bool _isMax[_MAX_ACCESS];
-
-    //// extra code ////
-    int _initLocalDecay = 8192;
-
-    bool _letOverflow = false;
-
-    bool _resetCounterOnHit = false;
-    //// eof extra code ////
-
-  friend IATAC;
-};
-
 class IATAC : public Base
 {
   public:
@@ -148,6 +86,68 @@ class IATAC : public Base
     bool _resetCounterOnHit = false;
     //// eof extra code ////
     // void _setupGlobalStructs();
+};
+
+class IATACdata : public GlobalDecayData
+{
+  public:
+    IATACdata();
+
+    void updateMaxGlobals(int);
+
+    void checkAcumOverflow(int);
+
+    virtual void setGlobal(int val);
+    void setGlobal(int i, int val) { _globalDecay[i] = val; }
+
+    // TODO
+    virtual int getGlobal() override { return -1; };
+
+    //// extra code ////
+    int getInitLocalDecay() { return _initLocalDecay; }
+    void setInitLocalDecay(int init_local_decay)
+    {
+      _initLocalDecay = init_local_decay;
+    }
+
+    bool doLetOverflow() { return _letOverflow; }
+    void setLetOverflow(bool letOverflow)
+    {
+      _letOverflow = letOverflow;
+    }
+
+    bool doResetCounterOnHit() { return _resetCounterOnHit; }
+    void setResetCounterOnHit(bool reset_counter_on_hit)
+    {
+      _resetCounterOnHit = reset_counter_on_hit;
+    }
+    //// eof extra code ////
+
+    void printGlobals();
+
+    virtual IATAC* instantiateDecay() override { return new IATAC(); }
+
+  protected:
+    static const int _MAX_ACCESS = 32;
+
+    static const int _MIN_COUNT = 8;
+    static const int _MAX_COUNT = 1024;
+
+    int _acumcounter[_MAX_ACCESS];
+    int _globalDecay[_MAX_ACCESS];
+    int _maxGlobalDecay[_MAX_ACCESS];
+
+    bool _isMax[_MAX_ACCESS];
+
+    //// extra code ////
+    int _initLocalDecay = 8192;
+
+    bool _letOverflow = false;
+
+    bool _resetCounterOnHit = false;
+    //// eof extra code ////
+
+  friend IATAC;
 };
 
 } // decay_policy

@@ -143,8 +143,14 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
 
     //// extra code ////
     DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, before decay\n", __func__);
-    if (decayEventHandler)
+    if (decayEventHandler) {
         decayEventHandler->setCache(this);
+
+        decayDuelingMonitor = new tp::DecayDuelingMonitor(
+            (p.size / blk_size)/32, p.assoc
+        );
+        tags->setDecayDuelingMonitor(decayDuelingMonitor);
+    }
     //// extra code ////
 
     //// extra code ////
@@ -3144,7 +3150,7 @@ BaseCache::iatacPowerOffRemainingBlks() {
 }
 
 bool
-BaseCache::updateDecayAndPowerOff() {
+BaseCache::updateDecayAndPowerOff(int &globalDecayCounter, int tourWindowCnt) {
     //// extra code ////
     assert(!onDecayPhase);
     onDecayPhase = true;
@@ -3153,6 +3159,12 @@ BaseCache::updateDecayAndPowerOff() {
     assert(!isSetDecayState());
     setDecayState();
     //// eof extra code ////
+
+    //// refactor code ////
+    if (tourWindowCnt == 5) {
+        // globDecayData->sample(globalDecayCounter);
+    }
+    //// eof refactor code ////
 
     stats.numOfDecayWindows++;
     PacketList writebacks;
@@ -3255,7 +3267,7 @@ BaseCache::updateDecayAndPowerOff() {
 }
 
 bool
-BaseCache::powerOffRemainingBlks() {
+BaseCache::powerOffRemainingBlks(int &globalDecayCounter, int tourWindowCnt) {
     //// extra code ////
     assert(onDecayPhase);
 

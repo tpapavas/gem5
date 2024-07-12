@@ -49,6 +49,9 @@
 
 #include "base/intmath.hh"
 
+#include "tp_src/mem/cache/decay/constant_dp.hh"
+#include "tp_src/mem/cache/decay/dueling_dp.hh"
+
 namespace gem5
 {
 
@@ -89,6 +92,15 @@ BaseSetAssoc::tagsInit()
         // }
         // Set the local decay counter for the block
         // blk->resetDecayCounter(localDecayCounter);
+
+        //// refactor code ////
+        tp::decay_policy::GlobalDecayData* constDecayData =
+            new tp::decay_policy::DuelingDecayData();
+
+        blk->instantiateDecay(constDecayData);
+        decayDuelingMonitor->initEntry(blk->getDecayDueler());
+        /// eof refactor code ///
+
         blk->constDecayMechResetDecayCounter(localDecayCounter);
         //// extra code ////
 

@@ -17,28 +17,56 @@ namespace tp
 namespace decay_policy
 {
 
-class Base;
-
-class DuelingDecayData : public GlobalDecayData
-{
-  protected:
-    int globalCounter;
-
-  public:
-    DuelingDecayData() {};
-
-    void setGlobal(int val) { globalCounter = val; }
-    int getGlobal() { return globalCounter;  }
-
-  friend Dueling;
-};
+class DuelingDecayData;
 
 class Dueling : public Base
 {
   protected:
-    std::vector<Base*> const duelingPolicies;
+    const int NUM_DUELERS = 3;
+
+    std::vector<Base*> duelingPolicies;
+
+    DecayDueler* duelerData;
+
   public:
     Dueling();
+
+    virtual void handleHit(std::shared_ptr<GlobalDecayData>&) override;
+    virtual void handleMiss(std::shared_ptr<GlobalDecayData>&) override;
+
+    virtual void updateDecay() override;
+    virtual void setDecay(int decay) override;
+    virtual int getDecay() override;
+
+    DecayDueler* getDecayDueler() override { return duelerData; }
+};
+
+class DuelingDecayData : public GlobalDecayData
+{
+  protected:
+    int _globalCounter;
+
+    DecayDuelingMonitor* decayDuelingMonitor;
+
+  public:
+    DuelingDecayData() {};
+
+    virtual void setGlobal(int val) override { _globalCounter = val; }
+    virtual int getGlobal() override { return _globalCounter;  }
+
+    virtual Dueling* instantiateDecay() override {
+      return new Dueling();
+    }
+
+    void setDecayDuelingMonitor(DecayDuelingMonitor* monitor) {
+      decayDuelingMonitor = monitor;
+    }
+
+
+    virtual void updateMaxGlobals(int) override {};
+    virtual void checkAcumOverflow(int) override {};
+
+  friend Dueling;
 };
 
 } // decay policy

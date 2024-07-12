@@ -7,5 +7,7 @@ Import("*")
 Source('base.cc')
 Source('iatac.cc')
 Source('constant_dp.cc')
+Source('dueling_dp.cc')
+Source('dueling.cc')
 
 DebugFlag('TPDecayPolicies')

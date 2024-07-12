@@ -80,6 +80,7 @@
 #include "tp_src/events/cache/decay_event_handler.hh"
 #include "tp_src/events/cache/flush_event_handler.hh"
 #include "tp_src/events/cache/iatac_decay_event_handler.hh"
+#include "tp_src/mem/cache/decay/dueling.hh"
 #include "tp_src/mem/cache/decay/iatac.hh"
 
 ////EOF MY INCLUDES////
@@ -1454,6 +1455,11 @@ class BaseCache : public ClockedObject
     bool iatacDecayedHit = false;
     bool decayOn = false;
 
+    //// refactor code ////
+    tp::decay_policy::GlobalDecayData* globDecayData;
+    tp::DecayDuelingMonitor* decayDuelingMonitor;
+    //// eof refactor code ////
+
     virtual void writebackOnIATACDecay(CacheBlk*, PacketList&) {}
 
     bool printIdleTime = false;
@@ -1473,8 +1479,8 @@ class BaseCache : public ClockedObject
 
     void setDecayOn(bool on) { decayOn = on; }
 
-    bool updateDecayAndPowerOff();
-    bool powerOffRemainingBlks();
+    bool updateDecayAndPowerOff(int &globalDecayCounter, int tourWindowCnt);
+    bool powerOffRemainingBlks(int &globalDecayCounter, int tourWindowCnt);
 
     void setLocalDecayCounter(int max_decay)
     {

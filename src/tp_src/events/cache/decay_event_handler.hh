@@ -16,7 +16,7 @@ class DecayEventHandler : public TimingEventHandler
     private:
         void processEvent() override;
 
-        const int decayPeriod;
+        int decayPeriod;
 
         int decayCounter;
 
@@ -35,6 +35,10 @@ class DecayEventHandler : public TimingEventHandler
         const int timesRemainingLimit;
 
         void processPowerOffRemainingEvent();
+
+        int tournamentWindow;
+
+        const int TOUR_WINDOW_LIMIT = 5;
     public:
         DecayEventHandler(const DecayEventHandlerParams &p);
 

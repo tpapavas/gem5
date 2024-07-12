@@ -61,6 +61,7 @@
 
 //// MY CODE ////
 #include "tp_src/mem/cache/decay/constant_dp.hh"
+#include "tp_src/mem/cache/decay/dueling_dp.hh"
 #include "tp_src/mem/cache/decay/iatac.hh"
 
 //// EOF MY CODE ////
@@ -306,20 +307,40 @@ class CacheBlk : public TaggedEntry
     void increaseRefCount() { _refCount++; }
 
     //// MY CODE ////
+
+    //// refactor code ////
+    void instantiateDecay(tp::decay_policy::GlobalDecayData* globDecayData) {
+        _decay = globDecayData->instantiateDecay();
+    }
+
+    tp::DecayDueler* getDecayDueler()
+    {
+        return _decay->getDecayDueler();
+    }
+    //// eof refactor code ////
+
+
     void updateDecayCounter() { _decayCounter--; }
-    void constDecayMechUpdate() { _constantDecay.updateDecay(); }
+    void constDecayMechUpdate() {
+        // _constantDecay.updateDecay();
+        _decay->updateDecay();
+    }
 
     void resetDecayCounter(int max_decay) {
         _decayCounter = max_decay;
         _maxDecayCounter = max_decay;
     }
     void constDecayMechResetDecayCounter(int max_decay) {
-        _constantDecay.setDecay(max_decay);
+        // _constantDecay.setDecay(max_decay);
+        _decay->setDecay(max_decay);
         _maxDecayCounter = max_decay;
     }
 
     int getDecayCounter() { return _decayCounter; }
-    int constDecayMechGetDecayCounter() { return _constantDecay.getDecay(); }
+    int constDecayMechGetDecayCounter() {
+        // return _constantDecay.getDecay();
+        return _decay->getDecay();
+    }
 
     //// extra code ////
     int getMaxDecayCounter() { return _maxDecayCounter; }
@@ -637,6 +658,7 @@ class CacheBlk : public TaggedEntry
 
     tp::decay_policy::IATAC _iatac;
     tp::decay_policy::Constant _constantDecay;
+    tp::decay_policy::Base *_decay;
     bool _onIATACDecayProc = false;
     bool _decayedHit = false;
     //// EOF MY CODE ////

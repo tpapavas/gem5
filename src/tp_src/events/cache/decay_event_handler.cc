@@ -24,7 +24,8 @@ DecayEventHandler::DecayEventHandler(const DecayEventHandlerParams &params) :
         this->cyclesToTicks(Cycles(params.post_decay_period))
     ),
     timesRemainingFired(0),
-    timesRemainingLimit(INT_MAX)  // extra code
+    timesRemainingLimit(INT_MAX),
+    tournamentWindow(0)  // extra code
     // timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1)
 {
     DPRINTF(TPCacheDecay,
@@ -47,17 +48,23 @@ DecayEventHandler::processEvent()
             return;
     }
 
+    tournamentWindow++;
+
     timesFired++;
     timesRemainingFired = 0;
 
     DPRINTF(TPCacheDecayDebug, "Processing the decay event! #%d fired\n",
         timesFired);
-    if (!cache->updateDecayAndPowerOff()) {
+    if (!cache->updateDecayAndPowerOff(decayPeriod, tournamentWindow)) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
     } else if (tillSimEnd || timesFired < numOfFires) {
         schedule(event, curTick() + decayPeriod);
     } else {
         DPRINTF(TPCacheDecay, "Done firing!\n");
+    }
+
+    if (tournamentWindow == TOUR_WINDOW_LIMIT) {
+        tournamentWindow = 0;
     }
 }
 
@@ -68,7 +75,7 @@ DecayEventHandler::processPowerOffRemainingEvent()
 
     DPRINTF(TPCacheDecayDebug, "process remaining blks\n");
 
-    if (!cache->powerOffRemainingBlks() &&
+    if (!cache->powerOffRemainingBlks(decayPeriod, tournamentWindow) &&
         timesRemainingFired < timesRemainingLimit) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
     } else {

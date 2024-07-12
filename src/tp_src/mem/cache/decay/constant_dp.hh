@@ -12,7 +12,18 @@ namespace tp
 namespace decay_policy
 {
 
-class Constant;
+class Constant : public Base
+{
+  public:
+    Constant();
+
+    virtual void handleHit(std::shared_ptr<GlobalDecayData>&) override {};
+    virtual void handleMiss(std::shared_ptr<GlobalDecayData>&) override {};
+
+    virtual void updateDecay() override;
+
+  protected:
+};
 
 class ConstantDecayData : public GlobalDecayData
 {
@@ -35,21 +46,9 @@ class ConstantDecayData : public GlobalDecayData
 
     virtual void printGlobals() override {};
 
+    virtual Constant* instantiateDecay() override { return new Constant(); }
 
   friend Constant;
-};
-
-class Constant : public Base
-{
-  public:
-    Constant();
-
-    virtual void handleHit(std::shared_ptr<GlobalDecayData>&) override {};
-    virtual void handleMiss(std::shared_ptr<GlobalDecayData>&) override {};
-
-    virtual void updateDecay() override;
-
-  protected:
 };
 
 } // decay policy
