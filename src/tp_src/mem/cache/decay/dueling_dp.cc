@@ -1,6 +1,7 @@
 #include "tp_src/mem/cache/decay/dueling_dp.hh"
 
 #include "debug/TPCacheDecay.hh"
+#include "debug/TPCacheDecayDebug.hh"
 #include "tp_src/mem/cache/decay/constant_dp.hh"
 
 namespace gem5
@@ -20,6 +21,7 @@ Dueling::Dueling()
     }
 
     duelerData = new DecayDueler();
+    DPRINTF(TPCacheDecayDebug, "DuelingDP: constructor\n");
 }
 
 void

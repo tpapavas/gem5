@@ -146,8 +146,13 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
     if (decayEventHandler) {
         decayEventHandler->setCache(this);
 
+        DPRINTF(TPCacheDecayDebug, "Cache size %d\n", p.size);
+        DPRINTF(TPCacheDecayDebug, "Cache blocks %d\n", p.size / blk_size);
+        DPRINTF(TPCacheDecayDebug, "Constituency size %d\n",
+            (p.size / blk_size)/8);
+        DPRINTF(TPCacheDecayDebug, "Team size %d\n", p.assoc);
         decayDuelingMonitor = new tp::DecayDuelingMonitor(
-            (p.size / blk_size)/32, p.assoc
+            (p.size / blk_size)/8, p.assoc
         );
         tags->setDecayDuelingMonitor(decayDuelingMonitor);
     }

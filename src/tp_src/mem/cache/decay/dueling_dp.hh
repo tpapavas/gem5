@@ -5,6 +5,7 @@
 
 //#include "params/BASE.hh"
 
+#include "debug/TPCacheDecayDebug.hh"
 #include "sim/clocked_object.hh"
 #include "tp_src/mem/cache/decay/base.hh"
 
@@ -38,7 +39,10 @@ class Dueling : public Base
     virtual void setDecay(int decay) override;
     virtual int getDecay() override;
 
-    DecayDueler* getDecayDueler() override { return duelerData; }
+    DecayDueler* getDecayDueler() override {
+      DPRINTF(TPCacheDecayDebug, "DuelingDP: getDecayDueler\n");
+      return duelerData;
+    }
 };
 
 class DuelingDecayData : public GlobalDecayData

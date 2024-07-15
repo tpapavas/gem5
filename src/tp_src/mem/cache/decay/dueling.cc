@@ -113,6 +113,8 @@ bool
 DecayDuelingMonitor::isSample(const DecayDueler* dueler, bool& team) const
 {
     // return dueler->isSample(id, team);
+
+    return true;
 }
 
 bool
@@ -124,17 +126,21 @@ DecayDuelingMonitor::getWinner() const
 void
 DecayDuelingMonitor::initEntry(DecayDueler* dueler)
 {
-    /** #1 team: entries where constituency == set
-    /*  #2 team: entries where constituency == ~set
-    /*  #3 team: entries where
-    /*      for even constituencies, (constituency+2) == set
-    /*      for odd constituencies, (constituency-2) == ~set
-     */
-    int teamSizeShifted = teamSize*(constituencyCounter+1);
+    //  #1 team: entries where constituency == set
+    //  #2 team: entries where constituency == ~set
+    //  #3 team: entries where
+    //      for even constituencies, (constituency+2) == set
+    //     for odd constituencies, (constituency-2) == ~set
+    //
+    DPRINTF(TPCacheDecayDebug, "inside initEntry #1\n");
+    int teamSizeShifted =
+        (teamSize*(constituencyCounter+1)-1) % constituencySize + 1;
     int prevTeamSizeShifted = teamSizeShifted - teamSize;
 
     //
-    int lead3TeamSizeShifted =  teamSize*(constituencySize+3);
+    DPRINTF(TPCacheDecayDebug, "inside initEntry #2\n");
+    int lead3TeamSizeShifted =
+        (teamSize*(constituencyCounter+3)-1) % constituencySize + 1;
     int lead3PrevTeamSizeShifted = lead3TeamSizeShifted - teamSize;
 
     assert(dueler);
@@ -148,7 +154,7 @@ DecayDuelingMonitor::initEntry(DecayDueler* dueler)
         dueler->setSample(1);
         DPRINTF(TPCacheDecayDebug, "constituency: %d, set: %d, team: 1\n",
             constituencyCounter, regionCounter/teamSize);
-    } else if (regionCounter/teamSize % 2 == 0) {
+    } else if (constituencyCounter % 2 == 0) {
         if ((regionCounter >= lead3PrevTeamSizeShifted &&
                 regionCounter < lead3TeamSizeShifted)) {
             dueler->setSample(2);
@@ -156,14 +162,16 @@ DecayDuelingMonitor::initEntry(DecayDueler* dueler)
                 constituencyCounter, regionCounter/teamSize);
         }
     } else {
-        if (regionCounter >= (constituencySize - lead3PrevTeamSizeShifted) &&
-                regionCounter < (constituencySize - lead3TeamSizeShifted)) {
+        if (regionCounter >= (constituencySize - lead3TeamSizeShifted) &&
+                regionCounter <
+                    (constituencySize - lead3PrevTeamSizeShifted)) {
             dueler->setSample(2);
             DPRINTF(TPCacheDecayDebug, "constituency: %d, set: %d, team: 2\n",
                 constituencyCounter, regionCounter/teamSize);
         }
     }
 
+    DPRINTF(TPCacheDecayDebug, "inside initEntry #3\n");
 
     // Check if we changed constituencies
     if (++regionCounter >= constituencySize) {

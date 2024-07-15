@@ -46,9 +46,9 @@
 #include "mem/cache/tags/base_set_assoc.hh"
 
 #include <string>
-
 #include "base/intmath.hh"
 
+#include "debug/TPCacheDecayDebug.hh"
 #include "tp_src/mem/cache/decay/constant_dp.hh"
 #include "tp_src/mem/cache/decay/dueling_dp.hh"
 
@@ -94,15 +94,21 @@ BaseSetAssoc::tagsInit()
         // blk->resetDecayCounter(localDecayCounter);
 
         //// refactor code ////
-        tp::decay_policy::GlobalDecayData* constDecayData =
-            new tp::decay_policy::DuelingDecayData();
+        if (decayDuelingMonitor != nullptr) {
+            DPRINTF(TPCacheDecayDebug, "before duelingData init\n");
+            tp::decay_policy::GlobalDecayData* constDecayData =
+                new tp::decay_policy::DuelingDecayData();
 
-        blk->instantiateDecay(constDecayData);
-        decayDuelingMonitor->initEntry(blk->getDecayDueler());
-        /// eof refactor code ///
+            DPRINTF(TPCacheDecayDebug, "before instantiateDecay\n");
+            blk->instantiateDecay(constDecayData);
+            DPRINTF(TPCacheDecayDebug, "before getDecayDueler\n");
+            decayDuelingMonitor->initEntry(blk->getDecayDueler());
+            /// eof refactor code ///
 
-        blk->constDecayMechResetDecayCounter(localDecayCounter);
-        //// extra code ////
+            DPRINTF(TPCacheDecayDebug, "before resetDecayCounter\n");
+            blk->constDecayMechResetDecayCounter(localDecayCounter);
+            //// extra code ////
+        }
 
         //// extra code ////
         if (iatacData != nullptr) {

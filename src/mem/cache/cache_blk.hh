@@ -162,6 +162,7 @@ class CacheBlk : public TaggedEntry
     CacheBlk()
     {
         invalidate();
+        _decay = nullptr;
     }
 
     CacheBlk(const CacheBlk&) = delete;
@@ -332,7 +333,9 @@ class CacheBlk : public TaggedEntry
     }
     void constDecayMechResetDecayCounter(int max_decay) {
         // _constantDecay.setDecay(max_decay);
-        _decay->setDecay(max_decay);
+        if (_decay) {
+            _decay->setDecay(max_decay);
+        }
         _maxDecayCounter = max_decay;
     }
 

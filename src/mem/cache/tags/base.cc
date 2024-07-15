@@ -75,6 +75,7 @@ BaseTags::BaseTags(const Params &p)
     registerExitCallback([this]() { cleanupRefs(); });
 
     //// extra code ////
+    decayDuelingMonitor = nullptr;
     iatacData = nullptr;
     //// eof extra code ////
 }

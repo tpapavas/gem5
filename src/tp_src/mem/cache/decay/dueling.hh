@@ -91,7 +91,7 @@ class DecayDuelingMonitor
   private:
     // There are always exactly two duelers. If this is changed the logic
     // must be revisited
-    const int NUM_DUELERS = 2;
+    const int NUM_DUELERS = 3;
 
     /**
      * Unique identifier of this instance. It is a one bit mask used to

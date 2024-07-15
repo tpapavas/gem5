@@ -2,6 +2,10 @@
 #define __TP_CACHE_DECAY_MECHANISM_BASE_HH__
 
 #include <memory>
+
+#include "base/cprintf.hh"
+#include "base/trace.hh"
+#include "debug/TPCacheDecayDebug.hh"
 #include "tp_src/mem/cache/decay/dueling.hh"
 
 namespace gem5
@@ -35,7 +39,10 @@ class Base
 
     virtual std::string print() const;
 
-    virtual DecayDueler* getDecayDueler() { return nullptr; }
+    virtual DecayDueler* getDecayDueler() {
+      DPRINTF(TPCacheDecayDebug, "BaseDP: getDecayDueler\n");
+      return nullptr;
+    }
 
   protected:
     /** if the block is on or off */
