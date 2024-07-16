@@ -23,7 +23,7 @@ class IATAC : public Base
     void handleHit(std::shared_ptr<GlobalDecayData>&) override;
     void handleMiss(std::shared_ptr<GlobalDecayData>&) override;
 
-    bool decayElapsed() { return (_elapsed >= _decay) && _onoff; }
+    bool decayElapsed() override { return (_elapsed >= _decay) && _onoff; }
     // static void printGlobals();
 
     void updateDecay();
@@ -33,6 +33,7 @@ class IATAC : public Base
 
     // int getCounter() { return _counter; }
 
+    bool isDecayable() override { return !getWrong(); }
     bool getWrong() { return _wrongBit; }
 
     //// extra code ////
@@ -97,27 +98,27 @@ class IATACdata : public GlobalDecayData
 
     void checkAcumOverflow(int);
 
-    virtual void setGlobal(int val);
+    virtual void setGlobal(int val) override;
     void setGlobal(int i, int val) { _globalDecay[i] = val; }
 
     // TODO
     virtual int getGlobal() override { return -1; };
 
     //// extra code ////
-    int getInitLocalDecay() { return _initLocalDecay; }
-    void setInitLocalDecay(int init_local_decay)
+    int getInitLocalDecay() override { return _initLocalDecay; }
+    void setInitLocalDecay(int init_local_decay) override
     {
       _initLocalDecay = init_local_decay;
     }
 
-    bool doLetOverflow() { return _letOverflow; }
-    void setLetOverflow(bool letOverflow)
+    bool doLetOverflow() override { return _letOverflow; }
+    void setLetOverflow(bool letOverflow) override
     {
       _letOverflow = letOverflow;
     }
 
-    bool doResetCounterOnHit() { return _resetCounterOnHit; }
-    void setResetCounterOnHit(bool reset_counter_on_hit)
+    bool doResetCounterOnHit() override { return _resetCounterOnHit; }
+    void setResetCounterOnHit(bool reset_counter_on_hit) override
     {
       _resetCounterOnHit = reset_counter_on_hit;
     }

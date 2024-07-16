@@ -96,8 +96,11 @@ BaseSetAssoc::tagsInit()
         //// refactor code ////
         if (decayDuelingMonitor != nullptr) {
             DPRINTF(TPCacheDecayDebug, "before duelingData init\n");
-            tp::decay_policy::GlobalDecayData* constDecayData =
-                new tp::decay_policy::DuelingDecayData();
+            // tp::decay_policy::GlobalDecayData* constDecayData =
+            std::shared_ptr<tp::decay_policy::GlobalDecayData>
+                constDecayData =
+                    std::shared_ptr<tp::decay_policy::GlobalDecayData>(
+                        new tp::decay_policy::DuelingDecayData());
 
             DPRINTF(TPCacheDecayDebug, "before instantiateDecay\n");
             blk->instantiateDecay(constDecayData);
@@ -112,6 +115,18 @@ BaseSetAssoc::tagsInit()
 
         //// extra code ////
         if (iatacData != nullptr) {
+            // tp::decay_policy::GlobalDecayData* constDecayData =
+            //     new tp::decay_policy::IATACdata();
+            std::shared_ptr<tp::decay_policy::GlobalDecayData>
+                constDecayData =
+                    std::shared_ptr<tp::decay_policy::GlobalDecayData>(
+                        new tp::decay_policy::IATACdata());
+
+            // blk->instantiateDecay(constDecayData);
+            blk->instantiateDecay(constDecayData);
+
+            // tp::decay_policy::IATAC* iatac = blk->getIATAC();
+
             blk->getIATAC()->setDecay(iatacData->getInitLocalDecay());
             blk->getIATAC()->setLetOverflow(iatacData->doLetOverflow());
             blk->getIATAC()->setResetCounterOnHit(

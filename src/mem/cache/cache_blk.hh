@@ -310,7 +310,8 @@ class CacheBlk : public TaggedEntry
     //// MY CODE ////
 
     //// refactor code ////
-    void instantiateDecay(tp::decay_policy::GlobalDecayData* globDecayData) {
+    void instantiateDecay(std::shared_ptr<tp::decay_policy::GlobalDecayData>&
+            globDecayData) {
         _decay = globDecayData->instantiateDecay();
     }
 
@@ -350,7 +351,11 @@ class CacheBlk : public TaggedEntry
     //// eof extra code ////
 
     //// extra code ////
-    tp::decay_policy::IATAC *getIATAC() { return &_iatac; }
+    tp::decay_policy::IATAC *getIATAC()
+    {
+        return &_iatac;
+        // return (tp::decay_policy::IATAC*) _decay;
+    }
     //// eof extra code ////
 
     void updateLastHitTick() { _tickLastHitted = curTick(); }
@@ -395,17 +400,26 @@ class CacheBlk : public TaggedEntry
     decayMechHandleHit(std::shared_ptr<tp::decay_policy::GlobalDecayData>&
         iatac) {
         _iatac.handleHit(iatac);
+        if (_decay) {
+            _decay->handleHit(iatac);
+        }
     }
 
     void
     decayMechHandleMiss(std::shared_ptr<tp::decay_policy::GlobalDecayData>&
         iatac) {
         _iatac.handleMiss(iatac);
+        if (_decay) {
+            _decay->handleMiss(iatac);
+        }
     }
 
     void
     decayMechUpdate() {
         _iatac.updateDecay();
+        if (_decay) {
+            _decay->updateDecay();
+        }
     }
 
     void
@@ -415,31 +429,65 @@ class CacheBlk : public TaggedEntry
 
         _onIATACDecayProc = true;
         _iatac.setPower(false);
+        if (_decay) {
+            _decay->setPower(false);
+        }
     }
 
     void
     decayMechPowerOn() {
         _iatac.setPower(true);
+        if (_decay) {
+            _decay->setPower(true);
+        }
     }
 
     bool
     isDecayable() {
+        // assert(!_iatac.getWrong() == _decay->isDecayable());
+
         return !_iatac.getWrong();
+        // if (_decay) {
+        //     return _decay->isDecayable();
+        // }
+
+        return true;
     }
 
     bool
     isDecayMechPoweredOff() const {
+        // assert(_iatac.isPoweredOff() == _decay->isPoweredOff());
+
         return _iatac.isPoweredOff();
+        // if (_decay) {
+        //     return _decay->isPoweredOff();
+        // }
+
+        return false;
     }
 
     bool
     hasDecayMechDecayElapsed() {
+        // assert(_iatac.decayElapsed() == _decay->decayElapsed());
+
         return _iatac.decayElapsed();
+        // if (_decay) {
+        //     return _decay->decayElapsed();
+        // }
+
+        return true;
     }
 
     int
     getDecayMechCounter() {
+        // assert(_iatac.getDecay() == _decay->getDecay());
+
         return _iatac.getDecay();
+        // if (_decay) {
+        //     return _decay->getDecay();
+        // }
+
+        return -1;
     }
 
     void
@@ -456,7 +504,13 @@ class CacheBlk : public TaggedEntry
 
     //// extra code ////
     void
-    resetIATACDecayCounter() { _iatac.resetDecayCounter(); }
+    resetIATACDecayCounter()
+    {
+        _iatac.resetDecayCounter();
+        if (_decay) {
+            _decay->resetCounter();
+        }
+    }
     //// eof extra code ////
     //// EOF MY CODE ////
 
