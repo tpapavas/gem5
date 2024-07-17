@@ -122,7 +122,6 @@ BaseSetAssoc::tagsInit()
                     std::shared_ptr<tp::decay_policy::GlobalDecayData>(
                         new tp::decay_policy::IATACdata());
 
-            // blk->instantiateDecay(constDecayData);
             blk->instantiateDecay(constDecayData);
 
             // tp::decay_policy::IATAC* iatac = blk->getIATAC();
@@ -130,6 +129,12 @@ BaseSetAssoc::tagsInit()
             blk->getIATAC()->setDecay(iatacData->getInitLocalDecay());
             blk->getIATAC()->setLetOverflow(iatacData->doLetOverflow());
             blk->getIATAC()->setResetCounterOnHit(
+                iatacData->doResetCounterOnHit());
+
+            //// new code
+            blk->getIATAC2()->setDecay(iatacData->getInitLocalDecay());
+            blk->getIATAC2()->setLetOverflow(iatacData->doLetOverflow());
+            blk->getIATAC2()->setResetCounterOnHit(
                 iatacData->doResetCounterOnHit());
         }
         //// eof extra code ////

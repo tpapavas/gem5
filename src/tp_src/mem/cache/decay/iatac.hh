@@ -37,7 +37,14 @@ class IATAC : public Base
     bool getWrong() { return _wrongBit; }
 
     //// extra code ////
-    void setDecay(int decay_interval) { _decay = decay_interval; }
+    void setDecay(int decay_interval)
+    {
+      // set _decay only one time (in the beginning of execution)
+      if (!_decayIsSet) {
+        _decay = decay_interval;
+        _decayIsSet = true;
+      }
+    }
 
     void setLetOverflow(bool let_overflow) { _letOverflow =let_overflow; }
 
@@ -87,6 +94,8 @@ class IATAC : public Base
     bool _resetCounterOnHit = false;
     //// eof extra code ////
     // void _setupGlobalStructs();
+
+    bool _decayIsSet = false;
 };
 
 class IATACdata : public GlobalDecayData
@@ -94,9 +103,9 @@ class IATACdata : public GlobalDecayData
   public:
     IATACdata();
 
-    void updateMaxGlobals(int);
+    void updateMaxGlobals(int) override;
 
-    void checkAcumOverflow(int);
+    void checkAcumOverflow(int) override;
 
     virtual void setGlobal(int val) override;
     void setGlobal(int i, int val) { _globalDecay[i] = val; }
@@ -105,20 +114,20 @@ class IATACdata : public GlobalDecayData
     virtual int getGlobal() override { return -1; };
 
     //// extra code ////
-    int getInitLocalDecay() override { return _initLocalDecay; }
-    void setInitLocalDecay(int init_local_decay) override
+    int getInitLocalDecay() { return _initLocalDecay; }
+    void setInitLocalDecay(int init_local_decay)
     {
       _initLocalDecay = init_local_decay;
     }
 
-    bool doLetOverflow() override { return _letOverflow; }
-    void setLetOverflow(bool letOverflow) override
+    bool doLetOverflow() { return _letOverflow; }
+    void setLetOverflow(bool letOverflow)
     {
       _letOverflow = letOverflow;
     }
 
-    bool doResetCounterOnHit() override { return _resetCounterOnHit; }
-    void setResetCounterOnHit(bool reset_counter_on_hit) override
+    bool doResetCounterOnHit() { return _resetCounterOnHit; }
+    void setResetCounterOnHit(bool reset_counter_on_hit)
     {
       _resetCounterOnHit = reset_counter_on_hit;
     }

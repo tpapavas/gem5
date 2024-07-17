@@ -163,6 +163,8 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
     if (iatacDecayEventHandler) {
         iatacData = std::shared_ptr<tp::decay_policy::GlobalDecayData>(
             new tp::decay_policy::IATACdata());
+        globDecayData = std::shared_ptr<tp::decay_policy::GlobalDecayData>(
+            new tp::decay_policy::IATACdata());
         tags->setIATACdata(iatacData);
 
         // set cache and iatacData parameters
@@ -1409,7 +1411,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         } else {
             DPRINTF(TPCacheIATACDebug, "IATAC: regular hit\n");
             // DPRINTF(TPCacheDecay, "%s\n", blk->printIATAC());
-            blk->decayMechHandleHit(iatacData);
+            blk->decayMechHandleHit(iatacData, globDecayData);
         }
     }
     //// EOF MY CODE ////
@@ -1890,7 +1892,7 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
     //// MY CODE ////
     if (iatacData != nullptr && decayOn) {
         DPRINTF(TPCacheIATACDebug, "IATAC: on miss check\n");
-        victim->decayMechHandleMiss(iatacData);
+        victim->decayMechHandleMiss(iatacData, globDecayData);
     }
 
     if (name().find("l1dcache") != std::string::npos) {

@@ -93,33 +93,33 @@ class GlobalDecayData
     virtual void sample(int &globalDecayCounter) {}
 
         //// needed only for IATAC ////
-    virtual int getInitLocalDecay()
-    {
-      DPRINTF(TPCacheDecayDebug, "BaseDP: getInitLocalDecay\n");
-      return -1;
-    }
-    virtual void setInitLocalDecay(int init_local_decay)
-    {
-      DPRINTF(TPCacheDecayDebug, "BaseDP: setInitLocalDecay\n");
-    }
-    virtual bool doLetOverflow()
-    {
-      DPRINTF(TPCacheDecayDebug, "BaseDP: doLetOverflow\n");
-      return -1;
-    }
-    virtual void setLetOverflow(bool letOverflow)
-    {
-      DPRINTF(TPCacheDecayDebug, "BaseDP: setLetOverflow\n");
-    }
-    virtual bool doResetCounterOnHit()
-    {
-      DPRINTF(TPCacheDecayDebug, "BaseDP: doResetCounterOnHit\n");
-      return -1;
-    }
-    virtual void setResetCounterOnHit(bool reset_counter_on_hit)
-    {
-      DPRINTF(TPCacheDecayDebug, "BaseDP: setResetCounterOnHit\n");
-    }
+    // virtual int getInitLocalDecay()
+    // {
+    //   DPRINTF(TPCacheDecayDebug, "BaseDP: getInitLocalDecay\n");
+    //   return -1;
+    // }
+    // virtual void setInitLocalDecay(int init_local_decay)
+    // {
+    //   DPRINTF(TPCacheDecayDebug, "BaseDP: setInitLocalDecay\n");
+    // }
+    // virtual bool doLetOverflow()
+    // {
+    //   DPRINTF(TPCacheDecayDebug, "BaseDP: doLetOverflow\n");
+    //   return -1;
+    // }
+    // virtual void setLetOverflow(bool letOverflow)
+    // {
+    //   DPRINTF(TPCacheDecayDebug, "BaseDP: setLetOverflow\n");
+    // }
+    // virtual bool doResetCounterOnHit()
+    // {
+    //   DPRINTF(TPCacheDecayDebug, "BaseDP: doResetCounterOnHit\n");
+    //   return -1;
+    // }
+    // virtual void setResetCounterOnHit(bool reset_counter_on_hit)
+    // {
+    //   DPRINTF(TPCacheDecayDebug, "BaseDP: setResetCounterOnHit\n");
+    // }
 
   protected:
 

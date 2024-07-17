@@ -1456,7 +1456,7 @@ class BaseCache : public ClockedObject
     bool decayOn = false;
 
     //// refactor code ////
-    tp::decay_policy::GlobalDecayData* globDecayData;
+    std::shared_ptr<tp::decay_policy::GlobalDecayData> globDecayData = nullptr;
     tp::DecayDuelingMonitor* decayDuelingMonitor;
     //// eof refactor code ////
 
@@ -1501,6 +1501,15 @@ class BaseCache : public ClockedObject
         std::static_pointer_cast<tp::decay_policy::IATACdata>(iatacData)
             ->setLetOverflow(let_overflow);
         std::static_pointer_cast<tp::decay_policy::IATACdata>(iatacData)
+            ->setResetCounterOnHit(reset_counter_on_hit);
+
+        std::static_pointer_cast<tp::decay_policy::IATACdata>(globDecayData)
+            ->setGlobal(global_counter);
+        std::static_pointer_cast<tp::decay_policy::IATACdata>(globDecayData)
+            ->setInitLocalDecay(init_decay);
+        std::static_pointer_cast<tp::decay_policy::IATACdata>(globDecayData)
+            ->setLetOverflow(let_overflow);
+        std::static_pointer_cast<tp::decay_policy::IATACdata>(globDecayData)
             ->setResetCounterOnHit(reset_counter_on_hit);
     }
 ////////--EOF_MY_CODE--////////

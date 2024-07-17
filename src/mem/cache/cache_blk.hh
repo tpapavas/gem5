@@ -353,8 +353,13 @@ class CacheBlk : public TaggedEntry
     //// extra code ////
     tp::decay_policy::IATAC *getIATAC()
     {
-        return &_iatac;
-        // return (tp::decay_policy::IATAC*) _decay;
+        // return &_iatac;
+        return (tp::decay_policy::IATAC*) _decay;
+    }
+
+    tp::decay_policy::IATAC *getIATAC2()
+    {
+        return (tp::decay_policy::IATAC*) _decay;
     }
     //// eof extra code ////
 
@@ -398,19 +403,21 @@ class CacheBlk : public TaggedEntry
 
     void
     decayMechHandleHit(std::shared_ptr<tp::decay_policy::GlobalDecayData>&
-        iatac) {
+        iatac, std::shared_ptr<tp::decay_policy::GlobalDecayData>&
+        decayData) {
         _iatac.handleHit(iatac);
         if (_decay) {
-            _decay->handleHit(iatac);
+            _decay->handleHit(decayData);
         }
     }
 
     void
     decayMechHandleMiss(std::shared_ptr<tp::decay_policy::GlobalDecayData>&
-        iatac) {
+        iatac, std::shared_ptr<tp::decay_policy::GlobalDecayData>&
+        decayData) {
         _iatac.handleMiss(iatac);
         if (_decay) {
-            _decay->handleMiss(iatac);
+            _decay->handleMiss(decayData);
         }
     }
 
@@ -444,48 +451,53 @@ class CacheBlk : public TaggedEntry
 
     bool
     isDecayable() {
-        // assert(!_iatac.getWrong() == _decay->isDecayable());
+        if (_decay) {
+            assert(!_iatac.getWrong() == _decay->isDecayable());
 
-        return !_iatac.getWrong();
-        // if (_decay) {
-        //     return _decay->isDecayable();
-        // }
+            return _decay->isDecayable();
+        }
+
+
+        // return !_iatac.getWrong();
 
         return true;
     }
 
     bool
     isDecayMechPoweredOff() const {
-        // assert(_iatac.isPoweredOff() == _decay->isPoweredOff());
+        if (_decay) {
+            assert(_iatac.isPoweredOff() == _decay->isPoweredOff());
 
-        return _iatac.isPoweredOff();
-        // if (_decay) {
-        //     return _decay->isPoweredOff();
-        // }
+            return _decay->isPoweredOff();
+        }
+
+        // return _iatac.isPoweredOff();
 
         return false;
     }
 
     bool
     hasDecayMechDecayElapsed() {
-        // assert(_iatac.decayElapsed() == _decay->decayElapsed());
+        if (_decay) {
+            assert(_iatac.decayElapsed() == _decay->decayElapsed());
 
-        return _iatac.decayElapsed();
-        // if (_decay) {
-        //     return _decay->decayElapsed();
-        // }
+            return _decay->decayElapsed();
+        }
 
-        return true;
+        // return _iatac.decayElapsed();
+
+        return true; // maybe needed to be false
     }
 
     int
     getDecayMechCounter() {
-        // assert(_iatac.getDecay() == _decay->getDecay());
+        if (_decay) {
+            assert(_iatac.getDecay() == _decay->getDecay());
 
-        return _iatac.getDecay();
-        // if (_decay) {
-        //     return _decay->getDecay();
-        // }
+            return _decay->getDecay();
+        }
+
+        // return _iatac.getDecay();
 
         return -1;
     }
