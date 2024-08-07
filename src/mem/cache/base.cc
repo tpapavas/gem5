@@ -3138,7 +3138,7 @@ BaseCache::iatacUpdateDecay() {
 }
 
 bool
-BaseCache::iatacPowerOffRemainingBlks() {
+BaseCache::iatacPowerOffRemainingBlks(bool isLastTime) {
     //// extra code ////
     assert(onDecayPhase);
 
@@ -3197,7 +3197,7 @@ BaseCache::iatacPowerOffRemainingBlks() {
 
     // no remaining decayed blocks. There may got populated
     // during wait-for-writeback period.
-    if (writebacks.empty() && decayPowerOffFinished) {
+    if (writebacks.empty() && decayPowerOffFinished || isLastTime) {
         clearBlocked(Blocked_HaveDecay);
         onDecayPhase = false;
 
@@ -3349,7 +3349,7 @@ BaseCache::updateDecayAndPowerOff() {
 }
 
 bool
-BaseCache::powerOffRemainingBlks() {
+BaseCache::powerOffRemainingBlks(bool isLastTime) {
     //// extra code ////
     assert(onDecayPhase);
 
@@ -3414,7 +3414,7 @@ BaseCache::powerOffRemainingBlks() {
 
     // no remaining decayed blocks. There may got populated
     // during wait-for-writeback period.
-    if (writebacks.empty() && decayPowerOffFinished) {
+    if (writebacks.empty() && decayPowerOffFinished || isLastTime) {
         clearBlocked(Blocked_HaveDecay);
         onDecayPhase = false;
 

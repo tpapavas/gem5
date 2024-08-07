@@ -80,7 +80,9 @@ DecayEventHandler::processPowerOffRemainingEvent()
 
     DPRINTF(TPCacheDecayDebug, "process remaining blks\n");
 
-    if (!cache->powerOffRemainingBlks() &&
+    bool lastTime = timesRemainingFired >= timesRemainingLimit;
+
+    if (!cache->powerOffRemainingBlks(lastTime) &&
         timesRemainingFired < timesRemainingLimit) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
     }

@@ -1468,7 +1468,7 @@ class BaseCache : public ClockedObject
     void flush(bool writebackOnFlush);
 
     bool iatacUpdateDecay();
-    bool iatacPowerOffRemainingBlks();
+    bool iatacPowerOffRemainingBlks(bool isLastTime);
 
     //// extra code ////
     tp::IATACdata *getIATACdata() { return iatacData; }
@@ -1477,7 +1477,7 @@ class BaseCache : public ClockedObject
     void setDecayOn(bool on) { decayOn = on; }
 
     bool updateDecayAndPowerOff();
-    bool powerOffRemainingBlks();
+    bool powerOffRemainingBlks(bool isLastTime);
     bool calcDecayPercentage();
     bool calcIATACDecayPercentage();
 

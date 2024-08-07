@@ -90,7 +90,9 @@ IATACDecayEventHandler::processPowerOffRemainingEvent()
 
     DPRINTF(TPCacheDecayDebug, "process remaining blks\n");
 
-    if (!cache->iatacPowerOffRemainingBlks() &&
+    bool lastTime = timesRemainingFired >= timesRemainingLimit;
+
+    if (!cache->iatacPowerOffRemainingBlks(lastTime) &&
         timesRemainingFired < timesRemainingLimit) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
     }
