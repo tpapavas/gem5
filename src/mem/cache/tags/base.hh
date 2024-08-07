@@ -373,6 +373,10 @@ class BaseTags : public ClockedObject
     // void setIATACInitDecay(int init_decay) { initIATACDecay = init_decay; }
 
     void setIATACdata(tp::IATACdata *iatac_data) { iatacData = iatac_data; }
+
+    unsigned int getNumBlocks() const { return numBlocks; }
+
+    BaseIndexingPolicy *getIndexingPolicy() { return indexingPolicy; }
     //// EOF MY CODE ////
 
   private:

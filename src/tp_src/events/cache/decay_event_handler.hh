@@ -27,6 +27,9 @@ class DecayEventHandler : public TimingEventHandler
         bool isOn = true;
 
         EventFunctionWrapper powerOffRemainingEvent;
+        EventFunctionWrapper calcDecayEvent;
+        bool onDecayEvent = false;
+        int calcDecayPeriod;
 
         int powerOffRemainingPeriod;
 
@@ -35,6 +38,7 @@ class DecayEventHandler : public TimingEventHandler
         const int timesRemainingLimit;
 
         void processPowerOffRemainingEvent();
+        void processCalcDecayEvent();
     public:
         DecayEventHandler(const DecayEventHandlerParams &p);
 

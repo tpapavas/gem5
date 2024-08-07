@@ -1198,6 +1198,8 @@ class BaseCache : public ClockedObject
 
         //// mlp code ////
         statistics::Distribution mshrMLPCosts;
+        statistics::Vector perSetDecayedBlksWindowPercnt;
+        std::vector<statistics::Formula*> perSetDecayPercnts;
         // statistics::Scalar numMshrMLPBlks;
         //// eof mlp code ////
 
@@ -1476,6 +1478,8 @@ class BaseCache : public ClockedObject
 
     bool updateDecayAndPowerOff();
     bool powerOffRemainingBlks();
+    bool calcDecayPercentage();
+    bool calcIATACDecayPercentage();
 
     void setLocalDecayCounter(int max_decay)
     {
