@@ -1853,7 +1853,8 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
                                         evict_blks);
 
         // in case the victim is a decayed block
-        if (victim->isDecayMechPoweredOff()) {
+        if (victim->isDecayMechPoweredOff() && victim->isValid()) {
+        // if (victim->isDecayMechPoweredOff()) {
             tags->invalidate(victim);
             evict_blks.clear();
         }
