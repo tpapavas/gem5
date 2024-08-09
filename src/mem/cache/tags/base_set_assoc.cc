@@ -130,12 +130,6 @@ BaseSetAssoc::tagsInit()
             blk->getIATAC()->setLetOverflow(iatacData->doLetOverflow());
             blk->getIATAC()->setResetCounterOnHit(
                 iatacData->doResetCounterOnHit());
-
-            //// new code
-            blk->getIATAC2()->setDecay(iatacData->getInitLocalDecay());
-            blk->getIATAC2()->setLetOverflow(iatacData->doLetOverflow());
-            blk->getIATAC2()->setResetCounterOnHit(
-                iatacData->doResetCounterOnHit());
         }
         //// eof extra code ////
     }

@@ -48,15 +48,25 @@ Dueling::handleMiss(std::shared_ptr<tp::decay_policy::GlobalDecayData>&
 void
 Dueling::setDecay(int decay)
 {
-    for (int i = 0; i < NUM_DUELERS; i++) {
-        duelingPolicies[i]->setDecay(decay);
-    }
+    // for (int i = 0; i < NUM_DUELERS; i++) {
+        // duelingPolicies[i]->setDecay(decay);
+    // }
+
+    duelingPolicies[0]->setDecay(decay/2);
+    duelingPolicies[1]->setDecay(decay*2);
+    duelingPolicies[2]->setDecay(decay);
 }
 
 int
 Dueling::getDecay()
 {
-    return duelingPolicies[0]->getDecay();
+    uint64_t thisTeam;
+
+    if (duelerData->isSample(thisTeam)) {
+        return duelingPolicies[thisTeam]->getDecay();
+    }
+
+    return duelingPolicies[2]->getDecay();
 }
 
 } // namespace decay_policy

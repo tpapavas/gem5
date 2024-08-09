@@ -128,7 +128,8 @@ class DecayDuelingMonitor
      * Counter that determines which dueler is winning.
      * In the DIP paper they propose using a 10-11 bit saturating counter.
      */
-    SatCounter32 selector;
+    int selectors[4];
+    // SatCounter32 selector;
 
     /**
      * Counts the number of entries have been initialized in the current
@@ -138,7 +139,7 @@ class DecayDuelingMonitor
     int constituencyCounter;
 
     /** The team that is currently winning. */
-    bool winner;
+    int winner;
 
   public:
     /**
@@ -149,7 +150,7 @@ class DecayDuelingMonitor
 
     DecayDuelingMonitor(std::size_t constituency_size,
         std::size_t team_size = 1,
-        unsigned num_bits = 10, double low_threshold = 0.5,
+        double low_threshold = 0.5,
         double high_threshold = 0.5);
     ~DecayDuelingMonitor() = default;
 
@@ -176,7 +177,7 @@ class DecayDuelingMonitor
      *
      * @return Winning team.
      */
-    bool getWinner() const;
+    int getWinner();
 
     /**
      * Initialize a dueler entry, deciding wether it is a sample or not.

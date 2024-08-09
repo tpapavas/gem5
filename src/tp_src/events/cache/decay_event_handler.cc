@@ -87,6 +87,7 @@ void
 DecayEventHandler::enable()
 {
     isOn = true;
+    cache->setDecayOn(true);
 }
 
 } // namespace tp

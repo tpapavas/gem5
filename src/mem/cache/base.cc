@@ -161,11 +161,9 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
     //// extra code ////
     DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, before iatac\n", __func__);
     if (iatacDecayEventHandler) {
-        iatacData = std::shared_ptr<tp::decay_policy::GlobalDecayData>(
-            new tp::decay_policy::IATACdata());
         globDecayData = std::shared_ptr<tp::decay_policy::GlobalDecayData>(
             new tp::decay_policy::IATACdata());
-        tags->setIATACdata(iatacData);
+        tags->setIATACdata(globDecayData);
 
         // set cache and iatacData parameters
         iatacDecayEventHandler->setCache(this);
@@ -1389,9 +1387,19 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
     Cycles tag_latency(0);
     blk = tags->accessBlock(pkt, tag_latency);
 
+    // if (blk != nullptr) {
+    //     if (blk->isDecayMechPoweredOff()) {
+    //         DPRINTF(TPCacheIATACDebug, "IATAC: decayed hit %s\n",
+    //             blk->print());
+    //     }
+    // }
+
     //// MY CODE ////
     // for IATAC
-    if (blk != nullptr && iatacData != nullptr && decayOn) {
+    if (blk != nullptr &&
+            (iatacDecayEventHandler != nullptr
+            || decayEventHandler != nullptr) &&
+            decayOn) {
         if (blk->isDecayMechPoweredOff()) {
             // On decayed hit, create a virtual miss.
             DPRINTF(TPCacheIATACDebug, "IATAC: decayed hit %s\n",
@@ -1411,7 +1419,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         } else {
             DPRINTF(TPCacheIATACDebug, "IATAC: regular hit\n");
             // DPRINTF(TPCacheDecay, "%s\n", blk->printIATAC());
-            blk->decayMechHandleHit(iatacData, globDecayData);
+            blk->decayMechHandleHit(globDecayData);
         }
     }
     //// EOF MY CODE ////
@@ -1844,6 +1852,10 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
         // I think invalidation must be tagwise
         tags->invalidate(decayedHitBlk);
 
+        // count decayed hit for dueling dp
+        if (decayDuelingMonitor) {
+            decayDuelingMonitor->sample(decayedHitBlk->getDecayDueler());
+        }
         // decayedHitBlk->invalidate(); // temporarily
         // evict_blks.push_back(victim);
         // iatacDecayedHit = false;
@@ -1890,9 +1902,9 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
     }
 
     //// MY CODE ////
-    if (iatacData != nullptr && decayOn) {
+    if (iatacDecayEventHandler != nullptr && decayOn) {
         DPRINTF(TPCacheIATACDebug, "IATAC: on miss check\n");
-        victim->decayMechHandleMiss(iatacData, globDecayData);
+        victim->decayMechHandleMiss(globDecayData);
     }
 
     if (name().find("l1dcache") != std::string::npos) {
@@ -3157,7 +3169,9 @@ BaseCache::iatacPowerOffRemainingBlks() {
 }
 
 bool
-BaseCache::updateDecayAndPowerOff(int &globalDecayCounter, int tourWindowCnt) {
+BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
+        int tourWindowCnt)
+{
     //// extra code ////
     assert(!onDecayPhase);
     onDecayPhase = true;
@@ -3168,8 +3182,24 @@ BaseCache::updateDecayAndPowerOff(int &globalDecayCounter, int tourWindowCnt) {
     //// eof extra code ////
 
     //// refactor code ////
-    if (tourWindowCnt == 5) {
+    if (tourWindowCnt == 36) {
         // globDecayData->sample(globalDecayCounter);
+        int currWinner = decayDuelingMonitor->getWinner();
+        uint64_t newGlobal;
+        switch (currWinner) {
+            case 0:
+                newGlobal = globalDecayCounter / 2;
+                break;
+
+            case 1:
+                newGlobal = globalDecayCounter * 2;
+                break;
+
+            default:
+                newGlobal = globalDecayCounter;
+        }
+
+        globalDecayCounter = newGlobal > 0 ? newGlobal : 1;
     }
     //// eof refactor code ////
 
@@ -3196,20 +3226,20 @@ BaseCache::updateDecayAndPowerOff(int &globalDecayCounter, int tourWindowCnt) {
                     &forward_time,
                     &powerOffFinished](CacheBlk &blk) {
         if (blk.isSet(CacheBlk::ReadableBit)) {
-            // blk.updateDecayCounter();
-            blk.constDecayMechUpdate();
+            // blk.constDecayMechUpdate();
+            blk.decayMechUpdate();
             // if (blk.getDecayCounter() < 0) {
-            if (blk.constDecayMechGetDecayCounter() < 0) {
-                //// extra code ////
-                // decayWBsLeft++;
-                //// eof extra code ////
-
+            if (blk.constDecayMechGetDecayCounter() < 0 &&
+                    !blk.isDecayMechPoweredOff()) {
                 // do not writeback more than it can handle
                 if (writebacks.size() < writebackLimit) {
                     // blk.resetDecayCounter(tags->getLocalDecayCounter());
                     blk.constDecayMechResetDecayCounter(
                         tags->getLocalDecayCounter());
-                    blk.powerOff();
+                    //// IMPORTANT! Changing constant decay
+                    ////    behavior by letting tag on.
+                    // blk.powerOff();
+                    blk.decayMechPowerOff();
 
                     DPRINTF(TPCacheDecayDebug,
                         "TPCacheDecay: block %s evicted\n",
@@ -3228,7 +3258,7 @@ BaseCache::updateDecayAndPowerOff(int &globalDecayCounter, int tourWindowCnt) {
                     //how to count these blocks?
                     //onBlksCnt++;
                 }
-            } else if (blk.isPoweredOff()) {
+            } else if (blk.isDecayMechPoweredOff()) {
                 DPRINTF(TPCacheDecay,
                     "TPCacheDecay: readable and powered off: %s",
                     blk.print());
@@ -3274,7 +3304,9 @@ BaseCache::updateDecayAndPowerOff(int &globalDecayCounter, int tourWindowCnt) {
 }
 
 bool
-BaseCache::powerOffRemainingBlks(int &globalDecayCounter, int tourWindowCnt) {
+BaseCache::powerOffRemainingBlks(uint64_t &globalDecayCounter,
+        int tourWindowCnt)
+{
     //// extra code ////
     assert(onDecayPhase);
 
@@ -3300,13 +3332,15 @@ BaseCache::powerOffRemainingBlks(int &globalDecayCounter, int tourWindowCnt) {
             (CacheBlk &blk) {
         if (blk.isSet(CacheBlk::ReadableBit)) {
             // if (blk.getDecayCounter() < 0) {
-            if (blk.constDecayMechGetDecayCounter() < 0) {
+            if (blk.constDecayMechGetDecayCounter() < 0 &&
+                    !blk.isDecayMechPoweredOff()) {
                 // do not writeback more than it can handle
                 if (writebacks.size() < writebackLimit) {
                     // blk.resetDecayCounter(tags->getLocalDecayCounter());
                     blk.constDecayMechResetDecayCounter(
                         tags->getLocalDecayCounter());
-                    blk.powerOff();
+                    // blk.powerOff();
+                    blk.decayMechPowerOff();
 
                     DPRINTF(TPCacheDecayDebug,
                         "TPCacheDecay: block %s evicted\n",

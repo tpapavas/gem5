@@ -353,12 +353,6 @@ class CacheBlk : public TaggedEntry
     //// extra code ////
     tp::decay_policy::IATAC *getIATAC()
     {
-        // return &_iatac;
-        return (tp::decay_policy::IATAC*) _decay;
-    }
-
-    tp::decay_policy::IATAC *getIATAC2()
-    {
         return (tp::decay_policy::IATAC*) _decay;
     }
     //// eof extra code ////
@@ -389,23 +383,24 @@ class CacheBlk : public TaggedEntry
     void
     powerOff() {
         _poweredOff = true;
+
+        if (_decay) {
+            _decay->setPower(false);
+        }
     }
 
     bool
     isPoweredOff() {
+        if (_decay) {
+            return _decay->isPoweredOff();
+        }
+
         return _poweredOff;
     }
 
-    // bool
-    // hasDecayMech() {
-    //     return _iatac.isOn();
-    // }
-
     void
     decayMechHandleHit(std::shared_ptr<tp::decay_policy::GlobalDecayData>&
-        iatac, std::shared_ptr<tp::decay_policy::GlobalDecayData>&
         decayData) {
-        _iatac.handleHit(iatac);
         if (_decay) {
             _decay->handleHit(decayData);
         }
@@ -413,9 +408,7 @@ class CacheBlk : public TaggedEntry
 
     void
     decayMechHandleMiss(std::shared_ptr<tp::decay_policy::GlobalDecayData>&
-        iatac, std::shared_ptr<tp::decay_policy::GlobalDecayData>&
         decayData) {
-        _iatac.handleMiss(iatac);
         if (_decay) {
             _decay->handleMiss(decayData);
         }
@@ -423,7 +416,6 @@ class CacheBlk : public TaggedEntry
 
     void
     decayMechUpdate() {
-        _iatac.updateDecay();
         if (_decay) {
             _decay->updateDecay();
         }
@@ -435,7 +427,6 @@ class CacheBlk : public TaggedEntry
         assert(!isDecayMechPoweredOff());
 
         _onIATACDecayProc = true;
-        _iatac.setPower(false);
         if (_decay) {
             _decay->setPower(false);
         }
@@ -443,7 +434,6 @@ class CacheBlk : public TaggedEntry
 
     void
     decayMechPowerOn() {
-        _iatac.setPower(true);
         if (_decay) {
             _decay->setPower(true);
         }
@@ -452,13 +442,8 @@ class CacheBlk : public TaggedEntry
     bool
     isDecayable() {
         if (_decay) {
-            assert(!_iatac.getWrong() == _decay->isDecayable());
-
             return _decay->isDecayable();
         }
-
-
-        // return !_iatac.getWrong();
 
         return true;
     }
@@ -466,12 +451,8 @@ class CacheBlk : public TaggedEntry
     bool
     isDecayMechPoweredOff() const {
         if (_decay) {
-            assert(_iatac.isPoweredOff() == _decay->isPoweredOff());
-
             return _decay->isPoweredOff();
         }
-
-        // return _iatac.isPoweredOff();
 
         return false;
     }
@@ -479,12 +460,8 @@ class CacheBlk : public TaggedEntry
     bool
     hasDecayMechDecayElapsed() {
         if (_decay) {
-            assert(_iatac.decayElapsed() == _decay->decayElapsed());
-
             return _decay->decayElapsed();
         }
-
-        // return _iatac.decayElapsed();
 
         return true; // maybe needed to be false
     }
@@ -492,12 +469,8 @@ class CacheBlk : public TaggedEntry
     int
     getDecayMechCounter() {
         if (_decay) {
-            assert(_iatac.getDecay() == _decay->getDecay());
-
             return _decay->getDecay();
         }
-
-        // return _iatac.getDecay();
 
         return -1;
     }
@@ -518,7 +491,6 @@ class CacheBlk : public TaggedEntry
     void
     resetIATACDecayCounter()
     {
-        _iatac.resetDecayCounter();
         if (_decay) {
             _decay->resetCounter();
         }
@@ -630,7 +602,8 @@ class CacheBlk : public TaggedEntry
     printIATAC() const
     {
         return csprintf("%s | %s",
-            TaggedEntry::print(), _iatac.print());
+            TaggedEntry::print(),
+            ((tp::decay_policy::IATAC*) _decay)->print());
     }
     //// EOF MY CODE ////
 
@@ -725,7 +698,6 @@ class CacheBlk : public TaggedEntry
     int _maxDecayCounter = 8;
     bool _poweredOff = false;
 
-    tp::decay_policy::IATAC _iatac;
     tp::decay_policy::Constant _constantDecay;
     tp::decay_policy::Base *_decay;
     bool _onIATACDecayProc = false;

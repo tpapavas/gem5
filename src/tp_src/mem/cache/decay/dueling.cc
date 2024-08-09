@@ -32,6 +32,7 @@
 #include "base/logging.hh"
 #include "base/trace.hh"
 #include "debug/TPCacheDecayDebug.hh"
+#include "debug/TPDecayPolicies.hh"
 
 namespace gem5
 {
@@ -61,13 +62,13 @@ DecayDueler::isSample(uint64_t& team) const
 }
 
 DecayDuelingMonitor::DecayDuelingMonitor(std::size_t constituency_size,
-    std::size_t team_size, unsigned num_bits, double low_threshold,
+    std::size_t team_size, double low_threshold,
     double high_threshold)
   : id(1 << numInstances), constituencySize(constituency_size),
     teamSize(team_size), lowThreshold(low_threshold),
-    highThreshold(high_threshold), selector(num_bits), regionCounter(0),
+    highThreshold(high_threshold), regionCounter(0),
     constituencyCounter(0), // new code
-    winner(true)
+    winner(2)
 {
     fatal_if(constituencySize < (NUM_DUELERS * teamSize),
         "There must be at least team size entries per team in a constituency");
@@ -81,16 +82,30 @@ DecayDuelingMonitor::DecayDuelingMonitor(std::size_t constituency_size,
     numInstances++;
 
     // Start selector around its middle value
-    selector.saturate();
-    selector >>= 1;
-    if (selector.calcSaturation() < lowThreshold) {
-        winner = false;
+    // selector.saturate();
+    // selector >>= 1;
+    // if (selector.calcSaturation() < lowThreshold) {
+    //     winner = false;
+    // }
+
+    for (int i = 0; i < 4; i++) {
+        selectors[i] = 0;
     }
 }
 
 void
 DecayDuelingMonitor::sample(const DecayDueler* dueler)
 {
+    if (dueler) {
+        u_int64_t duelerTeam;
+
+        if (dueler->isSample(duelerTeam)) {
+            selectors[duelerTeam]++;
+
+            DPRINTF(TPDecayPolicies, "DDM: Selectors: (%d, %d, %d)\n",
+                selectors[0], selectors[1], selectors[2]);
+        }
+    }
     // bool team;
     // if (dueler->isSample(id, team)) {
     //     if (team) {
@@ -117,9 +132,20 @@ DecayDuelingMonitor::isSample(const DecayDueler* dueler, bool& team) const
     return true;
 }
 
-bool
-DecayDuelingMonitor::getWinner() const
+int
+DecayDuelingMonitor::getWinner()
 {
+    winner = 2;
+    int minMisses = 10000000;
+
+    for (int i = 0; i < NUM_DUELERS; i++) {
+        if (selectors[i] <= minMisses) {
+            minMisses = selectors[i];
+            winner = i;
+        }
+        selectors[i] = 0;
+    }
+
     return winner;
 }
 

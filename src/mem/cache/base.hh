@@ -1450,7 +1450,6 @@ class BaseCache : public ClockedObject
     tp::FlushEventHandler *flushEventHandler;
     tp::DecayEventHandler *decayEventHandler;
     tp::IATACDecayEventHandler *iatacDecayEventHandler;
-    std::shared_ptr<tp::decay_policy::GlobalDecayData> iatacData = nullptr;
     CacheBlk *iatacDecayedBlk = nullptr;
     bool iatacDecayedHit = false;
     bool decayOn = false;
@@ -1473,36 +1472,25 @@ class BaseCache : public ClockedObject
     std::shared_ptr<tp::decay_policy::IATACdata> getIATACdata()
     {
         return std::static_pointer_cast<tp::decay_policy::IATACdata>(
-            iatacData);
+            globDecayData);
     }
     //// eof extra code ////
 
     void setDecayOn(bool on) { decayOn = on; }
 
-    bool updateDecayAndPowerOff(int &globalDecayCounter, int tourWindowCnt);
-    bool powerOffRemainingBlks(int &globalDecayCounter, int tourWindowCnt);
+    bool updateDecayAndPowerOff(uint64_t &globalDecayCounter,
+        int tourWindowCnt);
+    bool powerOffRemainingBlks(uint64_t &globalDecayCounter,
+        int tourWindowCnt);
 
     void setLocalDecayCounter(int max_decay)
     {
         tags->setLocalDecayCounter(max_decay);
     }
-    // void setIATACInitDecay(int init_decay)
-    // {
-    //     tags->setIATACInitDecay(init_decay);
-    // }
 
     void setIATACdata(int global_counter=1, int init_decay=8192,
         bool let_overflow=false, bool reset_counter_on_hit=false)
     {
-        std::static_pointer_cast<tp::decay_policy::IATACdata>(iatacData)
-            ->setGlobal(global_counter);
-        std::static_pointer_cast<tp::decay_policy::IATACdata>(iatacData)
-            ->setInitLocalDecay(init_decay);
-        std::static_pointer_cast<tp::decay_policy::IATACdata>(iatacData)
-            ->setLetOverflow(let_overflow);
-        std::static_pointer_cast<tp::decay_policy::IATACdata>(iatacData)
-            ->setResetCounterOnHit(reset_counter_on_hit);
-
         std::static_pointer_cast<tp::decay_policy::IATACdata>(globDecayData)
             ->setGlobal(global_counter);
         std::static_pointer_cast<tp::decay_policy::IATACdata>(globDecayData)
