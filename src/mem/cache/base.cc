@@ -1403,6 +1403,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
             if (blk->getIATAC()->doResetCounterOnDecayedHit()) {
                 blk->resetIATACDecayCounter();
             }
+            blk->decayMechHandleHit(iatacData);
             //// eof extra code ////
 
             // blk->invalidate(); // invalidate only tag and valid bit.
@@ -3075,7 +3076,8 @@ BaseCache::iatacUpdateDecay() {
                     &newDecayedBlks](CacheBlk &blk) {
         //// if (blk.isSet(CacheBlk::ReadableBit)) {
         if (blk.isDecayMechPoweredOff()) {
-                poweredOffCnt++;
+            poweredOffCnt++;
+            blk.decayMechUpdate();
         } else {
             // DPRINTF(TPCacheDecay, "%s\n", blk.printIATAC());
             // DPRINTF(TPCacheDecayDebug, "before decayMechUpdate\n");
@@ -3119,6 +3121,10 @@ BaseCache::iatacUpdateDecay() {
         onDecayPhase = false;
 
         clearDecayState();
+    } else {
+        if (onDecayPhase && !isBlocked(Blocked_HaveDecay)) {
+            setBlocked(Blocked_HaveDecay);
+        }
     }
     //// eof extra code ////
 
@@ -3324,6 +3330,11 @@ BaseCache::updateDecayAndPowerOff() {
         onDecayPhase = false;
 
         clearDecayState();
+    } else {
+        // block here for sure
+        if (onDecayPhase && !isBlocked(Blocked_HaveDecay)) {
+            setBlocked(Blocked_HaveDecay);
+        }
     }
     //// eof extra code ////
 
