@@ -1412,6 +1412,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
             if (blk->getIATAC()->doResetCounterOnDecayedHit()) {
                 blk->resetIATACDecayCounter();
             }
+            blk->decayMechHandleHit(globDecayData);
             //// eof extra code ////
 
             // blk->invalidate(); // invalidate only tag and valid bit.
@@ -1866,7 +1867,7 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
                                         evict_blks);
 
         // in case the victim is a decayed block
-        if (victim->isDecayMechPoweredOff()) {
+        if (victim->isDecayMechPoweredOff() && victim->isValid()) {
             tags->invalidate(victim);
             evict_blks.clear();
         }
@@ -3024,7 +3025,7 @@ BaseCache::iatacUpdateDecay() {
     setDecayState();
     //// eof extra code ////
 
-    stats.numOfDecayWindows++;
+    // stats.numOfDecayWindows++;
     PacketList writebacks;
 
     int poweredOffCnt = 0;
@@ -3042,7 +3043,14 @@ BaseCache::iatacUpdateDecay() {
                     &writebacks,
                     &poweredOffCnt,
                     &powerOffFinished](CacheBlk &blk) {
-        if (blk.isSet(CacheBlk::ReadableBit)) {
+        // if (blk.isSet(CacheBlk::ReadableBit)) {
+        if (blk.isDecayMechPoweredOff()) {
+                poweredOffCnt++;
+                // stats.numOfDecayedBlks++;
+
+                //// MAYBE IMPORTANT
+                // blk.decayMechUpdate();
+        } else {
             // DPRINTF(TPCacheDecay, "%s\n", blk.printIATAC());
             // DPRINTF(TPCacheDecayDebug, "before decayMechUpdate\n");
             blk.decayMechUpdate();
@@ -3051,7 +3059,9 @@ BaseCache::iatacUpdateDecay() {
                     blk.decayMechPowerOff();
 
                     // writeback dirty decayed block.
-                    writebackOnIATACDecay(&blk, writebacks);
+                    if (blk.isValid()) {
+                        writebackOnIATACDecay(&blk, writebacks);
+                    }
                     // evictBlock(&blk, writebacks);
 
                     DPRINTF(TPCacheDecayDebug, "block %s got powered off\n",
@@ -3062,12 +3072,13 @@ BaseCache::iatacUpdateDecay() {
                 } else {
                     powerOffFinished = false;
                 }
-            } else if (blk.isDecayMechPoweredOff()) {
-                poweredOffCnt++;
-                // stats.numOfDecayedBlks++;
             }
-        } else if (blk.isDecayMechPoweredOff()) {
-                poweredOffCnt++;
+        ////    else if (blk.isDecayMechPoweredOff()) {
+        ////        poweredOffCnt++;
+                // stats.numOfDecayedBlks++;
+        ////    }
+        ////} else if (blk.isDecayMechPoweredOff()) {
+        ////        poweredOffCnt++;
                 // stats.numOfDecayedBlks++;
         }
     });
@@ -3085,10 +3096,10 @@ BaseCache::iatacUpdateDecay() {
 
     doWritebacks(writebacks, forward_time);
 
-    stats.decayedBlksWindowPercnt += poweredOffCnt/(float)numBlocks;
+    // stats.decayedBlksWindowPercnt += poweredOffCnt/(float)numBlocks;
 
-    DPRINTF(TPCacheDecay, "Powered-off percentage: %f\n",
-        poweredOffCnt/(float)numBlocks);
+    // DPRINTF(TPCacheDecay, "Powered-off percentage: %f\n",
+    //     poweredOffCnt/(float)numBlocks);
     // DPRINTF(TPCacheDecay,
         // "Powered-off percentage: %f\t num of powered off: %d\n",
         // poweredOffCnt/(float)numBlocks, poweredOffCnt);
@@ -3100,7 +3111,7 @@ BaseCache::iatacUpdateDecay() {
 }
 
 bool
-BaseCache::iatacPowerOffRemainingBlks() {
+BaseCache::iatacPowerOffRemainingBlks(bool isLastTime) {
     //// extra code ////
     assert(onDecayPhase);
 
@@ -3125,7 +3136,7 @@ BaseCache::iatacPowerOffRemainingBlks() {
     tags->forEachBlk(
             [this, &writebacks, &forward_time, &powerOffFinished]
             (CacheBlk &blk) {
-        if (blk.isSet(CacheBlk::ReadableBit)) {
+        //// if (blk.isSet(CacheBlk::ReadableBit)) {
             if (blk.hasDecayMechDecayElapsed() && blk.isDecayable()) {
                 // do not writeback more than it can handle
                 if (writebacks.size() < writebackLimit) {
@@ -3135,12 +3146,16 @@ BaseCache::iatacPowerOffRemainingBlks() {
                         "iatac rem: block %s got powered off\n",
                         blk.print());
                     // evict block from cache
-                    evictBlock(&blk, writebacks);
+                    if (blk.isValid()) {
+                        evictBlock(&blk, writebacks);
+                    }
+
+                    stats.numOfDecayedBlks++;
                 } else {
                     powerOffFinished = false;
                 }
             }
-        }
+        //// }
     });
 
     //// extra code ////
@@ -3148,7 +3163,7 @@ BaseCache::iatacPowerOffRemainingBlks() {
 
     // no remaining decayed blocks. There may got populated
     // during wait-for-writeback period.
-    if (writebacks.empty() && decayPowerOffFinished) {
+    if ((writebacks.empty() && decayPowerOffFinished) || isLastTime) {
         clearBlocked(Blocked_HaveDecay);
         onDecayPhase = false;
 
@@ -3203,7 +3218,7 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
     }
     //// eof refactor code ////
 
-    stats.numOfDecayWindows++;
+    // stats.numOfDecayWindows++;
     PacketList writebacks;
     int poweredOffCnt = 0;
     int onBlksCnt = 0;
@@ -3225,7 +3240,11 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
                     &onBlksCnt,
                     &forward_time,
                     &powerOffFinished](CacheBlk &blk) {
-        if (blk.isSet(CacheBlk::ReadableBit)) {
+        //// if (blk.isSet(CacheBlk::ReadableBit)) {
+        if (blk.isDecayMechPoweredOff()) {
+            poweredOffCnt++;
+        //    onBlksCnt++;
+        } else {
             // blk.constDecayMechUpdate();
             blk.decayMechUpdate();
             // if (blk.getDecayCounter() < 0) {
@@ -3245,7 +3264,9 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
                         "TPCacheDecay: block %s evicted\n",
                         blk.print());
                     // evict block from cache
-                    evictBlock(&blk, writebacks);
+                    if (blk.isValid()) {
+                        evictBlock(&blk, writebacks);
+                    }
 
                     // doWritebacks(writebacks, forward_time);
 
@@ -3258,17 +3279,18 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
                     //how to count these blocks?
                     //onBlksCnt++;
                 }
-            } else if (blk.isDecayMechPoweredOff()) {
-                DPRINTF(TPCacheDecay,
-                    "TPCacheDecay: readable and powered off: %s",
-                    blk.print());
-                poweredOffCnt++;
-                stats.numOfDecayedBlks++;
-            } //else {
+            }
+        ////     else if (blk.isDecayMechPoweredOff()) {
+        ////        DPRINTF(TPCacheDecay,
+        ////            "TPCacheDecay: readable and powered off: %s",
+        ////            blk.print());
+        ////        poweredOffCnt++;
+        ////        stats.numOfDecayedBlks++;
+        ////    } //else {
               //  onBlksCnt++; //we should find a way
             //} //to get number of cache block once
-        } else if (blk.isPoweredOff()) {
-            poweredOffCnt++;
+    ////    } else if (blk.isPoweredOff()) {
+    ////        poweredOffCnt++;
         //    onBlksCnt++;
         }
     });
@@ -3281,16 +3303,21 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
         onDecayPhase = false;
 
         clearDecayState();
+    } else {
+        // block here for sure
+        if (onDecayPhase && !isBlocked(Blocked_HaveDecay)) {
+            setBlocked(Blocked_HaveDecay);
+        }
     }
     //// eof extra code ////
 
     // writeback block if necessary
     doWritebacks(writebacks, forward_time); // what delay we need?
 
-    stats.decayedBlksWindowPercnt += poweredOffCnt/(float)numBlocks;
+    // stats.decayedBlksWindowPercnt += poweredOffCnt/(float)numBlocks;
 
-    DPRINTF(TPCacheDecay, "Powered-off percentage: %f\n",
-        poweredOffCnt/(float)numBlocks);
+    // DPRINTF(TPCacheDecay, "Powered-off percentage: %f\n",
+    //     poweredOffCnt/(float)numBlocks);
     // DPRINTF(TPCacheDecay,
         // "Powered-off percentage: %f\t num of powered off: %d\n",
         // poweredOffCnt/(float)numBlocks, poweredOffCnt);
@@ -3305,7 +3332,7 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
 
 bool
 BaseCache::powerOffRemainingBlks(uint64_t &globalDecayCounter,
-        int tourWindowCnt)
+        int tourWindowCnt, bool isLastTime)
 {
     //// extra code ////
     assert(onDecayPhase);
@@ -3330,7 +3357,7 @@ BaseCache::powerOffRemainingBlks(uint64_t &globalDecayCounter,
     tags->forEachBlk(
             [this, &writebacks, &forward_time, &powerOffFinished]
             (CacheBlk &blk) {
-        if (blk.isSet(CacheBlk::ReadableBit)) {
+        //// if (blk.isSet(CacheBlk::ReadableBit)) {
             // if (blk.getDecayCounter() < 0) {
             if (blk.constDecayMechGetDecayCounter() < 0 &&
                     !blk.isDecayMechPoweredOff()) {
@@ -3346,12 +3373,16 @@ BaseCache::powerOffRemainingBlks(uint64_t &globalDecayCounter,
                         "TPCacheDecay: block %s evicted\n",
                         blk.print());
                     // evict block from cache
-                    evictBlock(&blk, writebacks);
+                    if (blk.isValid()) {
+                        evictBlock(&blk, writebacks);
+                    }
+
+                    stats.numOfDecayedBlks++;
                 } else {
                     powerOffFinished = false;
                 }
             }
-        }
+        //// }
     });
 
     //// extra code ////
@@ -3359,7 +3390,7 @@ BaseCache::powerOffRemainingBlks(uint64_t &globalDecayCounter,
 
     // no remaining decayed blocks. There may got populated
     // during wait-for-writeback period.
-    if (writebacks.empty() && decayPowerOffFinished) {
+    if (writebacks.empty() && decayPowerOffFinished || isLastTime) {
         clearBlocked(Blocked_HaveDecay);
         onDecayPhase = false;
 
@@ -3378,6 +3409,35 @@ BaseCache::powerOffRemainingBlks(uint64_t &globalDecayCounter,
         writeBuffer.getFreeEntries(), writeBuffer.getAllocatedEntries());
 
     return powerOffFinished;
+}
+
+bool
+BaseCache::calcDecayPercentage() {
+    stats.numOfDecayWindows++;
+    int poweredOffCnt = 0;
+
+    // int associativity = tags->getWayAllocationMax();
+
+    tags->forEachBlk(
+            [this, &poweredOffCnt]
+            (CacheBlk &blk) {
+        // if (!blk.isSet(CacheBlk::ReadableBit) &&
+            if (blk.isDecayMechPoweredOff()) {
+            poweredOffCnt++;
+            // stats.perSetDecayedBlksWindowPercnt[blk.getSet()] +=
+            //     1.0/associativity;
+        }
+    });
+
+    stats.decayedBlksWindowPercnt += poweredOffCnt/(float)numBlocks;
+    DPRINTF(TPCacheDecay, "Powered-off percentage: %f\n",
+        poweredOffCnt/(float)numBlocks);
+    DPRINTF(TPCacheDecay, "Powered-off avg percentage: %f\n",
+        stats.avgDecayPercentage.total());
+    DPRINTF(TPCacheDecay, "Num of blks decayed: %d\n",
+        stats.numOfDecayedBlks.value());
+
+    return true;
 }
 //// EOF MY CODE ////
 

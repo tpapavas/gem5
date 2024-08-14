@@ -22,13 +22,19 @@ IATACDecayEventHandler::IATACDecayEventHandler(
     powerOffRemainingPeriod(
         this->cyclesToTicks(Cycles(params.post_decay_period))
     ),
+    calcDecayEvent(
+            [this]{processCalcDecayEvent();},
+            "calcDecayEvent"),
+    calcDecayPeriod(
+        this->cyclesToTicks(Cycles(16384))
+    ),
     timesRemainingFired(0),
-    timesRemainingLimit(INT_MAX),
+    timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1),
     globalCounter(params.init_global_counter),
     initDecay(params.init_local_counter),
     letOverflow(params.let_overflow),
     resetCounterOnHit(params.reset_on_decay_hit)
-    // timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1),
+    // timesRemainingLimit(INT_MAX),
 {
     DPRINTF(TPCacheDecay,
         "Created the IATACDecayEventHandler object with the name %s\n",
@@ -65,8 +71,12 @@ IATACDecayEventHandler::processEvent()
 
     if (!cache->iatacUpdateDecay()) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
-    } else if (tillSimEnd || timesFired < numOfFires) {
+    }
+    if (tillSimEnd || timesFired < numOfFires) {
         schedule(event, curTick() + decayPeriod);
+        if (!calcDecayEvent.scheduled()) {
+            schedule(calcDecayEvent, curTick() + calcDecayPeriod);
+        }
     } else {
         DPRINTF(TPCacheDecay, "Done firing!\n");
     }
@@ -79,12 +89,22 @@ IATACDecayEventHandler::processPowerOffRemainingEvent()
 
     DPRINTF(TPCacheDecayDebug, "process remaining blks\n");
 
-    if (!cache->iatacPowerOffRemainingBlks() &&
+    bool lastTime = timesRemainingFired >= timesRemainingLimit;
+
+    if (!cache->iatacPowerOffRemainingBlks(lastTime) &&
         timesRemainingFired < timesRemainingLimit) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
-    } else {
-        schedule(event, curTick() + decayPeriod);
     }
+    //// else {
+    ////    schedule(event, curTick() + decayPeriod);
+    //// }
+}
+
+void
+IATACDecayEventHandler::processCalcDecayEvent()
+{
+    cache->calcDecayPercentage();
+    schedule(calcDecayEvent, curTick() + calcDecayPeriod);
 }
 
 void

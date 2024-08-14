@@ -23,10 +23,16 @@ DecayEventHandler::DecayEventHandler(const DecayEventHandlerParams &params) :
     powerOffRemainingPeriod(
         this->cyclesToTicks(Cycles(params.post_decay_period))
     ),
+    calcDecayEvent(
+            [this]{processCalcDecayEvent();},
+            "calcDecayEvent"),
+    calcDecayPeriod(
+        this->cyclesToTicks(Cycles(16384))
+    ),
     timesRemainingFired(0),
-    timesRemainingLimit(INT_MAX),
+    timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1),
     tournamentWindow(0)  // extra code
-    // timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1)
+    // timesRemainingLimit(INT_MAX),
 {
     DPRINTF(TPCacheDecay,
         "Created the DecayEventHandler object with the name %s\n",
@@ -57,8 +63,12 @@ DecayEventHandler::processEvent()
         timesFired);
     if (!cache->updateDecayAndPowerOff(decayPeriod, tournamentWindow)) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
-    } else if (tillSimEnd || timesFired < numOfFires) {
+    }
+    if (tillSimEnd || timesFired < numOfFires) {
         schedule(event, curTick() + decayPeriod);
+        if (!calcDecayEvent.scheduled()) {
+            schedule(calcDecayEvent, curTick() + calcDecayPeriod);
+        }
     } else {
         DPRINTF(TPCacheDecay, "Done firing!\n");
     }
@@ -75,12 +85,24 @@ DecayEventHandler::processPowerOffRemainingEvent()
 
     DPRINTF(TPCacheDecayDebug, "process remaining blks\n");
 
-    if (!cache->powerOffRemainingBlks(decayPeriod, tournamentWindow) &&
-        timesRemainingFired < timesRemainingLimit) {
+    bool lastTime = timesRemainingFired >= timesRemainingLimit;
+
+    if (!cache->powerOffRemainingBlks(decayPeriod, tournamentWindow, lastTime)
+        && timesRemainingFired < timesRemainingLimit) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
-    } else {
-        schedule(event, curTick() + decayPeriod);
     }
+    //// else {
+    ////    schedule(event, curTick() + decayPeriod);
+    //// }
+}
+
+void
+DecayEventHandler::processCalcDecayEvent()
+{
+    cache->calcDecayPercentage();
+    //if (!onDecayEvent) {
+        schedule(calcDecayEvent, curTick() + calcDecayPeriod);
+    //}
 }
 
 void

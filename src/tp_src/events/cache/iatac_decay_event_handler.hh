@@ -23,6 +23,8 @@ class IATACDecayEventHandler : public TimingEventHandler
         bool isOn = true;
 
         EventFunctionWrapper powerOffRemainingEvent;
+        EventFunctionWrapper calcDecayEvent;
+        int calcDecayPeriod;
 
         int powerOffRemainingPeriod;
 
@@ -41,6 +43,7 @@ class IATACDecayEventHandler : public TimingEventHandler
         //// eof extra code ////
 
         void processPowerOffRemainingEvent();
+        void processCalcDecayEvent();
 
     public:
         IATACDecayEventHandler(const IATACDecayEventHandlerParams &p);

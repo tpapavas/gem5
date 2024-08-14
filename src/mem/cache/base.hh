@@ -1466,7 +1466,7 @@ class BaseCache : public ClockedObject
     void flush(bool writebackOnFlush);
 
     bool iatacUpdateDecay();
-    bool iatacPowerOffRemainingBlks();
+    bool iatacPowerOffRemainingBlks(bool isLastTime);
 
     //// extra code ////
     std::shared_ptr<tp::decay_policy::IATACdata> getIATACdata()
@@ -1474,6 +1474,8 @@ class BaseCache : public ClockedObject
         return std::static_pointer_cast<tp::decay_policy::IATACdata>(
             globDecayData);
     }
+
+    bool calcDecayPercentage();
     //// eof extra code ////
 
     void setDecayOn(bool on) { decayOn = on; }
@@ -1481,7 +1483,7 @@ class BaseCache : public ClockedObject
     bool updateDecayAndPowerOff(uint64_t &globalDecayCounter,
         int tourWindowCnt);
     bool powerOffRemainingBlks(uint64_t &globalDecayCounter,
-        int tourWindowCnt);
+        int tourWindowCnt, bool isLastTime);
 
     void setLocalDecayCounter(int max_decay)
     {
