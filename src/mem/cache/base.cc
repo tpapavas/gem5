@@ -68,6 +68,7 @@
 #include "debug/TPCacheDecayDebug.hh"
 #include "debug/TPCacheIATAC.hh"
 #include "debug/TPCacheIATACDebug.hh"
+#include "debug/TPDecayPolicies.hh"
 #include "debug/TPExplain.hh"
 #include "debug/TPExplainVerbose.hh"
 #include "debug/TPFaulty.hh"
@@ -201,6 +202,8 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
     if (name().find("l1dcache") != std::string::npos) {
         printIdleTime = true;
     }
+
+    stats.totalTime = 0;
     //// MY CODE ////
 }
 
@@ -1088,34 +1091,49 @@ BaseCache::handleEvictions(std::vector<CacheBlk*> &evict_blks,
         // Evict valid blocks associated to this victim block
         for (auto& blk : evict_blks) {
             if (blk->isValid()) {
-                //// MY CODE ////
-                Tick block_idle_time = curTick() - blk->getLastHitTick();
-                if (printIdleTime) {
-                    DPRINTF(TPIdle,
-                        "Replaced block idle time: %d ticks | "
-                        "#replacements: %d | "
-                        "avg: %f | min: %ld | max: %ld\n",
-                        block_idle_time,
-                        stats.replacements.value(),
-                        stats.avgIdleTime.total(),
-                        stats.minIdleTime.value(),
-                        stats.maxIdleTime.value());
-                }
-                stats.totalIdleTime += block_idle_time;
-                // added non zero check because I can't set an initial value
-                if (block_idle_time < stats.minIdleTime.value() ||
-                        stats.minIdleTime.value() == 0) {
-                    stats.minIdleTime = block_idle_time;
-                }
-                if (block_idle_time > stats.maxIdleTime.value()) {
-                    stats.maxIdleTime = block_idle_time;
-                }
-                //// MY CODE ////
-
-                evictBlock(blk, writebacks);
+               evictBlock(blk, writebacks);
             }
         }
     }
+
+    // Evict valid blocks associated to this victim block
+    for (auto& blk : evict_blks) {
+        //// MY CODE ////
+        Tick block_idle_time = curTick() - blk->getLastHitTick();
+        if (printIdleTime) {
+            DPRINTF(TPIdle,
+                "Replaced block idle time: %d ticks | "
+                "#replacements: %d | "
+                "avg: %f | min: %ld | max: %ld\n",
+                block_idle_time,
+                stats.replacements.value(),
+                stats.avgIdleTime.total(),
+                stats.minIdleTime.value(),
+                stats.maxIdleTime.value());
+        }
+        stats.totalIdleTime += block_idle_time;
+        // added non zero check because I can't set an initial value
+        if (block_idle_time < stats.minIdleTime.value() ||
+                stats.minIdleTime.value() == 0) {
+            stats.minIdleTime = block_idle_time;
+        }
+        if (block_idle_time > stats.maxIdleTime.value()) {
+            stats.maxIdleTime = block_idle_time;
+        }
+        //// MY CODE ////
+
+        // stats.perfectDecayInterval.sample(ticksToCycles(block_idle_time));
+        uint64_t perfectDecayIndex =
+            (uint64_t) log2(ticksToCycles(block_idle_time));
+        if (perfectDecayIndex >= stats.perfectDecayIntervals.size()) {
+            perfectDecayIndex = stats.perfectDecayIntervals.size() - 1;
+        }
+        stats.perfectDecayIntervals[perfectDecayIndex]++;
+    }
+
+    //// MY PERFECT DECAY CODE ////
+    stats.totalTime = (curTick() - stats.startTime) * numBlocks;
+    //// EOF MY PERFECT DECAY CODE ////
 
     return true;
 }
@@ -2569,6 +2587,15 @@ BaseCache::CacheStats::CacheStats(BaseCache &c)
     ADD_STAT(avgDecayPercentage, statistics::units::Rate<
                 statistics::units::Count, statistics::units::Count>::get(),
              "average decay percentage"), //EOF MY CODE
+    ADD_STAT(totalTime, statistics::units::Tick::get(),
+             "total simulation time in Ticks"),
+    ADD_STAT(avgPerfectDecayPercentage, statistics::units::Ratio::get(),
+             "average perfect decay percentage"),
+    // ADD_STAT(perfectDecayInterval,
+    //          "distribution of perfect decay interval"),
+    ADD_STAT(perfectDecayIntervals, statistics::units::Count::get(),
+             "exponential distribution of perfect decay intervals"),
+    startTime(0), //EOF MY PERFECT DECAY CODE
     cmd(MemCmd::NUM_MEM_CMDS)
 {
     for (int idx = 0; idx < MemCmd::NUM_MEM_CMDS; ++idx)
@@ -2809,6 +2836,23 @@ BaseCache::CacheStats::regStats()
 
     // decay stats;
     avgDecayPercentage = decayedBlksWindowPercnt / numOfDecayWindows;
+
+    avgPerfectDecayPercentage = totalIdleTime / totalTime;
+
+    // if (cache.name().find("l2cache") != std::string::npos ||
+    //         cache.name().find("l3cache") != std::string::npos) {
+    //     perfectDecayInterval
+    //         .init(0, 4200000, 10000)
+    //         ;
+    // } else {
+    //     perfectDecayInterval
+    //         .init(0, 512000, 512000)
+    //         ;
+    // }
+
+    perfectDecayIntervals
+        .init(25);
+
     //// EOF MY CODE ////
 }
 
@@ -3214,7 +3258,20 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
                 newGlobal = globalDecayCounter;
         }
 
-        globalDecayCounter = newGlobal > 0 ? newGlobal : 1;
+        // uint64_t totalDecayTime = tags->getLocalDecayCounter()
+        //     * newGlobal;
+        uint64_t lowGlobalDecayLimit =
+            ((name().find("l3cache") != std::string::npos)
+            ? cyclesToTicks(Cycles(128000)) : cyclesToTicks(Cycles(64000)))
+                / (tags->getLocalDecayCounter()+1);
+
+        globalDecayCounter = newGlobal > lowGlobalDecayLimit ?
+            newGlobal : lowGlobalDecayLimit;
+
+        DPRINTF(TPDecayPolicies,
+                "lowDecayLimit: %u, new global: %u\n",
+                ticksToCycles(lowGlobalDecayLimit),
+                ticksToCycles(globalDecayCounter));
     }
     //// eof refactor code ////
 
@@ -3384,6 +3441,15 @@ BaseCache::powerOffRemainingBlks(uint64_t &globalDecayCounter,
             }
         //// }
     });
+
+    DPRINTF(TPCacheDecayDebug, "%s writebacks empty: %s, "
+            "powerOffFinished: %s, "
+            "isLastTime: %s\n",
+            __func__,
+            writebacks.empty() ? "true": "false",
+            powerOffFinished ? "true" : "false",
+            isLastTime ? "true" : "false"
+            );
 
     //// extra code ////
     decayPowerOffFinished = powerOffFinished;

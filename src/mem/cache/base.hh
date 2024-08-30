@@ -1094,6 +1094,14 @@ class BaseCache : public ClockedObject
 
         const BaseCache &cache;
 
+        void resetStats() override {
+            statistics::Group::resetStats();
+
+            startTime = curTick();
+
+            cache.tags->resetBlksLastHit();
+        }
+
         /** Number of hits for demand accesses. */
         statistics::Formula demandHits;
         /** Number of hit for all accesses. */
@@ -1196,6 +1204,16 @@ class BaseCache : public ClockedObject
         statistics::Scalar numOfDecayWindows;
         statistics::Scalar decayedBlksWindowPercnt;
         statistics::Formula avgDecayPercentage;
+
+        //// MY PERFECT DECAY CODE ////
+        statistics::Scalar totalTime;
+        statistics::Formula avgPerfectDecayPercentage;
+
+        // statistics::Distribution perfectDecayInterval;
+        statistics::Vector perfectDecayIntervals;
+
+        Tick startTime;
+        //// EOF MY PERFECT DECAY CODE ////
 
         /** Per-command statistics */
         std::vector<std::unique_ptr<CacheCmdStats>> cmd;
