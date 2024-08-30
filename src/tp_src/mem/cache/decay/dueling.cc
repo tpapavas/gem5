@@ -138,12 +138,30 @@ DecayDuelingMonitor::getWinner()
     winner = 2;
     int minMisses = 10000000;
 
-    for (int i = 0; i < NUM_DUELERS; i++) {
-        if (selectors[i] <= minMisses) {
-            minMisses = selectors[i];
-            winner = i;
-        }
-        selectors[i] = 0;
+    /**
+     * Variation
+     * 1) go down if (misses(d/2) - misses(d)) <= 1% * misses(d)
+     */
+    int halfDecayMissesIncrease = selectors[0] - selectors[2];
+    int doubleDecayMissesDecrease = selectors[2] - selectors[1];
+
+    // if (halfDecayMissesIncrease >= 0 &&
+    //         halfDecayMissesIncrease <= 0.01 * selectors[2]) {
+    if (selectors[0] <= 1.01 * selectors[2]) {
+        winner = 0;
+    // } else if (doubleDecayMissesDecrease >= 0 &&
+    //         doubleDecayMissesDecrease >= 0.02 * selectors[2]) {
+    } else if (selectors[1] <= 0.98 * selectors[2]) {
+        winner = 1;
+    } else {
+        // for (int i = 0; i < NUM_DUELERS; i++) {
+        //     if (selectors[i] <= minMisses) {
+        //         minMisses = selectors[i];
+        //         winner = i;
+        //     }
+        //     selectors[i] = 0;
+        // }
+        winner = 2;
     }
 
     return winner;
