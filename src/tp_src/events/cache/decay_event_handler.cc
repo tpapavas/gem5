@@ -30,8 +30,8 @@ DecayEventHandler::DecayEventHandler(const DecayEventHandlerParams &params) :
         this->cyclesToTicks(Cycles(16384))
     ),
     timesRemainingFired(0),
-    timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1)
-    // timesRemainingLimit(INT_MAX)  // extra code
+    timesRemainingLimit(INT_MAX)  // extra code
+    // timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1)
 {
     DPRINTF(TPCacheDecay,
         "Created the DecayEventHandler object with the name %s\n",
@@ -61,15 +61,16 @@ DecayEventHandler::processEvent()
     if (!cache->updateDecayAndPowerOff()) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
         //onDecayEvent = true;
-    }
-    if (tillSimEnd || timesFired < numOfFires) {
+    } else if (tillSimEnd || timesFired < numOfFires) {
         schedule(event, curTick() + decayPeriod);
-        if (!calcDecayEvent.scheduled()) {
-            schedule(calcDecayEvent, curTick() + calcDecayPeriod);
-        }
         //onDecayEvent = false;
     } else {
         DPRINTF(TPCacheDecay, "Done firing!\n");
+        return;
+    }
+
+    if (!calcDecayEvent.scheduled()) {
+        schedule(calcDecayEvent, curTick() + calcDecayPeriod);
     }
 }
 
@@ -85,15 +86,14 @@ DecayEventHandler::processPowerOffRemainingEvent()
     if (!cache->powerOffRemainingBlks(lastTime) &&
         timesRemainingFired < timesRemainingLimit) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
-    }
-    //else {
-      //  schedule(event, curTick() + decayPeriod);
+    } else {
+        schedule(event, curTick() + decayPeriod);
 
         //if (!calcDecayEvent.scheduled()) {
         //    schedule(calcDecayEvent, curTick() + calcDecayPeriod);
         //}
         //onDecayEvent = false;
-    //}
+    }
 }
 
 void
