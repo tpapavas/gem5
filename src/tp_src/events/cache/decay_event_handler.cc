@@ -30,9 +30,9 @@ DecayEventHandler::DecayEventHandler(const DecayEventHandlerParams &params) :
         this->cyclesToTicks(Cycles(16384))
     ),
     timesRemainingFired(0),
-    timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1),
+    timesRemainingLimit(INT_MAX),
     tournamentWindow(0)  // extra code
-    // timesRemainingLimit(INT_MAX),
+    // timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1),
 {
     DPRINTF(TPCacheDecay,
         "Created the DecayEventHandler object with the name %s\n",
@@ -63,14 +63,15 @@ DecayEventHandler::processEvent()
         timesFired);
     if (!cache->updateDecayAndPowerOff(decayPeriod, tournamentWindow)) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
-    }
-    if (tillSimEnd || timesFired < numOfFires) {
+    } else if (tillSimEnd || timesFired < numOfFires) {
         schedule(event, curTick() + decayPeriod);
-        if (!calcDecayEvent.scheduled()) {
-            schedule(calcDecayEvent, curTick() + calcDecayPeriod);
-        }
     } else {
         DPRINTF(TPCacheDecay, "Done firing!\n");
+        return;
+    }
+
+    if (!calcDecayEvent.scheduled()) {
+       schedule(calcDecayEvent, curTick() + calcDecayPeriod);
     }
 
     if (tournamentWindow == TOUR_WINDOW_LIMIT) {
@@ -90,10 +91,9 @@ DecayEventHandler::processPowerOffRemainingEvent()
     if (!cache->powerOffRemainingBlks(decayPeriod, tournamentWindow, lastTime)
         && timesRemainingFired < timesRemainingLimit) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
+    } else {
+        schedule(event, curTick() + decayPeriod);
     }
-    //// else {
-    ////    schedule(event, curTick() + decayPeriod);
-    //// }
 }
 
 void
