@@ -263,6 +263,17 @@ class BaseSetAssoc : public BaseTags
         }
         return false;
     }
+
+    //// MY PERFECT DECAY CODE ////
+    void resetBlksLastHit() override {
+        for (unsigned blk_index = 0; blk_index < numBlocks; blk_index++) {
+            // Locate next cache block
+            CacheBlk* blk = &blks[blk_index];
+
+            blk->updateLastHitTick();
+        }
+    }
+    //// EOF MY PERFECT DECAY CODE ////
 };
 
 } // namespace gem5

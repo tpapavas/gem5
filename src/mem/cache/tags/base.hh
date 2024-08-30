@@ -386,6 +386,8 @@ class BaseTags : public ClockedObject
     {
         decayDuelingMonitor = monitor;
     }
+
+    virtual void resetBlksLastHit() {};
     //// EOF MY CODE ////
 
   private:
