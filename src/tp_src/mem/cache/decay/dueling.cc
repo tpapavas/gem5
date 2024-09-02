@@ -147,7 +147,7 @@ DecayDuelingMonitor::getWinner()
 
     // if (halfDecayMissesIncrease >= 0 &&
     //         halfDecayMissesIncrease <= 0.01 * selectors[2]) {
-    if (selectors[0] <= 1.01 * selectors[2]) {
+    if (selectors[0] <= 1.03 * selectors[2]) {
         winner = 0;
     // } else if (doubleDecayMissesDecrease >= 0 &&
     //         doubleDecayMissesDecrease >= 0.02 * selectors[2]) {
@@ -162,6 +162,10 @@ DecayDuelingMonitor::getWinner()
         //     selectors[i] = 0;
         // }
         winner = 2;
+    }
+
+    for (int i = 0; i < NUM_DUELERS; i++) {
+        selectors[i] = 0;
     }
 
     return winner;
