@@ -1480,6 +1480,8 @@ class BaseCache : public ClockedObject
     virtual void writebackOnIATACDecay(CacheBlk*, PacketList&) {}
 
     bool printIdleTime = false;
+
+    uint64_t postDecayBlkIndex;
   public:
     void flush(bool writebackOnFlush);
 
