@@ -262,6 +262,21 @@ class BaseSetAssoc : public BaseTags
         }
         return false;
     }
+
+    //// opt code ////
+    bool anyBlkFromI(std::function<bool(CacheBlk &)> visitor,
+            uint64_t &i) override
+    {
+        size_t blksSize = blks.size();
+        for (i; i < blksSize; i++) {
+            CacheBlk& blk = blks.at(i);
+            if (visitor(blk)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    //// eof opt code ////
 };
 
 } // namespace gem5
