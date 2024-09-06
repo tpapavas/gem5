@@ -3421,37 +3421,39 @@ BaseCache::powerOffRemainingBlks(uint64_t &globalDecayCounter,
         powerOffFinished = false;
     } else {
     //// eof opt code ////
-            powerOffFinished = !tags->anyBlkFromI(
-                [this, &writebacks, &forward_time, &powerOffFinished]
-                (CacheBlk &blk) {
-            //// if (blk.isSet(CacheBlk::ReadableBit)) {
-                // if (blk.getDecayCounter() < 0) {
-                if (blk.constDecayMechGetDecayCounter() < 0 &&
-                        !blk.isDecayMechPoweredOff()) {
-                    // do not writeback more than it can handle
-                    if (writebacks.size() < writebackLimit) {
-                        // blk.resetDecayCounter(tags->getLocalDecayCounter());
-                        blk.constDecayMechResetDecayCounter(
-                            tags->getLocalDecayCounter());
-                        // blk.powerOff();
-                        blk.decayMechPowerOff();
+        powerOffFinished = !tags->anyBlkFromI(
+            [this, &writebacks, &forward_time, &powerOffFinished]
+            (CacheBlk &blk)
+        {
+        //// if (blk.isSet(CacheBlk::ReadableBit)) {
+            // if (blk.getDecayCounter() < 0) {
+            if (blk.constDecayMechGetDecayCounter() < 0 &&
+                    !blk.isDecayMechPoweredOff()) {
+                // do not writeback more than it can handle
+                if (writebacks.size() < writebackLimit) {
+                    // blk.resetDecayCounter(tags->getLocalDecayCounter());
+                    blk.constDecayMechResetDecayCounter(
+                        tags->getLocalDecayCounter());
+                    // blk.powerOff();
+                    blk.decayMechPowerOff();
 
-                        DPRINTF(TPCacheDecayDebug,
-                            "TPCacheDecay: block %s evicted\n",
-                            blk.print());
-                        // evict block from cache
-                        if (blk.isValid()) {
-                            evictBlock(&blk, writebacks);
-                        }
-
-                        stats.numOfDecayedBlks++;
-                    } else {
-                        return true;
+                    DPRINTF(TPCacheDecayDebug,
+                        "TPCacheDecay: block %s evicted\n",
+                        blk.print());
+                    // evict block from cache
+                    if (blk.isValid()) {
+                        evictBlock(&blk, writebacks);
                     }
+
+                    stats.numOfDecayedBlks++;
+                } else {
+                    return true;
                 }
-            //// }
-                return false;
-            }, postDecayBlkIndex);
+            }
+        //// }
+            return false;
+        }, postDecayBlkIndex);
+    }
 
     DPRINTF(TPCacheDecayDebug, "%s writebacks empty: %s, "
             "powerOffFinished: %s, "
