@@ -39,9 +39,9 @@ class DecayEventHandler : public TimingEventHandler
         void processPowerOffRemainingEvent();
         void processCalcDecayEvent();
 
-        int tournamentWindow;
+        uint64_t tournamentWindow;
 
-        const int TOUR_WINDOW_LIMIT = 36;
+        uint64_t TOUR_WINDOW_LIMIT = 36;
     public:
         DecayEventHandler(const DecayEventHandlerParams &p);
 

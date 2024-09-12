@@ -391,6 +391,8 @@ class BaseTags : public ClockedObject
     }
 
     virtual void resetBlksLastHit() {};
+
+    bool isMissInStdLT(Addr addr);
     //// EOF MY CODE ////
 
   private:

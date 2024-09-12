@@ -147,14 +147,21 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
     if (decayEventHandler) {
         decayEventHandler->setCache(this);
 
+        // number of dedicated sets for each leader team
+        // (needs to be a parameter)
+        int dedicatedSets = 32;
+
         DPRINTF(TPCacheDecayDebug, "Cache size %d\n", p.size);
         DPRINTF(TPCacheDecayDebug, "Cache blocks %d\n", p.size / blk_size);
         DPRINTF(TPCacheDecayDebug, "Constituency size %d\n",
-            (p.size / blk_size)/8);
+            (p.size / blk_size) / dedicatedSets);
         DPRINTF(TPCacheDecayDebug, "Team size %d\n", p.assoc);
         decayDuelingMonitor = new tp::DecayDuelingMonitor(
-            (p.size / blk_size)/8, p.assoc
+            (p.size / blk_size) / p.assoc, dedicatedSets,
+            (p.size / blk_size) / dedicatedSets, p.assoc
         );
+        DPRINTF(TPCacheDecayDebug, "Cache sets: %d\n, leader sets: %d",
+            (p.size / blk_size) / p.assoc, dedicatedSets);
         tags->setDecayDuelingMonitor(decayDuelingMonitor);
     }
     //// extra code ////
@@ -1543,6 +1550,15 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
 
                 // no replaceable block available: give up, fwd to next level.
                 incMissCount(pkt);
+
+                //// tour code ////
+                if (decayDuelingMonitor) {
+                    if (tags->isMissInStdLT(pkt->getAddr())) {
+                        decayDuelingMonitor->incStdLTMisses();
+                    }
+                }
+                //// eof tour code ////
+
                 return false;
             }
 
@@ -1626,6 +1642,15 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                     // no replaceable block available: give up, fwd to
                     // next level.
                     incMissCount(pkt);
+
+                    //// tour code ////
+                    if (decayDuelingMonitor) {
+                        if (tags->isMissInStdLT(pkt->getAddr())) {
+                            decayDuelingMonitor->incStdLTMisses();
+                        }
+                    }
+                    //// eof tour code ////
+
                     return false;
                 }
 
@@ -1700,6 +1725,16 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
     //      "MissingMiss: Can't satisfy access normally.\n");
     //// EOF MY CODE ////
     incMissCount(pkt);
+
+    //// tour code ////
+    if (decayDuelingMonitor) {
+        if (tags->isMissInStdLT(pkt->getAddr())) {
+            // tags->indexingPolicy
+            //  pkt->getAddr()
+            decayDuelingMonitor->incStdLTMisses();
+        }
+    }
+    //// eof tour code ////
 
     lat = calculateAccessLatency(blk, pkt->headerDelay, tag_latency);
 
@@ -3229,7 +3264,7 @@ BaseCache::iatacPowerOffRemainingBlks(bool isLastTime) {
 
 bool
 BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
-        int tourWindowCnt)
+        uint64_t tourWindowCnt, uint64_t TOUR_WINDOW_LIMIT)
 {
     //// extra code ////
     assert(!onDecayPhase);
@@ -3245,7 +3280,16 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
     //// eof opt code ////
 
     //// refactor code ////
-    if (tourWindowCnt == 36) {
+    // if (tourWindowCnt % 216 == 0) {
+    //     // getWinner so for the counters to reset
+    //     int currWinner = decayDuelingMonitor->getWinner();
+    //     globalDecayCounter = cyclesToTicks(Cycles(32000));
+
+    //     DPRINTF(TPDecayPolicies,
+    //             "new global: %u\n",
+    //             ticksToCycles(globalDecayCounter));
+    // } else
+    if (tourWindowCnt % TOUR_WINDOW_LIMIT == 0) {
         // globDecayData->sample(globalDecayCounter);
         int currWinner = decayDuelingMonitor->getWinner();
         uint64_t newGlobal;
@@ -3269,13 +3313,20 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
             ? cyclesToTicks(Cycles(128000)) : cyclesToTicks(Cycles(64000)))
                 / (tags->getLocalDecayCounter()+1);
 
+        uint64_t upperGlobalDecayLimit =
+            cyclesToTicks(Cycles(4096000));
+
         globalDecayCounter = newGlobal > lowGlobalDecayLimit ?
-            newGlobal : lowGlobalDecayLimit;
+            (newGlobal < upperGlobalDecayLimit ?
+                newGlobal : upperGlobalDecayLimit) : lowGlobalDecayLimit;
 
         DPRINTF(TPDecayPolicies,
-                "lowDecayLimit: %u, new global: %u\n",
+                "lowDecayLimit: %u, upperDecayLimit: %u, new global: %u\n",
                 ticksToCycles(lowGlobalDecayLimit),
+                ticksToCycles(upperGlobalDecayLimit),
                 ticksToCycles(globalDecayCounter));
+        // DPRINTF(TPDecayPolicies, "TOUR_WINDOW_LIMIT: %u",
+                // TOUR_WINDOW_LIMIT);
     }
     //// eof refactor code ////
 
@@ -3393,7 +3444,7 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
 
 bool
 BaseCache::powerOffRemainingBlks(uint64_t &globalDecayCounter,
-        int tourWindowCnt, bool isLastTime)
+        uint64_t tourWindowCnt, bool isLastTime)
 {
     //// extra code ////
     assert(onDecayPhase);

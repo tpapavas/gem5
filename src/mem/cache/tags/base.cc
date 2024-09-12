@@ -51,6 +51,7 @@
 
 //// MY CODE ////
 #include "debug/Cache.hh"
+#include "debug/TPDecayPolicies.hh"
 
 //// EOF MY CODE ////
 #include "mem/cache/replacement_policies/replaceable_entry.hh"
@@ -224,6 +225,29 @@ BaseTags::print()
 
     return str;
 }
+
+//// tour code ////
+bool
+BaseTags::isMissInStdLT(Addr addr)
+{
+    uint64_t thisTeam;
+
+    // Find possible entries that may contain the given address
+    const std::vector<ReplaceableEntry*> entries =
+        indexingPolicy->getPossibleEntries(addr);
+
+    // Search for block
+    for (const auto& location : entries) {
+        CacheBlk* blk = static_cast<CacheBlk*>(location);
+        if (blk->getDecayDueler()->isSample(thisTeam)) {
+            return thisTeam == 2;
+        }
+    }
+
+    // Did not find block
+    return false;
+}
+//// eof tour code ////
 
 BaseTags::BaseTagStats::BaseTagStats(BaseTags &_tags)
     : statistics::Group(&_tags),

@@ -1474,7 +1474,7 @@ class BaseCache : public ClockedObject
 
     //// refactor code ////
     std::shared_ptr<tp::decay_policy::GlobalDecayData> globDecayData = nullptr;
-    tp::DecayDuelingMonitor* decayDuelingMonitor;
+    tp::DecayDuelingMonitor* decayDuelingMonitor = nullptr;
     //// eof refactor code ////
 
     virtual void writebackOnIATACDecay(CacheBlk*, PacketList&) {}
@@ -1501,9 +1501,9 @@ class BaseCache : public ClockedObject
     void setDecayOn(bool on) { decayOn = on; }
 
     bool updateDecayAndPowerOff(uint64_t &globalDecayCounter,
-        int tourWindowCnt);
+        uint64_t tourWindowCnt, uint64_t);
     bool powerOffRemainingBlks(uint64_t &globalDecayCounter,
-        int tourWindowCnt, bool isLastTime);
+        uint64_t tourWindowCnt, bool isLastTime);
 
     void setLocalDecayCounter(int max_decay)
     {

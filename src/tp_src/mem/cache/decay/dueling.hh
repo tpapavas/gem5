@@ -103,14 +103,22 @@ class DecayDuelingMonitor
     const uint64_t id;
 
     /**
+     * [size in number of blocks]
      * Given a table containing X entries, a constituency is a region of
      * the table such that it contains X/constituencySize entries. Each
      * constituency contains one sample of each dueler.
      */
     const std::size_t constituencySize;
 
-    /** Number of entries that belong to each team within a constituency. */
+    /**
+     * [size in number of blocks]
+     * Number of entries that belong to each team within a constituency.
+     */
     const std::size_t teamSize;
+
+    const std::size_t numOfSets;
+    const std::size_t numOfLeaderTeamSets;
+    uint64_t standardLeaderTeamMisses;
 
     /**
      * If the winning team was "True", and the counter is decreased further
@@ -148,7 +156,9 @@ class DecayDuelingMonitor
      */
     static unsigned numInstances;
 
-    DecayDuelingMonitor(std::size_t constituency_size,
+    DecayDuelingMonitor(std::size_t total_sets,
+        std::size_t leader_sets,
+        std::size_t constituency_size,
         std::size_t team_size = 1,
         double low_threshold = 0.5,
         double high_threshold = 0.5);
@@ -187,6 +197,8 @@ class DecayDuelingMonitor
      * @param dueler The entry to be initialized.
      */
     void initEntry(DecayDueler* dueler);
+
+    void incStdLTMisses() { standardLeaderTeamMisses++; }
 };
 
 } // namespcae tp

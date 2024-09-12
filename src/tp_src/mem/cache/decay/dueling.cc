@@ -61,14 +61,19 @@ DecayDueler::isSample(uint64_t& team) const
     return _isSample;
 }
 
-DecayDuelingMonitor::DecayDuelingMonitor(std::size_t constituency_size,
+DecayDuelingMonitor::DecayDuelingMonitor(std::size_t total_sets,
+    std::size_t leader_sets,
+    std::size_t constituency_size,
     std::size_t team_size, double low_threshold,
     double high_threshold)
-  : id(1 << numInstances), constituencySize(constituency_size),
+  : id(1 << numInstances), numOfSets(total_sets),
+    numOfLeaderTeamSets(leader_sets),
+    constituencySize(constituency_size),
     teamSize(team_size), lowThreshold(low_threshold),
     highThreshold(high_threshold), regionCounter(0),
     constituencyCounter(0), // new code
-    winner(2)
+    winner(2),
+    standardLeaderTeamMisses(0)
 {
     fatal_if(constituencySize < (NUM_DUELERS * teamSize),
         "There must be at least team size entries per team in a constituency");
@@ -102,8 +107,13 @@ DecayDuelingMonitor::sample(const DecayDueler* dueler)
         if (dueler->isSample(duelerTeam)) {
             selectors[duelerTeam]++;
 
-            DPRINTF(TPDecayPolicies, "DDM: Selectors: (%d, %d, %d)\n",
-                selectors[0], selectors[1], selectors[2]);
+            DPRINTF(TPDecayPolicies, "DDM: Selectors (d/2, d, 2d): "
+                "(%d, %d, %d)",
+                selectors[0], selectors[2], selectors[1]);
+            DPRINTF(TPDecayPolicies, " (%d, %d, %d)\n",
+                selectors[0] + standardLeaderTeamMisses,
+                selectors[2] + standardLeaderTeamMisses,
+                selectors[1] + standardLeaderTeamMisses);
         }
     }
     // bool team;
@@ -142,12 +152,16 @@ DecayDuelingMonitor::getWinner()
      * Variation
      * 1) go down if (misses(d/2) - misses(d)) <= 1% * misses(d)
      */
-    int halfDecayMissesIncrease = selectors[0] - selectors[2];
-    int doubleDecayMissesDecrease = selectors[2] - selectors[1];
+    // int halfDecayMissesIncrease = selectors[0] - selectors[2];
+    // int doubleDecayMissesDecrease = selectors[2] - selectors[1];
 
+
+////////////// THRESHOLD MECHANISM ///////////////////////////////////////
+
+/*
     // if (halfDecayMissesIncrease >= 0 &&
     //         halfDecayMissesIncrease <= 0.01 * selectors[2]) {
-    if (selectors[0] <= 1.03 * selectors[2]) {
+    if (selectors[0] <= 1.01 * selectors[2]) {
         winner = 0;
     // } else if (doubleDecayMissesDecrease >= 0 &&
     //         doubleDecayMissesDecrease >= 0.02 * selectors[2]) {
@@ -163,10 +177,29 @@ DecayDuelingMonitor::getWinner()
         // }
         winner = 2;
     }
+    */
+//////////////// EOF THRESHOLD MECHANISM /////////////////////////////////
 
+/////////////// NEW THRESHOLD MECHANISM //////////////////////////////////
+    // count only non decay induced misses
+    standardLeaderTeamMisses -= selectors[2];
+
+    if ((selectors[0] + standardLeaderTeamMisses)
+            <= 1.005 * (selectors[2] + standardLeaderTeamMisses)) {
+        winner = 0;
+    } else if ((selectors[1] + standardLeaderTeamMisses)
+            <= 0.98 * (selectors[2] + standardLeaderTeamMisses)) {
+        winner = 1;
+    } else {
+        winner = 2;
+    }
+////////////// EOF NEW THRESHOLD MECHANISM ///////////////////////////////
+
+    // reset counters
     for (int i = 0; i < NUM_DUELERS; i++) {
         selectors[i] = 0;
     }
+    standardLeaderTeamMisses = 0;
 
     return winner;
 }
