@@ -369,7 +369,7 @@ class BaseTags : public ClockedObject
     virtual bool anyBlk(std::function<bool(CacheBlk &)> visitor) = 0;
 
     virtual bool anyBlkFromI(std::function<bool(CacheBlk &)> visitor,
-        uint64_t &i) {}
+        uint64_t &i) { return false; }
 
     //// MY CODE ////
     void setLocalDecayCounter(int max_decay) { localDecayCounter = max_decay; }
