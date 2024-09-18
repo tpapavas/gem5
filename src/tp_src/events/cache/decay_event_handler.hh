@@ -13,7 +13,7 @@ namespace tp
 
 class DecayEventHandler : public TimingEventHandler
 {
-    private:
+    protected:
         void processEvent() override;
 
         uint64_t decayPeriod;

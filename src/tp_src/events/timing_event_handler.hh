@@ -6,27 +6,40 @@
 
 namespace gem5
 {
-namespace tp 
+namespace tp
 {
 
-class TimingEventHandler : public ClockedObject 
+enum EventType
 {
-	protected:
-		EventFunctionWrapper event;
+    PLAIN_TIMING,
+    DECAY_CONST,
+    DECAY_IATAC,
+    DECAY_TOUR,
+    DECAY_AMC
+};
 
-		const Tick period;
+class TimingEventHandler : public ClockedObject
+{
+    protected:
+        EventType eventType;
 
-		int numOfFires, timesFired;
-	
-		bool tillSimEnd;
+        EventFunctionWrapper event;
 
-		int startDelay;
+        const Tick period;
 
-		virtual void processEvent();	
-	public:
-    	TimingEventHandler(const TimingEventHandlerParams &p);
+        int numOfFires, timesFired;
 
-		void startup() override;
+        bool tillSimEnd;
+
+        int startDelay;
+
+        virtual void processEvent();
+    public:
+        TimingEventHandler(const TimingEventHandlerParams &p);
+
+        void startup() override;
+
+        EventType getEventType() { return eventType; }
 };
 
 } // namespace tp

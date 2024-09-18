@@ -116,6 +116,7 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
         l3_iatac_decay_event_handler: Type[
             IATACDecayEventHandler
         ] = None,  # new code for IATAC
+        l3_gen_decay_event_handler: Type[DecayEventHandler] = None,
         membus: BaseXBar = _get_default_membus.__func__(),
     ) -> None:
         """
@@ -176,6 +177,8 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
         self._l1d_iatac_decay_event_handler = l1d_iatac_decay_event_handler
         self._l2_iatac_decay_event_handler = l2_iatac_decay_event_handler
         self._l3_iatac_decay_event_handler = l3_iatac_decay_event_handler
+
+        self._l3_gen_decay_event_handler = l3_gen_decay_event_handler
 
         self.membus = membus
 
@@ -277,6 +280,10 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
         if self._l3_iatac_decay_event_handler is not None:
             self.l3cache.iatac_decay_event_handler = (
                 self._l3_iatac_decay_event_handler
+            )
+        if self._l3_gen_decay_event_handler is not None:
+            self.l3cache.gen_decay_event_handler = (
+                self._l3_gen_decay_event_handler
             )
         # ITLB Page walk caches
         self.iptw_caches = [

@@ -74,3 +74,9 @@ class IATACDecayEventHandler(TimingEventHandler):
         False,
         "Whether we reset local counter of a decayed block when it gets hit.",
     )
+
+
+class AMCDecayEventHandler(DecayEventHandler):
+    type = "AMCDecayEventHandler"
+    cxx_header = "tp_src/events/cache/amc_decay_event_handler.hh"
+    cxx_class = "gem5::tp::AMCDecayEventHandler"

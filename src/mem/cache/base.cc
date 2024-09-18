@@ -129,7 +129,8 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
       writebackLimit(p.write_buffers), //my code
       flushEventHandler(p.flush_event_handler), //my code
       decayEventHandler(p.decay_event_handler), //my code
-      iatacDecayEventHandler(p.iatac_decay_event_handler) //my code
+      iatacDecayEventHandler(p.iatac_decay_event_handler), //my code
+      genDecayEventHandler(p.gen_decay_event_handler) // my code
 {
     // the MSHR queue has no reserve entries as we check the MSHR
     // queue on every single allocation, whereas the write queue has
@@ -141,6 +142,42 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
     // whether the connected requestor is actually snooping or not
 
     tempBlock = new TempCacheBlk(blkSize);
+
+    //// decay event refactor code ////
+    if (genDecayEventHandler) {
+        DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, before decay %s\n",
+            __func__, genDecayEventHandler);
+        switch (genDecayEventHandler->getEventType()) {
+            case gem5::tp::EventType::DECAY_AMC:
+            {
+                genDecayEventHandler->setCache(this);
+
+                // number of dedicated sets for each leader team
+                // (needs to be a parameter)
+                size_t cacheBlocks = p.size / blk_size;
+                size_t totalSets = cacheBlocks / p.assoc;
+                // in order not to get fatal error (it has no effect in amc)
+                size_t dedicatedSets = totalSets / 4;
+                size_t constituencySize = cacheBlocks / dedicatedSets;
+
+                DPRINTF(TPCacheDecayDebug, "Cache size %d\n", p.size);
+                DPRINTF(TPCacheDecayDebug, "Cache blocks %d\n", cacheBlocks);
+                DPRINTF(TPCacheDecayDebug, "Constituency size %d\n",
+                    constituencySize);
+                DPRINTF(TPCacheDecayDebug, "Team size %d\n", p.assoc);
+                decayDuelingMonitor = new tp::DecayAMCMonitor(
+                    totalSets, dedicatedSets,
+                    constituencySize, p.assoc
+                );
+                DPRINTF(TPCacheDecayDebug, "Cache sets: %d\n, leader sets: %d",
+                    totalSets, dedicatedSets);
+                tags->setDecayDuelingMonitor(decayDuelingMonitor);
+                tags->setDecayType(tp::EventType::DECAY_AMC);
+                break;
+            }
+        }
+    }
+    //// eof decay event refactor code ////
 
     //// extra code ////
     DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, before decay\n", __func__);
@@ -1421,14 +1458,22 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
 
     //// MY CODE ////
     // for IATAC
+    /* DPRINTF(TPCacheDecayDebug, "blk: %s, "
+        "iatacHandler: %s, "
+        "decayHandler: %s, "
+        "decayOn: %d\n",
+        iatacDecayEventHandler, decayEventHandler,
+        blk, decayOn); */
     if (blk != nullptr &&
             (iatacDecayEventHandler != nullptr
-            || decayEventHandler != nullptr) &&
+            || decayEventHandler != nullptr
+            || genDecayEventHandler != nullptr) &&
             decayOn) {
         if (blk->isDecayMechPoweredOff()) {
             // On decayed hit, create a virtual miss.
-            DPRINTF(TPCacheIATACDebug, "IATAC: decayed hit %s\n",
-                blk->print());
+            DPRINTF(TPCacheIATACDebug, "IATAC: decayed hit %s on %s "
+                "for %s\n",
+                blk->print(), __func__, pkt->cmdString());
             // iatacDecayedBlk = blk;
             // iatacDecayedHit = true;
             blk->decayMechSetDecayedHit(true);
@@ -1552,7 +1597,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                 incMissCount(pkt);
 
                 //// tour code ////
-                if (decayDuelingMonitor) {
+                if (decayDuelingMonitor && decayOn) {
                     if (tags->isMissInStdLT(pkt->getAddr())) {
                         decayDuelingMonitor->incStdLTMisses();
                     }
@@ -1644,7 +1689,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                     incMissCount(pkt);
 
                     //// tour code ////
-                    if (decayDuelingMonitor) {
+                    if (decayDuelingMonitor && decayOn) {
                         if (tags->isMissInStdLT(pkt->getAddr())) {
                             decayDuelingMonitor->incStdLTMisses();
                         }
@@ -1727,7 +1772,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
     incMissCount(pkt);
 
     //// tour code ////
-    if (decayDuelingMonitor) {
+    if (decayDuelingMonitor && decayOn) {
         if (tags->isMissInStdLT(pkt->getAddr())) {
             // tags->indexingPolicy
             //  pkt->getAddr()

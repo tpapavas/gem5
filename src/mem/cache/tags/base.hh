@@ -61,6 +61,7 @@
 #include "sim/clocked_object.hh"
 
 //// extra code ////
+#include "tp_src/events/timing_event_handler.hh"
 #include "tp_src/mem/cache/decay/dueling.hh"
 #include "tp_src/mem/cache/decay/iatac.hh"
 
@@ -118,6 +119,7 @@ class BaseTags : public ClockedObject
     std::shared_ptr<tp::decay_policy::IATACdata> iatacData;
 
     tp::DecayDuelingMonitor* decayDuelingMonitor;
+    tp::EventType decayType = tp::EventType::PLAIN_TIMING;
     //// eof extra code ////
 
     /**
@@ -388,6 +390,11 @@ class BaseTags : public ClockedObject
     void setDecayDuelingMonitor(tp::DecayDuelingMonitor* monitor)
     {
         decayDuelingMonitor = monitor;
+    }
+
+    void setDecayType(tp::EventType decay_type)
+    {
+        decayType = decay_type;
     }
 
     virtual void resetBlksLastHit() {};

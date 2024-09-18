@@ -49,6 +49,7 @@
 #include "base/intmath.hh"
 
 #include "debug/TPCacheDecayDebug.hh"
+#include "tp_src/mem/cache/decay/amc_dp.hh"
 #include "tp_src/mem/cache/decay/constant_dp.hh"
 #include "tp_src/mem/cache/decay/dueling_dp.hh"
 
@@ -93,8 +94,23 @@ BaseSetAssoc::tagsInit()
         // Set the local decay counter for the block
         // blk->resetDecayCounter(localDecayCounter);
 
-        //// refactor code ////
-        if (decayDuelingMonitor != nullptr) {
+        if (decayType == tp::EventType::DECAY_AMC) {
+             DPRINTF(TPCacheDecayDebug, "before amcDuelingData init\n");
+            std::shared_ptr<tp::decay_policy::GlobalDecayData>
+                constDecayData =
+                    std::shared_ptr<tp::decay_policy::GlobalDecayData>(
+                        new tp::decay_policy::AMCDecayData());
+
+            DPRINTF(TPCacheDecayDebug, "before instantiateDecay\n");
+            blk->instantiateDecay(constDecayData);
+            DPRINTF(TPCacheDecayDebug, "before getDecayDueler\n");
+            decayDuelingMonitor->initEntry(blk->getDecayDueler());
+            /// eof refactor code ///
+
+            DPRINTF(TPCacheDecayDebug, "before resetDecayCounter\n");
+            blk->constDecayMechResetDecayCounter(localDecayCounter);
+            //// extra code ////
+        } else if (decayDuelingMonitor != nullptr) {  //// refactor code ////
             DPRINTF(TPCacheDecayDebug, "before duelingData init\n");
             // tp::decay_policy::GlobalDecayData* constDecayData =
             std::shared_ptr<tp::decay_policy::GlobalDecayData>

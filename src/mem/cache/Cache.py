@@ -191,6 +191,9 @@ class BaseCache(ClockedObject):
     iatac_decay_event_handler = Param.IATACDecayEventHandler(
         NULL, "An event handler for IATAC decay operation"
     )
+    gen_decay_event_handler = Param.DecayEventHandler(
+        NULL, "An event handler for any type of decay mechanism."
+    )
     #### EOF My Code ####
 
 
