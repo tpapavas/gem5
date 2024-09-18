@@ -88,7 +88,7 @@ class DecayDueler
  */
 class DecayDuelingMonitor
 {
-  private:
+  protected:
     // There are always exactly two duelers. If this is changed the logic
     // must be revisited
     const int NUM_DUELERS = 3;
@@ -170,7 +170,7 @@ class DecayDuelingMonitor
      *
      * @param dueler The selected entry.
      */
-    void sample(const DecayDueler* dueler);
+    virtual void sample(const DecayDueler* dueler);
 
     /**
      * Check if the given dueler is a sample for this instance. If so, get its
@@ -187,7 +187,7 @@ class DecayDuelingMonitor
      *
      * @return Winning team.
      */
-    int getWinner();
+    virtual int getWinner();
 
     /**
      * Initialize a dueler entry, deciding wether it is a sample or not.
@@ -196,9 +196,36 @@ class DecayDuelingMonitor
      *
      * @param dueler The entry to be initialized.
      */
-    void initEntry(DecayDueler* dueler);
+    virtual void initEntry(DecayDueler* dueler);
 
     void incStdLTMisses() { standardLeaderTeamMisses++; }
+};
+
+class DecayAMCMonitor : public DecayDuelingMonitor
+{
+  protected:
+    double pf; // performance factor
+  public:
+    DecayAMCMonitor(std::size_t total_sets,
+        std::size_t leader_sets,
+        std::size_t constituency_size,
+        std::size_t team_size = 1,
+        double low_threshold = 0.5,
+        double high_threshold = 0.5)
+    : DecayDuelingMonitor(total_sets,
+        leader_sets,
+        constituency_size,
+        team_size,
+        low_threshold,
+        high_threshold),
+      pf(0.5) {}
+    ~DecayAMCMonitor() = default;
+
+    // virtual void sample(const DecayDueler* dueler) override;
+
+    virtual int getWinner() override;
+
+    virtual void initEntry(DecayDueler* dueler) override;
 };
 
 } // namespcae tp

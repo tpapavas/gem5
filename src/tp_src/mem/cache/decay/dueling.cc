@@ -107,13 +107,14 @@ DecayDuelingMonitor::sample(const DecayDueler* dueler)
         if (dueler->isSample(duelerTeam)) {
             selectors[duelerTeam]++;
 
+            int idealMisses = standardLeaderTeamMisses - selectors[2];
             DPRINTF(TPDecayPolicies, "DDM: Selectors (d/2, d, 2d): "
                 "(%d, %d, %d)",
                 selectors[0], selectors[2], selectors[1]);
             DPRINTF(TPDecayPolicies, " (%d, %d, %d)\n",
-                selectors[0] + standardLeaderTeamMisses,
-                selectors[2] + standardLeaderTeamMisses,
-                selectors[1] + standardLeaderTeamMisses);
+                selectors[0] + idealMisses,
+                selectors[2] + idealMisses,
+                selectors[1] + idealMisses);
         }
     }
     // bool team;
@@ -259,6 +260,35 @@ DecayDuelingMonitor::initEntry(DecayDueler* dueler)
         regionCounter = 0;
         constituencyCounter++;
     }
+}
+
+int
+DecayAMCMonitor::getWinner()
+{
+    int winner = 2;
+    // separate ideal from sleep misses
+    standardLeaderTeamMisses -= selectors[2];
+    if (selectors[2] < (standardLeaderTeamMisses * 0.5 * pf)) {
+        winner = 0; // halve the decay interval
+    } else if (selectors[2] > (standardLeaderTeamMisses * 1.5 * pf)) {
+        winner = 1; // double the decay interval
+    } else {
+        winner = 2; // keep the same decay interval
+    }
+
+    // reset counters
+    for (int i = 0; i < NUM_DUELERS; i++) {
+        selectors[i] = 0;
+    }
+    standardLeaderTeamMisses = 0;
+
+    return winner;
+}
+
+void
+DecayAMCMonitor::initEntry(DecayDueler* dueler)
+{
+    dueler->setSample(2);
 }
 
 } // namespace tp
