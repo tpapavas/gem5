@@ -159,7 +159,7 @@ DecayDuelingMonitor::getWinner()
 
 ////////////// THRESHOLD MECHANISM ///////////////////////////////////////
 
-/*
+// /*
     // if (halfDecayMissesIncrease >= 0 &&
     //         halfDecayMissesIncrease <= 0.01 * selectors[2]) {
     if (selectors[0] <= 1.01 * selectors[2]) {
@@ -178,12 +178,12 @@ DecayDuelingMonitor::getWinner()
         // }
         winner = 2;
     }
-    */
+    // */
 //////////////// EOF THRESHOLD MECHANISM /////////////////////////////////
 
 /////////////// NEW THRESHOLD MECHANISM //////////////////////////////////
     // count only non decay induced misses
-    standardLeaderTeamMisses -= selectors[2];
+/*    standardLeaderTeamMisses -= selectors[2];
 
     if ((selectors[0] + standardLeaderTeamMisses)
             <= 1.005 * (selectors[2] + standardLeaderTeamMisses)) {
@@ -193,7 +193,7 @@ DecayDuelingMonitor::getWinner()
         winner = 1;
     } else {
         winner = 2;
-    }
+    } */
 ////////////// EOF NEW THRESHOLD MECHANISM ///////////////////////////////
 
     // reset counters
