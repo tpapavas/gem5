@@ -3347,6 +3347,10 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
                 newGlobal = globalDecayCounter * 2;
                 break;
 
+            case 3:
+                newGlobal = globalDecayCounter * 4;
+                break;
+
             default:
                 newGlobal = globalDecayCounter;
         }

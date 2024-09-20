@@ -149,6 +149,7 @@ DecayDuelingMonitor::getWinner()
     winner = 2;
     int minMisses = 10000000;
 
+    int ideal_misses = standardLeaderTeamMisses - selectors[2];
     /**
      * Variation
      * 1) go down if (misses(d/2) - misses(d)) <= 1% * misses(d)
@@ -168,6 +169,10 @@ DecayDuelingMonitor::getWinner()
     //         doubleDecayMissesDecrease >= 0.02 * selectors[2]) {
     } else if (selectors[1] <= 0.98 * selectors[2]) {
         winner = 1;
+    } else if (selectors[1] >= 0.1 * ideal_misses) {
+        // dim: decay-induced misses
+        // if dim(2d) >= 10% increase to dim(d), go to 4x decay.
+        winner = 3;
     } else {
         // for (int i = 0; i < NUM_DUELERS; i++) {
         //     if (selectors[i] <= minMisses) {
