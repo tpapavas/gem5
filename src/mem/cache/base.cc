@@ -145,11 +145,12 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
 
     //// decay event refactor code ////
     if (genDecayEventHandler) {
-        DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, before decay %s\n",
-            __func__, genDecayEventHandler);
+        genDecayEventHandler->setCache(this);
         switch (genDecayEventHandler->getEventType()) {
             case gem5::tp::EventType::DECAY_AMC:
             {
+                DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, "
+                    "before amc decay %s\n", __func__, genDecayEventHandler);
                 genDecayEventHandler->setCache(this);
 
                 // number of dedicated sets for each leader team
@@ -169,39 +170,51 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
                     totalSets, dedicatedSets,
                     constituencySize, p.assoc
                 );
-                DPRINTF(TPCacheDecayDebug, "Cache sets: %d\n, leader sets: %d",
+                DPRINTF(TPCacheDecayDebug, "Cache sets: %d, leader sets: %d",
                     totalSets, dedicatedSets);
                 tags->setDecayDuelingMonitor(decayDuelingMonitor);
-                tags->setDecayType(tp::EventType::DECAY_AMC);
+                // tags->setDecayType(tp::EventType::DECAY_AMC);
+                break;
+            }
+
+            case gem5::tp::EventType::DECAY_TOUR:
+            {
+                //// extra code ////
+                DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, "
+                    "before tour decay %s\n", __func__, genDecayEventHandler);
+
+                ////// NEW PARAMETERIZED CODE //////////
+                int dedicatedSets, scaleFactor;
+                float dThres, uThres;
+                ////////////////////////////////////////
+                // number of dedicated sets for each leader team
+                // (needs to be a parameter)
+                // int dedicatedSets = 32;
+                genDecayEventHandler->retreiveParams(
+                    dedicatedSets, scaleFactor, dThres, uThres);
+
+                DPRINTF(TPCacheDecayDebug, "Cache size %d\n", p.size);
+                DPRINTF(TPCacheDecayDebug, "Cache blocks %d\n",
+                    p.size / blk_size);
+                DPRINTF(TPCacheDecayDebug, "Constituency size %d\n",
+                    (p.size / blk_size) / dedicatedSets);
+                DPRINTF(TPCacheDecayDebug, "Team size %d\n", p.assoc);
+                decayDuelingMonitor = new tp::DecayDuelingMonitor(
+                    (p.size / blk_size) / p.assoc, dedicatedSets,
+                    (p.size / blk_size) / dedicatedSets, p.assoc,
+                    dThres, uThres, scaleFactor
+                );
+                DPRINTF(TPCacheDecayDebug, "Cache sets: %d, leader sets: %d",
+                    (p.size / blk_size) / p.assoc, dedicatedSets);
+                tags->setDecayDuelingMonitor(decayDuelingMonitor);
+                //// extra code ////
                 break;
             }
         }
+        tags->setDecayType(genDecayEventHandler->getEventType());
     }
     //// eof decay event refactor code ////
 
-    //// extra code ////
-    DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, before decay\n", __func__);
-    if (decayEventHandler) {
-        decayEventHandler->setCache(this);
-
-        // number of dedicated sets for each leader team
-        // (needs to be a parameter)
-        int dedicatedSets = 32;
-
-        DPRINTF(TPCacheDecayDebug, "Cache size %d\n", p.size);
-        DPRINTF(TPCacheDecayDebug, "Cache blocks %d\n", p.size / blk_size);
-        DPRINTF(TPCacheDecayDebug, "Constituency size %d\n",
-            (p.size / blk_size) / dedicatedSets);
-        DPRINTF(TPCacheDecayDebug, "Team size %d\n", p.assoc);
-        decayDuelingMonitor = new tp::DecayDuelingMonitor(
-            (p.size / blk_size) / p.assoc, dedicatedSets,
-            (p.size / blk_size) / dedicatedSets, p.assoc
-        );
-        DPRINTF(TPCacheDecayDebug, "Cache sets: %d\n, leader sets: %d",
-            (p.size / blk_size) / p.assoc, dedicatedSets);
-        tags->setDecayDuelingMonitor(decayDuelingMonitor);
-    }
-    //// extra code ////
 
     //// extra code ////
     DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, before iatac\n", __func__);
@@ -216,6 +229,8 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
             decayOn = true;
         }
         // tp::IATAC::setOn();
+
+        tags->setDecayType(tp::EventType::DECAY_IATAC);
     }
     //// eof extra code ////
     DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, before tagsInit\n",
@@ -3348,7 +3363,8 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
                 break;
 
             case 3:
-                newGlobal = globalDecayCounter * 4;
+                newGlobal = globalDecayCounter *
+                    decayDuelingMonitor->getScaleFactor();
                 break;
 
             default:

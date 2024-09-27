@@ -121,14 +121,12 @@ class DecayDuelingMonitor
     uint64_t standardLeaderTeamMisses;
 
     /**
-     * If the winning team was "True", and the counter is decreased further
-     * than this threshold, "False" will become the winning team.
+     * Threshold for downscaling.
      */
     const double lowThreshold;
 
     /**
-     * If the winning team was "False", and the counter is increased further
-     * than this threshold, "True" will become the winning team.
+     * Threshold for upscaling.
      */
     const double highThreshold;
 
@@ -149,6 +147,8 @@ class DecayDuelingMonitor
     /** The team that is currently winning. */
     int winner;
 
+    int sFactor;
+
   public:
     /**
      * Number of times this class has been instantiated. It is used to assign
@@ -160,8 +160,9 @@ class DecayDuelingMonitor
         std::size_t leader_sets,
         std::size_t constituency_size,
         std::size_t team_size = 1,
-        double low_threshold = 0.5,
-        double high_threshold = 0.5);
+        double low_threshold = 0.01,
+        double high_threshold = 0.02,
+        int s_factor = 4);
     ~DecayDuelingMonitor() = default;
 
     /**
@@ -199,6 +200,8 @@ class DecayDuelingMonitor
     virtual void initEntry(DecayDueler* dueler);
 
     void incStdLTMisses() { standardLeaderTeamMisses++; }
+
+    int getScaleFactor() { return sFactor; }
 };
 
 class DecayAMCMonitor : public DecayDuelingMonitor

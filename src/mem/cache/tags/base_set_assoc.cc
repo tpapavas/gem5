@@ -73,6 +73,27 @@ BaseSetAssoc::BaseSetAssoc(const Params &p)
 void
 BaseSetAssoc::tagsInit()
 {
+    std::shared_ptr<tp::decay_policy::GlobalDecayData> constDecayData;
+
+    bool haveDecay = decayType != tp::EventType::PLAIN_TIMING;
+    //// refactor code ////
+    if (haveDecay) {
+        if (decayType == tp::EventType::DECAY_AMC) {
+            constDecayData =
+                std::shared_ptr<tp::decay_policy::GlobalDecayData>(
+                new tp::decay_policy::AMCDecayData());
+        } else if (decayType == tp::EventType::DECAY_TOUR) {
+            constDecayData =
+                std::shared_ptr<tp::decay_policy::GlobalDecayData>(
+                new tp::decay_policy::DuelingDecayData());
+        } else if (decayType == tp::EventType::DECAY_IATAC) {
+            constDecayData =
+                std::shared_ptr<tp::decay_policy::GlobalDecayData>(
+                new tp::decay_policy::IATACdata());
+        }
+    }
+    //// eof refactor code ////
+
     // Initialize all blocks
     for (unsigned blk_index = 0; blk_index < numBlocks; blk_index++) {
         // Locate next cache block
@@ -94,60 +115,55 @@ BaseSetAssoc::tagsInit()
         // Set the local decay counter for the block
         // blk->resetDecayCounter(localDecayCounter);
 
-        if (decayType == tp::EventType::DECAY_AMC) {
-             DPRINTF(TPCacheDecayDebug, "before amcDuelingData init\n");
-            std::shared_ptr<tp::decay_policy::GlobalDecayData>
-                constDecayData =
-                    std::shared_ptr<tp::decay_policy::GlobalDecayData>(
-                        new tp::decay_policy::AMCDecayData());
-
+        if (haveDecay) {
             DPRINTF(TPCacheDecayDebug, "before instantiateDecay\n");
             blk->instantiateDecay(constDecayData);
-            DPRINTF(TPCacheDecayDebug, "before getDecayDueler\n");
-            decayDuelingMonitor->initEntry(blk->getDecayDueler());
-            /// eof refactor code ///
 
-            DPRINTF(TPCacheDecayDebug, "before resetDecayCounter\n");
-            blk->constDecayMechResetDecayCounter(localDecayCounter);
-            //// extra code ////
-        } else if (decayDuelingMonitor != nullptr) {  //// refactor code ////
-            DPRINTF(TPCacheDecayDebug, "before duelingData init\n");
-            // tp::decay_policy::GlobalDecayData* constDecayData =
-            std::shared_ptr<tp::decay_policy::GlobalDecayData>
-                constDecayData =
-                    std::shared_ptr<tp::decay_policy::GlobalDecayData>(
-                        new tp::decay_policy::DuelingDecayData());
+            if (decayType == tp::EventType::DECAY_AMC) {
+                // DPRINTF(TPCacheDecayDebug, "before amcDuelingData init\n");
+                // blk->instantiateDecay(constDecayData);
+                DPRINTF(TPCacheDecayDebug, "before getDecayDueler\n");
+                decayDuelingMonitor->initEntry(blk->getDecayDueler());
 
-            DPRINTF(TPCacheDecayDebug, "before instantiateDecay\n");
-            blk->instantiateDecay(constDecayData);
-            DPRINTF(TPCacheDecayDebug, "before getDecayDueler\n");
-            decayDuelingMonitor->initEntry(blk->getDecayDueler());
-            /// eof refactor code ///
+                DPRINTF(TPCacheDecayDebug, "before resetDecayCounter\n");
+                blk->constDecayMechResetDecayCounter(localDecayCounter);
+                //// extra code ////
+            // } else if (decayDuelingMonitor != nullptr) {
+            //// refactor code ////
+            } else if (decayType == tp::EventType::DECAY_TOUR) {
+                // DPRINTF(TPCacheDecayDebug, "before duelingData init\n");
+                // tp::decay_policy::GlobalDecayData* constDecayData =
+                // std::shared_ptr<tp::decay_policy::GlobalDecayData>
+                //     constDecayData =
+                //         std::shared_ptr<tp::decay_policy::GlobalDecayData>(
+                //             new tp::decay_policy::DuelingDecayData());
 
-            DPRINTF(TPCacheDecayDebug, "before resetDecayCounter\n");
-            blk->constDecayMechResetDecayCounter(localDecayCounter);
-            //// extra code ////
+                // blk->instantiateDecay(constDecayData);
+                DPRINTF(TPCacheDecayDebug, "before getDecayDueler\n");
+                decayDuelingMonitor->initEntry(blk->getDecayDueler());
+                /// eof refactor code ///
+
+                DPRINTF(TPCacheDecayDebug, "before resetDecayCounter\n");
+                blk->constDecayMechResetDecayCounter(localDecayCounter);
+                //// extra code ////
+            } else if (decayType == tp::DECAY_IATAC || iatacData != nullptr) {
+                // tp::decay_policy::GlobalDecayData* constDecayData =
+                //     new tp::decay_policy::IATACdata();
+                // std::shared_ptr<tp::decay_policy::GlobalDecayData>
+                //     constDecayData =
+                //         std::shared_ptr<tp::decay_policy::GlobalDecayData>(
+                //             new tp::decay_policy::IATACdata());
+                // blk->instantiateDecay(constDecayData);
+                // tp::decay_policy::IATAC* iatac = blk->getIATAC();
+
+                blk->getIATAC()->setDecay(iatacData->getInitLocalDecay());
+                blk->getIATAC()->setLetOverflow(iatacData->doLetOverflow());
+                blk->getIATAC()->setResetCounterOnHit(
+                    iatacData->doResetCounterOnHit());
+            }
+            //// eof extra code ////
         }
 
-        //// extra code ////
-        if (iatacData != nullptr) {
-            // tp::decay_policy::GlobalDecayData* constDecayData =
-            //     new tp::decay_policy::IATACdata();
-            std::shared_ptr<tp::decay_policy::GlobalDecayData>
-                constDecayData =
-                    std::shared_ptr<tp::decay_policy::GlobalDecayData>(
-                        new tp::decay_policy::IATACdata());
-
-            blk->instantiateDecay(constDecayData);
-
-            // tp::decay_policy::IATAC* iatac = blk->getIATAC();
-
-            blk->getIATAC()->setDecay(iatacData->getInitLocalDecay());
-            blk->getIATAC()->setLetOverflow(iatacData->doLetOverflow());
-            blk->getIATAC()->setResetCounterOnHit(
-                iatacData->doResetCounterOnHit());
-        }
-        //// eof extra code ////
     }
 }
 

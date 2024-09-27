@@ -65,12 +65,13 @@ DecayDuelingMonitor::DecayDuelingMonitor(std::size_t total_sets,
     std::size_t leader_sets,
     std::size_t constituency_size,
     std::size_t team_size, double low_threshold,
-    double high_threshold)
+    double high_threshold, int s_factor)
   : id(1 << numInstances), numOfSets(total_sets),
     numOfLeaderTeamSets(leader_sets),
     constituencySize(constituency_size),
     teamSize(team_size), lowThreshold(low_threshold),
-    highThreshold(high_threshold), regionCounter(0),
+    highThreshold(high_threshold), sFactor(s_factor),
+    regionCounter(0),
     constituencyCounter(0), // new code
     winner(2),
     standardLeaderTeamMisses(0)
@@ -159,15 +160,16 @@ DecayDuelingMonitor::getWinner()
 
 
 ////////////// THRESHOLD MECHANISM ///////////////////////////////////////
-
+    float lowLimit = 1.0 + lowThreshold;
+    float highLimit = 1.0 - highThreshold;
 // /*
     // if (halfDecayMissesIncrease >= 0 &&
     //         halfDecayMissesIncrease <= 0.01 * selectors[2]) {
-    if (selectors[0] <= 1.01 * selectors[2]) {
+    if (selectors[0] <= lowLimit * selectors[2]) {
         winner = 0;
     // } else if (doubleDecayMissesDecrease >= 0 &&
     //         doubleDecayMissesDecrease >= 0.02 * selectors[2]) {
-    } else if (selectors[1] <= 0.98 * selectors[2]) {
+    } else if (selectors[1] <= highLimit * selectors[2]) {
         winner = 1;
     } else if (selectors[1] >= 0.1 * ideal_misses) {
         // dim: decay-induced misses

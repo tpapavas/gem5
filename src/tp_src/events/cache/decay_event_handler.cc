@@ -35,7 +35,8 @@ DecayEventHandler::DecayEventHandler(const DecayEventHandlerParams &params) :
     tournamentWindow(0)  // extra code
     // timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1),
 {
-    TOUR_WINDOW_LIMIT = (36 * Cycles(128000)) / ticksToCycles(decayPeriod);
+    TW_CYCLES = Cycles(params.window_size * 9 * 128000);
+    TOUR_WINDOW_LIMIT = TW_CYCLES / ticksToCycles(decayPeriod);
     DPRINTF(TPCacheDecay,
         "Created the DecayEventHandler object with the name %s\n"
         "TOUR_WINDOW_LIMIT: %" PRIu64"",
@@ -81,7 +82,7 @@ DecayEventHandler::processEvent()
     if (tournamentWindow % TOUR_WINDOW_LIMIT == 0) {
         tournamentWindow = 0;
 
-        TOUR_WINDOW_LIMIT = (36 * Cycles(128000)) / ticksToCycles(decayPeriod);
+        TOUR_WINDOW_LIMIT = TW_CYCLES / ticksToCycles(decayPeriod);
         DPRINTF(TPDecayPolicies, "TOUR_WINDOW_LIMIT: %" PRIu64"\n",
             TOUR_WINDOW_LIMIT);
     }

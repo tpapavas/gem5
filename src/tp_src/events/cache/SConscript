@@ -4,12 +4,14 @@ SimObject('TPCacheEvents.py',
           sim_objects=['FlushEventHandler',
                        'DecayEventHandler',
                        'IATACDecayEventHandler',
-                       'AMCDecayEventHandler'])
+                       'AMCDecayEventHandler',
+                       'TourDecayEventHandler'])
 
 Source('flush_event_handler.cc')
 Source('decay_event_handler.cc')
 Source('iatac_decay_event_handler.cc')
 Source('amc_decay_event_handler.cc')
+Source('tour_decay_event_handler.cc')
 
 DebugFlag('TPIdle')
 DebugFlag('TPFaulty')

@@ -40,6 +40,10 @@ class DecayEventHandler(TimingEventHandler):
 
     is_on = Param.Bool(True, "Whether the event is doing its thing")
 
+    window_size = Param.Float(
+        4, "Size of sense window (in millions of cycles)"
+    )
+
 
 class IATACDecayEventHandler(TimingEventHandler):
     type = "IATACDecayEventHandler"
@@ -80,3 +84,19 @@ class AMCDecayEventHandler(DecayEventHandler):
     type = "AMCDecayEventHandler"
     cxx_header = "tp_src/events/cache/amc_decay_event_handler.hh"
     cxx_class = "gem5::tp::AMCDecayEventHandler"
+
+
+class TourDecayEventHandler(DecayEventHandler):
+    type = "TourDecayEventHandler"
+    cxx_header = "tp_src/events/cache/tour_decay_event_handler.hh"
+    cxx_class = "gem5::tp::TourDecayEventHandler"
+
+    dedicated_sets = Param.UInt32(
+        32, "Number of dedicated sets for set dueling per leader team"
+    )
+
+    d_threshold = Param.Float(0.01, "Threshold for downscale.")
+
+    u_threshold = Param.Float(0.02, "Threshold for upscale.")
+
+    s_factor = Param.UInt32(4, "Factor for jump upscale.")

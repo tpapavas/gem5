@@ -42,12 +42,15 @@ class DecayEventHandler : public TimingEventHandler
         uint64_t tournamentWindow;
 
         uint64_t TOUR_WINDOW_LIMIT = 36;
+        Cycles TW_CYCLES; // factor to scale GDI to get the window size
     public:
         DecayEventHandler(const DecayEventHandlerParams &p);
 
-        void setCache(BaseCache *_cache);
+        virtual void setCache(BaseCache *_cache);
 
         void enable();
+
+        virtual void retreiveParams(int &, int &, float &, float &) {}
 };
 
 } // namespace tp
