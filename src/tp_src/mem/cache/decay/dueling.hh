@@ -171,7 +171,7 @@ class DecayDuelingMonitor
      *
      * @param dueler The selected entry.
      */
-    virtual void sample(const DecayDueler* dueler);
+    virtual bool sample(const DecayDueler* dueler);
 
     /**
      * Check if the given dueler is a sample for this instance. If so, get its

@@ -69,6 +69,7 @@
 #include "debug/TPCacheIATAC.hh"
 #include "debug/TPCacheIATACDebug.hh"
 #include "debug/TPDecayPolicies.hh"
+#include "debug/TPDecayPoliciesDebug.hh"
 #include "debug/TPExplain.hh"
 #include "debug/TPExplainVerbose.hh"
 #include "debug/TPFaulty.hh"
@@ -1968,7 +1969,12 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
 
         // count decayed hit for dueling dp
         if (decayDuelingMonitor) {
-            decayDuelingMonitor->sample(decayedHitBlk->getDecayDueler());
+            DPRINTF(TPDecayPoliciesDebug, "to-window: %d\n",
+                decayedHitBlk->decayMechGetTurnOffWindowId());
+            if (!decayDuelingMonitor->
+                    sample(decayedHitBlk->getDecayDueler())) {
+                genDecayEventHandler->skipWindow();
+            }
         }
         // decayedHitBlk->invalidate(); // temporarily
         // evict_blks.push_back(victim);
@@ -3350,6 +3356,8 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
     //             ticksToCycles(globalDecayCounter));
     // } else
     if (tourWindowCnt % TOUR_WINDOW_LIMIT == 0) {
+        decayWindowId++;
+
         // globDecayData->sample(globalDecayCounter);
         int currWinner = decayDuelingMonitor->getWinner();
         uint64_t newGlobal;
@@ -3436,6 +3444,7 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
                     ////    behavior by letting tag on.
                     // blk.powerOff();
                     blk.decayMechPowerOff();
+                    blk.decayMechSetTurnOffWindowId(decayWindowId);
 
                     DPRINTF(TPCacheDecayDebug,
                         "TPCacheDecay: block %s evicted\n",
@@ -3538,7 +3547,8 @@ BaseCache::powerOffRemainingBlks(uint64_t &globalDecayCounter,
     } else {
     //// eof opt code ////
         powerOffFinished = !tags->anyBlkFromI(
-                [this, &writebacks, &forward_time]
+                [this, &writebacks,
+                &forward_time]
                 (CacheBlk &blk)
             {
             //// if (blk.isSet(CacheBlk::ReadableBit)) {
@@ -3552,6 +3562,7 @@ BaseCache::powerOffRemainingBlks(uint64_t &globalDecayCounter,
                             tags->getLocalDecayCounter());
                         // blk.powerOff();
                         blk.decayMechPowerOff();
+                        blk.decayMechSetTurnOffWindowId(decayWindowId);
 
                         DPRINTF(TPCacheDecayDebug,
                             "TPCacheDecay: block %s evicted\n",

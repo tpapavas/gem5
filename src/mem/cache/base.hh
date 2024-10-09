@@ -440,6 +440,8 @@ class BaseCache : public ClockedObject
     uint8_t decayMode = DecayMode::Decay_WBPhase;
     uint8_t decayMask = 1 << decayMode;
     uint8_t decayState = 0;
+
+    uint64_t decayWindowId = 0;
     //// eof extra code ////
 
     //// EOF MY CODE ////

@@ -99,7 +99,7 @@ DecayDuelingMonitor::DecayDuelingMonitor(std::size_t total_sets,
     }
 }
 
-void
+bool
 DecayDuelingMonitor::sample(const DecayDueler* dueler)
 {
     if (dueler) {
@@ -116,6 +116,15 @@ DecayDuelingMonitor::sample(const DecayDueler* dueler)
                 selectors[0] + idealMisses,
                 selectors[2] + idealMisses,
                 selectors[1] + idealMisses);
+
+            int maxSleepMisses =
+                std::max(selectors[0], std::max(selectors[1], selectors[2]));
+            if ((maxSleepMisses > 30 && idealMisses > 0)
+                && maxSleepMisses >= 0.1 * idealMisses) {
+                // dim: decay-induced misses
+                // if dim(2d) >= 10% increase to dim(d), go to 4x decay.
+                return false;
+            }
         }
     }
     // bool team;
@@ -134,6 +143,8 @@ DecayDuelingMonitor::sample(const DecayDueler* dueler)
     //         }
     //     }
     // }
+
+    return true;
 }
 
 bool
@@ -150,7 +161,7 @@ DecayDuelingMonitor::getWinner()
     winner = 2;
     int minMisses = 10000000;
 
-    int ideal_misses = standardLeaderTeamMisses - selectors[2];
+    int idealMisses = standardLeaderTeamMisses - selectors[2];
     /**
      * Variation
      * 1) go down if (misses(d/2) - misses(d)) <= 1% * misses(d)
@@ -171,10 +182,6 @@ DecayDuelingMonitor::getWinner()
     //         doubleDecayMissesDecrease >= 0.02 * selectors[2]) {
     } else if (selectors[1] <= highLimit * selectors[2]) {
         winner = 1;
-    } else if (selectors[1] >= 0.1 * ideal_misses) {
-        // dim: decay-induced misses
-        // if dim(2d) >= 10% increase to dim(d), go to 4x decay.
-        winner = 3;
     } else {
         // for (int i = 0; i < NUM_DUELERS; i++) {
         //     if (selectors[i] <= minMisses) {
@@ -184,6 +191,15 @@ DecayDuelingMonitor::getWinner()
         //     selectors[i] = 0;
         // }
         winner = 2;
+    }
+
+    int maxSleepMisses =
+        std::max(selectors[0], std::max(selectors[1], selectors[2]));
+    if ((maxSleepMisses > 0 && idealMisses > 0)
+        && maxSleepMisses >= 0.1 * idealMisses) {
+        // dim: decay-induced misses
+        // if dim(2d) >= 10% increase to dim(d), go to 4x decay.
+        winner = 3;
     }
     // */
 //////////////// EOF THRESHOLD MECHANISM /////////////////////////////////

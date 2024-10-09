@@ -435,6 +435,14 @@ class CacheBlk : public TaggedEntry
     }
 
     void
+    decayMechSetTurnOffWindowId(uint64_t turnOffWndId) {
+        _turnOffWindowId = turnOffWndId;
+    }
+
+    uint64_t
+    decayMechGetTurnOffWindowId() { return _turnOffWindowId; }
+
+    void
     decayMechPowerOn() {
         if (_decay) {
             _decay->setPower(true);
@@ -704,6 +712,8 @@ class CacheBlk : public TaggedEntry
     tp::decay_policy::Base *_decay;
     bool _onIATACDecayProc = false;
     bool _decayedHit = false;
+
+    uint64_t _turnOffWindowId = 0;
     //// EOF MY CODE ////
 
     /** Whether this block is an unaccessed hardware prefetch. */

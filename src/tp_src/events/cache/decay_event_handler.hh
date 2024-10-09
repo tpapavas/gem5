@@ -50,6 +50,8 @@ class DecayEventHandler : public TimingEventHandler
 
         void enable();
 
+        void skipWindow() { tournamentWindow = TOUR_WINDOW_LIMIT - 1; }
+
         virtual void retreiveParams(int &, int &, float &, float &) {}
 };
 

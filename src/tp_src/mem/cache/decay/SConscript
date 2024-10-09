@@ -12,3 +12,4 @@ Source('dueling_dp.cc')
 Source('dueling.cc')
 
 DebugFlag('TPDecayPolicies')
+DebugFlag('TPDecayPoliciesDebug')
