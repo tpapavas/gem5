@@ -13,3 +13,4 @@ Source('dueling.cc')
 
 DebugFlag('TPDecayPolicies')
 DebugFlag('TPDecayPoliciesDebug')
+DebugFlag('TPDecayPoliciesStats')

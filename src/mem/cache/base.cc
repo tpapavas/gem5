@@ -70,6 +70,7 @@
 #include "debug/TPCacheIATACDebug.hh"
 #include "debug/TPDecayPolicies.hh"
 #include "debug/TPDecayPoliciesDebug.hh"
+#include "debug/TPDecayPoliciesStats.hh"
 #include "debug/TPExplain.hh"
 #include "debug/TPExplainVerbose.hh"
 #include "debug/TPFaulty.hh"
@@ -131,7 +132,8 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
       flushEventHandler(p.flush_event_handler), //my code
       decayEventHandler(p.decay_event_handler), //my code
       iatacDecayEventHandler(p.iatac_decay_event_handler), //my code
-      genDecayEventHandler(p.gen_decay_event_handler) // my code
+      genDecayEventHandler(p.gen_decay_event_handler), // my code
+      decayWndDist(80) // expl code
 {
     // the MSHR queue has no reserve entries as we check the MSHR
     // queue on every single allocation, whereas the write queue has
@@ -624,6 +626,31 @@ BaseCache::recvTimingReq(PacketPtr pkt)
             schedMemSideSendEvent(next_pf_time);
         }
     }
+
+    //// exploration code ////
+    if (name().find("l3cache") != std::string::npos) {
+        uint64_t currExplWnd =
+            this->ticksToCycles((curTick() - stats.startTime))
+                / stats.explWndWidth;
+        uint64_t lastExplWnd = currExplWnd - 1;
+        if (currExplWnd >= stats.nextExplWnd) {
+            for (int i = stats.nextExplWnd-1; i < lastExplWnd; i++) {
+                DPRINTF(TPDecayPoliciesStats,
+                    "EW %d: M: 0, A: 0\n",
+                    i);
+            }
+            DPRINTF(TPDecayPoliciesStats,
+                "EW %d: M: %d, A: %d\n",
+                lastExplWnd,
+                stats.overallMisses.total() - stats.missesTillNow,
+                stats.overallAccesses.total() - stats.accessesTillNow);
+
+            stats.missesTillNow = stats.overallMisses.total();
+            stats.accessesTillNow = stats.overallAccesses.total();
+            stats.nextExplWnd = currExplWnd + 1;
+        }
+    }
+    //// eof exploration code ////
 }
 
 void
@@ -1975,6 +2002,11 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
                     sample(decayedHitBlk->getDecayDueler())) {
                 genDecayEventHandler->skipWindow();
             }
+
+            //// expl code ////
+            decayWndDist.at(decayedHitBlk->decayMechGetTurnOffWindowId())++;
+            DIMsPerWnd++;
+            //// eof expl code ////
         }
         // decayedHitBlk->invalidate(); // temporarily
         // evict_blks.push_back(victim);
@@ -3356,6 +3388,22 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
     //             ticksToCycles(globalDecayCounter));
     // } else
     if (tourWindowCnt % TOUR_WINDOW_LIMIT == 0) {
+        //// expl code ////
+        DPRINTF(TPDecayPoliciesStats, "DW %d DIMs: %d, DI: %d\n",
+            decayWindowId, DIMsPerWnd,
+            ticksToCycles(globalDecayCounter)*tags->getLocalDecayCounter());
+        uint16_t pos = 0;
+        for (auto it = std::begin(decayWndDist);
+                it != std::end(decayWndDist); ++it) {
+            DPRINTF(TPDecayPoliciesStats, "cw %d: %d\n",
+                pos++, *it);
+        }
+
+        // reset
+        std::fill(decayWndDist.begin(), decayWndDist.end(), 0);
+        DIMsPerWnd = 0;
+        //// eof expl code ////
+
         decayWindowId++;
 
         // globDecayData->sample(globalDecayCounter);

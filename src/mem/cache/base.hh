@@ -1101,6 +1101,12 @@ class BaseCache : public ClockedObject
 
             startTime = curTick();
 
+            //// exploration code ////
+            nextExplWnd = 1;
+            missesTillNow = 0;
+            accessesTillNow = 0;
+            //// eof exploration code ////
+
             cache.tags->resetBlksLastHit();
         }
 
@@ -1215,6 +1221,14 @@ class BaseCache : public ClockedObject
         statistics::Vector perfectDecayIntervals;
 
         Tick startTime;
+
+        //// exploration code ////
+        uint64_t nextExplWnd = 1;
+        Cycles explWndWidth = Cycles(128000);
+        uint64_t missesTillNow = 0;
+        uint64_t accessesTillNow = 0;
+        //// eof exploration code ////
+
         //// EOF MY PERFECT DECAY CODE ////
 
         /** Per-command statistics */
@@ -1485,6 +1499,11 @@ class BaseCache : public ClockedObject
     bool printIdleTime = false;
 
     uint64_t postDecayBlkIndex;
+
+    //// exploration code ////
+    uint64_t DIMsPerWnd = 0;
+    std::vector<uint64_t> decayWndDist;
+    //// eof exploration code ////
   public:
     void flush(bool writebackOnFlush);
 
