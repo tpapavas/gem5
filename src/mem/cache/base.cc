@@ -2004,7 +2004,11 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
             }
 
             //// expl code ////
-            decayWndDist.at(decayedHitBlk->decayMechGetTurnOffWindowId())++;
+            int distRange = decayWndDist.size();
+            decayWndDist.at
+                (decayedHitBlk->decayMechGetTurnOffWindowId() < distRange
+                 ? decayedHitBlk->decayMechGetTurnOffWindowId()
+                 : (distRange-1))++;
             DIMsPerWnd++;
             //// eof expl code ////
         }
