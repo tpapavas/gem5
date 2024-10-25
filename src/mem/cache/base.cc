@@ -2984,7 +2984,7 @@ BaseCache::CacheStats::regStats()
     // }
 
     perfectDecayIntervals
-        .init(25);
+        .init(29);
 
     //// EOF MY CODE ////
 }

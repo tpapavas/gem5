@@ -110,7 +110,7 @@ DecayDuelingMonitor::sample(const DecayDueler* dueler)
 
             int idealMisses = standardLeaderTeamMisses - selectors[2];
             DPRINTF(TPDecayPolicies, "DDM: Selectors (d/2, d, 2d): "
-                "(%d, %d, %d)",
+                "(%d, %d, %d) ",
                 selectors[0], selectors[2], selectors[1]);
             DPRINTF(TPDecayPolicies, " (%d, %d, %d)\n",
                 selectors[0] + idealMisses,
@@ -118,7 +118,8 @@ DecayDuelingMonitor::sample(const DecayDueler* dueler)
                 selectors[1] + idealMisses);
 
             int maxSleepMisses =
-                std::max(selectors[0], std::max(selectors[1], selectors[2]));
+                std::max(selectors[1], selectors[2]);
+            // std::max(selectors[0], std::max(selectors[1], selectors[2]));
             if ((maxSleepMisses > 30 && idealMisses > 0)
                 && maxSleepMisses >= 0.1 * idealMisses) {
                 // dim: decay-induced misses
@@ -180,7 +181,7 @@ DecayDuelingMonitor::getWinner()
         winner = 0;
     // } else if (doubleDecayMissesDecrease >= 0 &&
     //         doubleDecayMissesDecrease >= 0.02 * selectors[2]) {
-    } else if (selectors[1] <= highLimit * selectors[2]) {
+    } else if (selectors[1] < highLimit * selectors[2]) {
         winner = 1;
     } else {
         // for (int i = 0; i < NUM_DUELERS; i++) {
@@ -194,7 +195,8 @@ DecayDuelingMonitor::getWinner()
     }
 
     int maxSleepMisses =
-        std::max(selectors[0], std::max(selectors[1], selectors[2]));
+        std::max(selectors[1], selectors[2]);
+        // std::max(selectors[0], std::max(selectors[1], selectors[2]));
     if ((maxSleepMisses > 0 && idealMisses > 0)
         && maxSleepMisses >= 0.1 * idealMisses) {
         // dim: decay-induced misses
