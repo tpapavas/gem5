@@ -65,7 +65,8 @@ DecayDuelingMonitor::DecayDuelingMonitor(std::size_t total_sets,
     std::size_t leader_sets,
     std::size_t constituency_size,
     std::size_t team_size, double low_threshold,
-    double high_threshold, int s_factor)
+    double high_threshold, int s_factor,
+    DuelingType dueling_type)
   : id(1 << numInstances), numOfSets(total_sets),
     numOfLeaderTeamSets(leader_sets),
     constituencySize(constituency_size),
@@ -74,7 +75,8 @@ DecayDuelingMonitor::DecayDuelingMonitor(std::size_t total_sets,
     regionCounter(0),
     constituencyCounter(0), // new code
     winner(2),
-    standardLeaderTeamMisses(0)
+    duelingType(dueling_type)
+    // standardLeaderTeamMisses(0)
 {
     fatal_if(constituencySize < (NUM_DUELERS * teamSize),
         "There must be at least team size entries per team in a constituency");
@@ -96,7 +98,12 @@ DecayDuelingMonitor::DecayDuelingMonitor(std::size_t total_sets,
 
     for (int i = 0; i < 4; i++) {
         selectors[i] = 0;
+        standardLeaderTeamMisses[i] = 0;
     }
+
+    std::size_t maxDIMs = 320 * (double(numOfLeaderTeamSets) / numOfSets);
+    udLimit = 2*maxDIMs + (maxDIMs * maxDIMs)/2;
+    printf("LIM: %ld\n", udLimit);
 }
 
 bool
@@ -108,27 +115,38 @@ DecayDuelingMonitor::sample(const DecayDueler* dueler)
         if (dueler->isSample(duelerTeam)) {
             selectors[duelerTeam]++;
 
-            int idealMisses = standardLeaderTeamMisses - selectors[2];
+            int idealMisses[4];
+            for (int i = 0; i < NUM_DUELERS; i++) {
+                idealMisses[i] = standardLeaderTeamMisses[i] - selectors[i];
+            }
             DPRINTF(TPDecayPolicies, "DDM: Selectors (d/2, d, 2d): "
                 "(%d, %d, %d) ",
                 selectors[0], selectors[2], selectors[1]);
             DPRINTF(TPDecayPolicies, " (%d, %d, %d)\n",
-                selectors[0] + idealMisses,
-                selectors[2] + idealMisses,
-                selectors[1] + idealMisses);
+                selectors[0] + idealMisses[0],
+                selectors[2] + idealMisses[2],
+                selectors[1] + idealMisses[1]);
 
-            int maxSleepMisses =
-                std::max(selectors[1], selectors[2]);
-            // std::max(selectors[0], std::max(selectors[1], selectors[2]));
-            if ((maxSleepMisses > 30 && idealMisses > 0)
-                && maxSleepMisses >= 0.1 * idealMisses) {
-                // dim: decay-induced misses
-                // if dim(2d) >= 10% increase to dim(d), go to 4x decay.
-                return false;
+            if (duelingType > DuelingType::JUMP) {
+                int maxSleepMisses =
+                    // std::max(selectors[0],
+                    //      std::max(selectors[1], selectors[2]));
+                    // // std::max(selectors[1], selectors[2]);
+                    std::max(
+                        selectors[0] *
+                            (duelingType == DuelingType::E_JUMP ? 1 : 0),
+                        std::max(selectors[1], selectors[2])
+                    );
+                if ((maxSleepMisses > 30 && idealMisses[2] > 0)
+                    && maxSleepMisses >= 0.1 * idealMisses[2]) {
+                    // dim: decay-induced misses
+                    // if dim(2d) >= 10% increase to dim(d), go to 4x decay.
+                    return false;
+                }
             }
         }
     }
-    // bool team;
+    /* bool team;
     // if (dueler->isSample(id, team)) {
     //     if (team) {
     //         selector++;
@@ -143,7 +161,7 @@ DecayDuelingMonitor::sample(const DecayDueler* dueler)
     //             winner = false;
     //         }
     //     }
-    // }
+    // } */
 
     return true;
 }
@@ -162,7 +180,7 @@ DecayDuelingMonitor::getWinner()
     winner = 2;
     int minMisses = 10000000;
 
-    int idealMisses = standardLeaderTeamMisses - selectors[2];
+    int idealMisses = standardLeaderTeamMisses[2] - selectors[2];
     /**
      * Variation
      * 1) go down if (misses(d/2) - misses(d)) <= 1% * misses(d)
@@ -175,34 +193,47 @@ DecayDuelingMonitor::getWinner()
     float lowLimit = 1.0 + lowThreshold;
     float highLimit = 1.0 - highThreshold;
 // /*
-    // if (halfDecayMissesIncrease >= 0 &&
-    //         halfDecayMissesIncrease <= 0.01 * selectors[2]) {
-    if (selectors[0] <= lowLimit * selectors[2]) {
+    if (( duelingType < DuelingType::OPT_S
+            && selectors[0] <= lowLimit * selectors[2])
+        || (duelingType == DuelingType::OPT_S
+            && ((2*(selectors[0]-selectors[2]) + selectors[0]*selectors[0]/2)
+                < udLimit))) {
         winner = 0;
-    // } else if (doubleDecayMissesDecrease >= 0 &&
-    //         doubleDecayMissesDecrease >= 0.02 * selectors[2]) {
-    } else if (selectors[1] < highLimit * selectors[2]) {
+    } else if (
+        (duelingType == DuelingType::OPT_S
+            && ((2*(selectors[2]-selectors[1]) + selectors[2]*selectors[2]/2)
+                > udLimit))
+        || (duelingType < DuelingType::OPT_S
+            && selectors[1] < highLimit * selectors[2])
+        || (duelingType < DuelingType::OPT
+            && selectors[1] == highLimit * selectors[2])) {
         winner = 1;
     } else {
-        // for (int i = 0; i < NUM_DUELERS; i++) {
-        //     if (selectors[i] <= minMisses) {
-        //         minMisses = selectors[i];
-        //         winner = i;
-        //     }
-        //     selectors[i] = 0;
-        // }
         winner = 2;
     }
 
-    int maxSleepMisses =
-        std::max(selectors[1], selectors[2]);
-        // std::max(selectors[0], std::max(selectors[1], selectors[2]));
-    if ((maxSleepMisses > 0 && idealMisses > 0)
-        && maxSleepMisses >= 0.1 * idealMisses) {
-        // dim: decay-induced misses
-        // if dim(2d) >= 10% increase to dim(d), go to 4x decay.
-        winner = 3;
+    // bool gotInsideIf = false;
+    if (!((duelingType == DuelingType::PLAIN)
+          || (duelingType == DuelingType::JUMP && winner !=2)))
+    {
+        int maxSleepMisses =
+            std::max(
+                selectors[0] * (duelingType == DuelingType::E_JUMP ? 1 : 0),
+                std::max(selectors[1],
+                         selectors[2] *
+                            (duelingType == DuelingType::JUMP ? 0 : 1))
+            );
+        if ((maxSleepMisses > 30 && idealMisses > 0)
+            && maxSleepMisses >= 0.1 * idealMisses) {
+            // DIM: decay-induced misses
+            // if maxDIM >= 10% increase to dim(d), go to sf (4x/8x) decay.
+            winner = 3;
+            // gotInsideIf = true;
+            // printf("sleep misses: %d, ideal misses: %d\n",
+                // maxSleepMisses, idealMisses);
+        }
     }
+    // assert(!gotInsideIf);
     // */
 //////////////// EOF THRESHOLD MECHANISM /////////////////////////////////
 
@@ -224,8 +255,8 @@ DecayDuelingMonitor::getWinner()
     // reset counters
     for (int i = 0; i < NUM_DUELERS; i++) {
         selectors[i] = 0;
+        standardLeaderTeamMisses[i] = 0;
     }
-    standardLeaderTeamMisses = 0;
 
     return winner;
 }
@@ -292,10 +323,10 @@ DecayAMCMonitor::getWinner()
 {
     int winner = 2;
     // separate ideal from sleep misses
-    standardLeaderTeamMisses -= selectors[2];
-    if (selectors[2] < (standardLeaderTeamMisses * 0.5 * pf)) {
+    standardLeaderTeamMisses[2] -= selectors[2];
+    if (selectors[2] < (standardLeaderTeamMisses[2] * 0.5 * pf)) {
         winner = 0; // halve the decay interval
-    } else if (selectors[2] > (standardLeaderTeamMisses * 1.5 * pf)) {
+    } else if (selectors[2] > (standardLeaderTeamMisses[2] * 1.5 * pf)) {
         winner = 1; // double the decay interval
     } else {
         winner = 2; // keep the same decay interval
@@ -305,7 +336,7 @@ DecayAMCMonitor::getWinner()
     for (int i = 0; i < NUM_DUELERS; i++) {
         selectors[i] = 0;
     }
-    standardLeaderTeamMisses = 0;
+    standardLeaderTeamMisses[2] = 0;
 
     return winner;
 }

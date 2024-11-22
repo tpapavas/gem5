@@ -227,8 +227,8 @@ BaseTags::print()
 }
 
 //// tour code ////
-bool
-BaseTags::isMissInStdLT(Addr addr)
+int
+BaseTags::isMissInLT(Addr addr)
 {
     uint64_t thisTeam;
 
@@ -240,12 +240,12 @@ BaseTags::isMissInStdLT(Addr addr)
     for (const auto& location : entries) {
         CacheBlk* blk = static_cast<CacheBlk*>(location);
         if (blk->getDecayDueler()->isSample(thisTeam)) {
-            return thisTeam == 2;
+            return thisTeam;
         }
     }
 
     // Did not find block
-    return false;
+    return -1;
 }
 //// eof tour code ////
 

@@ -100,3 +100,9 @@ class TourDecayEventHandler(DecayEventHandler):
     u_threshold = Param.Float(0.02, "Threshold for upscale.")
 
     s_factor = Param.UInt32(4, "Factor for jump upscale.")
+
+    dueling_type = Param.UInt32(
+        0,
+        "Type of tournamen variation"
+        "PLAIN(0), JUMP(1), E_JUMP(2), OPT(3), OPT_S(4)",
+    )

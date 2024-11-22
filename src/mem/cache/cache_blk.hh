@@ -491,6 +491,12 @@ class CacheBlk : public TaggedEntry
     bool
     hasDecayMechDecayedHit() { return _decayedHit; }
 
+    void
+    decayMechSetRealDIM(bool b) { _hasRealDIM = b; }
+
+    bool
+    hasDecayMechRealDIM() { return _hasRealDIM; }
+
     bool
     isOnIATACDecayProc() { return _onIATACDecayProc; }
 
@@ -712,6 +718,7 @@ class CacheBlk : public TaggedEntry
     tp::decay_policy::Base *_decay;
     bool _onIATACDecayProc = false;
     bool _decayedHit = false;
+    bool _hasRealDIM = false;
 
     uint64_t _turnOffWindowId = 0;
     //// EOF MY CODE ////

@@ -19,6 +19,7 @@ class TourDecayEventHandler : public DecayEventHandler
         float dThres = 0.01;
         float uThres = 0.02;
         float scaleFactor = 4;
+        uint32_t duelingType = 0;
 
     public:
         TourDecayEventHandler(const TourDecayEventHandlerParams &p);

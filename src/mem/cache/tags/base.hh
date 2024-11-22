@@ -392,6 +392,10 @@ class BaseTags : public ClockedObject
         decayDuelingMonitor = monitor;
     }
 
+    tp::DecayDuelingMonitor *getDecayDuelingMonitor() {
+        return decayDuelingMonitor;
+    }
+
     void setDecayType(tp::EventType decay_type)
     {
         decayType = decay_type;
@@ -399,7 +403,7 @@ class BaseTags : public ClockedObject
 
     virtual void resetBlksLastHit() {};
 
-    bool isMissInStdLT(Addr addr);
+    int isMissInLT(Addr addr);
     //// EOF MY CODE ////
 
   private:

@@ -7,6 +7,7 @@
 #include "debug/TPDecayPolicies.hh"
 #include "mem/cache/base.hh"
 #include "tour_decay_event_handler.hh"
+#include "tp_src/mem/cache/decay/dueling.hh"
 
 namespace gem5
 {
@@ -19,7 +20,8 @@ TourDecayEventHandler::TourDecayEventHandler(
     dedicatedSets(params.dedicated_sets),
     dThres(params.d_threshold),
     uThres(params.u_threshold),
-    scaleFactor(params.s_factor)
+    scaleFactor(params.s_factor),
+    duelingType(params.dueling_type)
 {
     DPRINTF(TPCacheDecay,
         "Created the DecayEventHandler object with the name %s\n"
@@ -32,6 +34,8 @@ TourDecayEventHandler::TourDecayEventHandler(
 void TourDecayEventHandler::setCache(BaseCache *_cache)
 {
     DecayEventHandler::setCache(_cache);
+    cache->getDecayDuelingMonitor()->setDuelingType(
+        static_cast<DecayDuelingMonitor::DuelingType>(duelingType));
 }
 
 void TourDecayEventHandler::retreiveParams(

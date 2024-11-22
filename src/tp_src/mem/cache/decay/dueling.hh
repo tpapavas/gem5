@@ -88,7 +88,20 @@ class DecayDueler
  */
 class DecayDuelingMonitor
 {
+  public:
+    enum DuelingType
+      {
+        PLAIN,
+        JUMP,
+        E_JUMP,
+        OPT,
+        OPT_S
+      };
+
   protected:
+    //// tour-var code ////
+    //// eof tour-var code ////
+
     // There are always exactly two duelers. If this is changed the logic
     // must be revisited
     const int NUM_DUELERS = 3;
@@ -118,7 +131,8 @@ class DecayDuelingMonitor
 
     const std::size_t numOfSets;
     const std::size_t numOfLeaderTeamSets;
-    uint64_t standardLeaderTeamMisses;
+    uint64_t standardLeaderTeamMisses[4];
+    std::size_t udLimit;
 
     /**
      * Threshold for downscaling.
@@ -149,6 +163,10 @@ class DecayDuelingMonitor
 
     int sFactor;
 
+    //// tour-var code ////
+    DuelingType duelingType = DuelingType::PLAIN;
+    //// eof tour-var code ////
+
   public:
     /**
      * Number of times this class has been instantiated. It is used to assign
@@ -162,7 +180,8 @@ class DecayDuelingMonitor
         std::size_t team_size = 1,
         double low_threshold = 0.01,
         double high_threshold = 0.02,
-        int s_factor = 4);
+        int s_factor = 4,
+        DuelingType dueling_type = DuelingType::PLAIN);
     ~DecayDuelingMonitor() = default;
 
     /**
@@ -199,9 +218,16 @@ class DecayDuelingMonitor
      */
     virtual void initEntry(DecayDueler* dueler);
 
-    void incStdLTMisses() { standardLeaderTeamMisses++; }
+    void incLTMisses(int ltId) { standardLeaderTeamMisses[ltId]++; }
 
     int getScaleFactor() { return sFactor; }
+
+    const int *getSelectors() { return selectors; }
+    const uint64_t *getLTMisses()  { return standardLeaderTeamMisses; }
+    int getNumOfDuelers() { return NUM_DUELERS; }
+    void setDuelingType(DuelingType dueling_type) {
+      duelingType = dueling_type;
+    }
 };
 
 class DecayAMCMonitor : public DecayDuelingMonitor
@@ -214,13 +240,15 @@ class DecayAMCMonitor : public DecayDuelingMonitor
         std::size_t constituency_size,
         std::size_t team_size = 1,
         double low_threshold = 0.5,
-        double high_threshold = 0.5)
+        double high_threshold = 0.5,
+        DuelingType dueling_type = DuelingType::PLAIN)
     : DecayDuelingMonitor(total_sets,
         leader_sets,
         constituency_size,
         team_size,
         low_threshold,
-        high_threshold),
+        high_threshold, -1,
+        dueling_type),
       pf(0.5) {}
     ~DecayAMCMonitor() = default;
 

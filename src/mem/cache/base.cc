@@ -148,7 +148,6 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
 
     //// decay event refactor code ////
     if (genDecayEventHandler) {
-        genDecayEventHandler->setCache(this);
         switch (genDecayEventHandler->getEventType()) {
             case gem5::tp::EventType::DECAY_AMC:
             {
@@ -214,6 +213,7 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
                 break;
             }
         }
+        genDecayEventHandler->setCache(this); //// SHOULD IT BE HIGHER?
         tags->setDecayType(genDecayEventHandler->getEventType());
     }
     //// eof decay event refactor code ////
@@ -628,7 +628,7 @@ BaseCache::recvTimingReq(PacketPtr pkt)
     }
 
     //// exploration code ////
-    if (name().find("l3cache") != std::string::npos) {
+    /* if (name().find("l3cache") != std::string::npos) {
         uint64_t currExplWnd =
             this->ticksToCycles((curTick() - stats.startTime))
                 / stats.explWndWidth;
@@ -649,7 +649,7 @@ BaseCache::recvTimingReq(PacketPtr pkt)
             stats.accessesTillNow = stats.overallAccesses.total();
             stats.nextExplWnd = currExplWnd + 1;
         }
-    }
+    } */
     //// eof exploration code ////
 }
 
@@ -1498,6 +1498,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
     //             blk->print());
     //     }
     // }
+    CacheBlk *origBlk = blk;
 
     //// MY CODE ////
     // for IATAC
@@ -1641,8 +1642,9 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
 
                 //// tour code ////
                 if (decayDuelingMonitor && decayOn) {
-                    if (tags->isMissInStdLT(pkt->getAddr())) {
-                        decayDuelingMonitor->incStdLTMisses();
+                    int leaderTeamId = tags->isMissInLT(pkt->getAddr());
+                    if (leaderTeamId >= 0) {
+                        decayDuelingMonitor->incLTMisses(leaderTeamId);
                     }
                 }
                 //// eof tour code ////
@@ -1729,12 +1731,16 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                     //// EOF MY CODE ////
                     // no replaceable block available: give up, fwd to
                     // next level.
+                    if (decayDuelingMonitor && origBlk && !blk) {
+                        origBlk->decayMechSetRealDIM(true);
+                    }
                     incMissCount(pkt);
 
                     //// tour code ////
                     if (decayDuelingMonitor && decayOn) {
-                        if (tags->isMissInStdLT(pkt->getAddr())) {
-                            decayDuelingMonitor->incStdLTMisses();
+                        int leaderTeamId = tags->isMissInLT(pkt->getAddr());
+                        if (leaderTeamId >= 0) {
+                            decayDuelingMonitor->incLTMisses(leaderTeamId);
                         }
                     }
                     //// eof tour code ////
@@ -1812,14 +1818,19 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
     // DPRINTF(TPCacheDecayDebug,
     //      "MissingMiss: Can't satisfy access normally.\n");
     //// EOF MY CODE ////
+
+    if (decayDuelingMonitor && origBlk && !blk) {
+        origBlk->decayMechSetRealDIM(true);
+    }
     incMissCount(pkt);
+    DPRINTF(TPCacheIATACDebug, "overall-misses: %d\n",
+        stats.overallMisses.total());
 
     //// tour code ////
     if (decayDuelingMonitor && decayOn) {
-        if (tags->isMissInStdLT(pkt->getAddr())) {
-            // tags->indexingPolicy
-            //  pkt->getAddr()
-            decayDuelingMonitor->incStdLTMisses();
+        int leaderTeamId = tags->isMissInLT(pkt->getAddr());
+        if (leaderTeamId >= 0) {
+            decayDuelingMonitor->incLTMisses(leaderTeamId);
         }
     }
     //// eof tour code ////
@@ -1995,7 +2006,7 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
         tags->invalidate(decayedHitBlk);
 
         // count decayed hit for dueling dp
-        if (decayDuelingMonitor) {
+        if (decayDuelingMonitor && decayedHitBlk->hasDecayMechRealDIM()) {
             DPRINTF(TPDecayPoliciesDebug, "to-window: %d\n",
                 decayedHitBlk->decayMechGetTurnOffWindowId());
             if (!decayDuelingMonitor->
@@ -2011,6 +2022,7 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
                  : (distRange-1))++;
             DIMsPerWnd++;
             //// eof expl code ////
+            decayedHitBlk->decayMechSetRealDIM(false);
         }
         // decayedHitBlk->invalidate(); // temporarily
         // evict_blks.push_back(victim);
@@ -3393,19 +3405,41 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
     // } else
     if (tourWindowCnt % TOUR_WINDOW_LIMIT == 0) {
         //// expl code ////
-        DPRINTF(TPDecayPoliciesStats, "DW %d DIMs: %d, DI: %d\n",
+        const int NUM_DUELERS =
+            tags->getDecayDuelingMonitor()->getNumOfDuelers();
+        const int *DIMsPerLT =
+            tags->getDecayDuelingMonitor()->getSelectors();
+        const uint64_t *MissesPerLT =
+            tags->getDecayDuelingMonitor()->getLTMisses();
+        int IMsPerLT[NUM_DUELERS];
+
+        for (int i = 0; i < NUM_DUELERS; i++) {
+            IMsPerLT[i] = MissesPerLT[i] - DIMsPerLT[i];
+        }
+
+        DPRINTF(TPDecayPoliciesStats, "DIM-per-LT: (%d, %d, %d), "
+            "IMs-per-LT: (%d, %d, %d)\n",
+            DIMsPerLT[0], DIMsPerLT[2], DIMsPerLT[1],
+            IMsPerLT[0], IMsPerLT[2], IMsPerLT[1]);
+        DPRINTF(TPDecayPoliciesStats, "DW: %d, DIMs: %d, DI: %d, "
+            "T-Off: %.2f, New-Off-Blks: %d, W-Cycle: %d\n",
             decayWindowId, DIMsPerWnd,
-            ticksToCycles(globalDecayCounter)*tags->getLocalDecayCounter());
-        uint16_t pos = 0;
+            ticksToCycles(globalDecayCounter)*(tags->getLocalDecayCounter()+1)
+                / 1024000,
+            stats.avgDecayPercentage.total(), newOffBlks,
+            ticksToCycles(curTick()-decayStartTime)/1152000
+            );
+        /* uint16_t pos = 0;
         for (auto it = std::begin(decayWndDist);
                 it != std::end(decayWndDist); ++it) {
             DPRINTF(TPDecayPoliciesStats, "cw %d: %d\n",
                 pos++, *it);
-        }
+        } */
 
         // reset
         std::fill(decayWndDist.begin(), decayWndDist.end(), 0);
         DIMsPerWnd = 0;
+        newOffBlks = 0;
         //// eof expl code ////
 
         decayWindowId++;
@@ -3497,6 +3531,7 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
                     // blk.powerOff();
                     blk.decayMechPowerOff();
                     blk.decayMechSetTurnOffWindowId(decayWindowId);
+                    this->newOffBlks++;
 
                     DPRINTF(TPCacheDecayDebug,
                         "TPCacheDecay: block %s evicted\n",
@@ -3648,7 +3683,7 @@ BaseCache::powerOffRemainingBlks(uint64_t &globalDecayCounter,
 
     // no remaining decayed blocks. There may got populated
     // during wait-for-writeback period.
-    if (writebacks.empty() && decayPowerOffFinished || isLastTime) {
+    if ((writebacks.empty() && decayPowerOffFinished) || isLastTime) {
         clearBlocked(Blocked_HaveDecay);
         onDecayPhase = false;
 

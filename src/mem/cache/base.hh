@@ -1503,6 +1503,8 @@ class BaseCache : public ClockedObject
     //// exploration code ////
     uint64_t DIMsPerWnd = 0;
     std::vector<uint64_t> decayWndDist;
+    int newOffBlks;
+    Tick decayStartTime;
     //// eof exploration code ////
   public:
     void flush(bool writebackOnFlush);
@@ -1520,7 +1522,10 @@ class BaseCache : public ClockedObject
     bool calcDecayPercentage();
     //// eof extra code ////
 
-    void setDecayOn(bool on) { decayOn = on; }
+    void setDecayOn(bool on) {
+        decayOn = on;
+        decayStartTime = curTick();
+    }
 
     bool updateDecayAndPowerOff(uint64_t &globalDecayCounter,
         uint64_t tourWindowCnt, uint64_t);
@@ -1543,6 +1548,11 @@ class BaseCache : public ClockedObject
             ->setLetOverflow(let_overflow);
         std::static_pointer_cast<tp::decay_policy::IATACdata>(globDecayData)
             ->setResetCounterOnHit(reset_counter_on_hit);
+    }
+
+    tp::DecayDuelingMonitor *getDecayDuelingMonitor()
+    {
+        return decayDuelingMonitor;
     }
 ////////--EOF_MY_CODE--////////
 };
