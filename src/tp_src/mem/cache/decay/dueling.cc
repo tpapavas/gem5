@@ -33,6 +33,7 @@
 #include "base/trace.hh"
 #include "debug/TPCacheDecayDebug.hh"
 #include "debug/TPDecayPolicies.hh"
+#include "debug/TPDecayPoliciesStats.hh"
 
 namespace gem5
 {
@@ -66,6 +67,8 @@ DecayDuelingMonitor::DecayDuelingMonitor(std::size_t total_sets,
     std::size_t constituency_size,
     std::size_t team_size, double low_threshold,
     double high_threshold, int s_factor,
+    Tick clock_ticks,
+    Cycles w_cycles,
     DuelingType dueling_type)
   : id(1 << numInstances), numOfSets(total_sets),
     numOfLeaderTeamSets(leader_sets),
@@ -75,6 +78,7 @@ DecayDuelingMonitor::DecayDuelingMonitor(std::size_t total_sets,
     regionCounter(0),
     constituencyCounter(0), // new code
     winner(2),
+    wInCycles(w_cycles),
     duelingType(dueling_type)
     // standardLeaderTeamMisses(0)
 {
@@ -101,9 +105,23 @@ DecayDuelingMonitor::DecayDuelingMonitor(std::size_t total_sets,
         standardLeaderTeamMisses[i] = 0;
     }
 
-    std::size_t maxDIMs = 320 * (double(numOfLeaderTeamSets) / numOfSets);
+    LSetsToSetsRatio = double(numOfLeaderTeamSets) / numOfSets;
+    std::size_t maxDIMs = 320 * LSetsToSetsRatio;
     udLimit = 2*maxDIMs + (maxDIMs * maxDIMs)/2;
+    // udLimit = 200;
     printf("LIM: %ld\n", udLimit);
+
+    double clkFreq = 1000.0 / clock_ticks;  // GHz
+    size_t numBlks = numOfSets * teamSize;
+    numOfLTBlks = numBlks * LSetsToSetsRatio;
+
+    float cacheLeakage = cacheBlkLeakagePow/clkFreq * numBlks; // nj per cycle
+
+
+    ltLeakage = cacheLeakage * LSetsToSetsRatio; // nj per cycle
+
+    DPRINTF(TPDecayPoliciesStats, "Leader Team leakage: %.4lf\n"
+        "Window (cycles): %d\n", ltLeakage, wInCycles);
 }
 
 bool
@@ -127,7 +145,8 @@ DecayDuelingMonitor::sample(const DecayDueler* dueler)
                 selectors[2] + idealMisses[2],
                 selectors[1] + idealMisses[1]);
 
-            if (duelingType > DuelingType::JUMP) {
+            if (duelingType > DuelingType::JUMP
+                && duelingType < DuelingType::EN_AWARE) {
                 int maxSleepMisses =
                     // std::max(selectors[0],
                     //      std::max(selectors[1], selectors[2]));
@@ -177,6 +196,10 @@ DecayDuelingMonitor::isSample(const DecayDueler* dueler, bool& team) const
 int
 DecayDuelingMonitor::getWinner()
 {
+    if (duelingType == DuelingType::EN_AWARE) {
+        return getEnergyWinner();
+    }
+
     winner = 2;
     int minMisses = 10000000;
 
@@ -193,7 +216,7 @@ DecayDuelingMonitor::getWinner()
     float lowLimit = 1.0 + lowThreshold;
     float highLimit = 1.0 - highThreshold;
 // /*
-    if (( duelingType < DuelingType::OPT_S
+    if ((duelingType < DuelingType::OPT_S
             && selectors[0] <= lowLimit * selectors[2])
         || (duelingType == DuelingType::OPT_S
             && ((2*(selectors[0]-selectors[2]) + selectors[0]*selectors[0]/2)
@@ -257,6 +280,47 @@ DecayDuelingMonitor::getWinner()
         selectors[i] = 0;
         standardLeaderTeamMisses[i] = 0;
     }
+
+    return winner;
+}
+
+int
+DecayDuelingMonitor::getEnergyWinner()
+{
+    calcTOffs();
+    double energyBenefit[NUM_DUELERS];
+    for (int i = 0; i < NUM_DUELERS; i++) {
+        energyBenefit[i] = wInCycles*toffRatios[i]*ltLeakage
+                                - selectors[i]*memDynamic;
+    }
+    DPRINTF(TPDecayPoliciesStats, "Energy Benefits (d/2, d, 2d): "
+        "%.4f, %.4f, %.4f (nJ)\n",
+        energyBenefit[0], energyBenefit[2], energyBenefit[1]);
+
+    if (energyBenefit[0] > energyBenefit[2]) {
+        winner = 0;
+    } else if (energyBenefit[1] > energyBenefit[2]) {
+        winner = 1;
+    } else {
+        winner = 2;
+    }
+
+    // if we have energy increase, perform jump-upscale.
+    int minEnergyBenefit =
+        std::min(energyBenefit[0],
+                 std::min(energyBenefit[1], energyBenefit[2])
+        );
+    if (minEnergyBenefit < 0) {
+        winner = 3;
+    }
+
+    // reset counters
+    for (int i = 0; i < NUM_DUELERS; i++) {
+        selectors[i] = 0;
+        standardLeaderTeamMisses[i] = 0;
+    }
+    resetGlobalCounter();
+    resetTOffs();
 
     return winner;
 }

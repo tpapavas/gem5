@@ -204,7 +204,8 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
                 decayDuelingMonitor = new tp::DecayDuelingMonitor(
                     (p.size / blk_size) / p.assoc, dedicatedSets,
                     (p.size / blk_size) / dedicatedSets, p.assoc,
-                    dThres, uThres, scaleFactor
+                    dThres, uThres, scaleFactor,
+                    clockPeriod(), genDecayEventHandler->getWCycles()
                 );
                 DPRINTF(TPCacheDecayDebug, "Cache sets: %d, leader sets: %d",
                     (p.size / blk_size) / p.assoc, dedicatedSets);
@@ -3436,10 +3437,6 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
                 pos++, *it);
         } */
 
-        // reset
-        std::fill(decayWndDist.begin(), decayWndDist.end(), 0);
-        DIMsPerWnd = 0;
-        newOffBlks = 0;
         //// eof expl code ////
 
         decayWindowId++;
@@ -3486,6 +3483,11 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
                 ticksToCycles(globalDecayCounter));
         // DPRINTF(TPDecayPolicies, "TOUR_WINDOW_LIMIT: %u",
                 // TOUR_WINDOW_LIMIT);
+
+        // reset
+        std::fill(decayWndDist.begin(), decayWndDist.end(), 0);
+        DIMsPerWnd = 0;
+        newOffBlks = 0;
     }
     //// eof refactor code ////
 
@@ -3514,6 +3516,11 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
         //// if (blk.isSet(CacheBlk::ReadableBit)) {
         if (blk.isDecayMechPoweredOff()) {
             poweredOffCnt++;
+
+            uint64_t leaderTeam;
+            if (blk.getDecayDueler()->isSample(leaderTeam)) {
+                this->decayDuelingMonitor->incTOff(leaderTeam);
+            }
         //    onBlksCnt++;
         } else {
             // blk.constDecayMechUpdate();
@@ -3546,6 +3553,10 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
                     poweredOffCnt++;
                     stats.numOfDecayedBlks++;
 
+                    uint64_t leaderTeam;
+                    if (blk.getDecayDueler()->isSample(leaderTeam)) {
+                        this->decayDuelingMonitor->incTOff(leaderTeam);
+                    }
                 } else {
                     powerOffFinished = false;
 
@@ -3599,6 +3610,8 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
         "TPCacheDecay: updateDecay: "
         "writebuffer empty positions: %d\tallocated: %d\n\n",
         writeBuffer.getFreeEntries(), writeBuffer.getAllocatedEntries());
+
+    decayDuelingMonitor->updateGlobalCounter();
 
     return powerOffFinished;
 }

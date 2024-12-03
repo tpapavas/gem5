@@ -53,6 +53,8 @@ class DecayEventHandler : public TimingEventHandler
         void skipWindow() { tournamentWindow = TOUR_WINDOW_LIMIT - 1; }
 
         virtual void retreiveParams(int &, int &, float &, float &) {}
+
+        Cycles getWCycles() { return TW_CYCLES; }
 };
 
 } // namespace tp

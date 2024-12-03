@@ -95,7 +95,8 @@ class DecayDuelingMonitor
         JUMP,
         E_JUMP,
         OPT,
-        OPT_S
+        OPT_S,
+        EN_AWARE
       };
 
   protected:
@@ -131,8 +132,18 @@ class DecayDuelingMonitor
 
     const std::size_t numOfSets;
     const std::size_t numOfLeaderTeamSets;
+    std::size_t numOfLTBlks;
     uint64_t standardLeaderTeamMisses[4];
+    double toffRatios[4];
     std::size_t udLimit;
+
+    Cycles wInCycles;
+
+    double ltLeakage;
+    double LSetsToSetsRatio;
+
+    const double memDynamic = 7.2; // nj per read (access)
+    const double cacheBlkLeakagePow = 0.000033; // nj per ns
 
     /**
      * Threshold for downscaling.
@@ -158,6 +169,8 @@ class DecayDuelingMonitor
     int regionCounter;
     int constituencyCounter;
 
+    uint64_t globCounter;
+
     /** The team that is currently winning. */
     int winner;
 
@@ -181,6 +194,8 @@ class DecayDuelingMonitor
         double low_threshold = 0.01,
         double high_threshold = 0.02,
         int s_factor = 4,
+        Tick clock_ticks = 0,
+        Cycles w_cycles = Cycles(0),
         DuelingType dueling_type = DuelingType::PLAIN);
     ~DecayDuelingMonitor() = default;
 
@@ -208,6 +223,7 @@ class DecayDuelingMonitor
      * @return Winning team.
      */
     virtual int getWinner();
+    virtual int getEnergyWinner();
 
     /**
      * Initialize a dueler entry, deciding wether it is a sample or not.
@@ -228,6 +244,24 @@ class DecayDuelingMonitor
     void setDuelingType(DuelingType dueling_type) {
       duelingType = dueling_type;
     }
+
+    void updateGlobalCounter() { globCounter++; }
+    void resetGlobalCounter() { globCounter = 0; }
+
+    void incTOff(uint64_t leaderTeam) {
+      toffRatios[leaderTeam] += 1.0;
+    }
+    void resetTOffs() {
+      for (int i = 0; i < NUM_DUELERS; i++) {
+        toffRatios[i] = 0;
+      }
+    }
+
+    void calcTOffs() {
+      for (int i = 0; i < NUM_DUELERS; i++) {
+        toffRatios[i] /= (globCounter * numOfLTBlks);
+      }
+    }
 };
 
 class DecayAMCMonitor : public DecayDuelingMonitor
@@ -247,7 +281,7 @@ class DecayAMCMonitor : public DecayDuelingMonitor
         constituency_size,
         team_size,
         low_threshold,
-        high_threshold, -1,
+        high_threshold, -1, 0, 0,
         dueling_type),
       pf(0.5) {}
     ~DecayAMCMonitor() = default;

@@ -104,5 +104,5 @@ class TourDecayEventHandler(DecayEventHandler):
     dueling_type = Param.UInt32(
         0,
         "Type of tournamen variation"
-        "PLAIN(0), JUMP(1), E_JUMP(2), OPT(3), OPT_S(4)",
+        "PLAIN(0), JUMP(1), E_JUMP(2), OPT(3), OPT_S(4), EN_AWARE(5)",
     )
