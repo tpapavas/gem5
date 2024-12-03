@@ -281,7 +281,7 @@ class DecayAMCMonitor : public DecayDuelingMonitor
         constituency_size,
         team_size,
         low_threshold,
-        high_threshold, -1, 0, 0,
+        high_threshold, -1, Tick(0), Cycles(0),
         dueling_type),
       pf(0.5) {}
     ~DecayAMCMonitor() = default;
