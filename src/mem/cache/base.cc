@@ -76,6 +76,7 @@
 #include "debug/TPFaulty.hh"
 #include "debug/TPHello.hh"
 #include "debug/TPIdle.hh"
+#include "tp_src/events/cache/tour_decay_event_handler.hh"
 
 //// EOF MY CODE ////
 
@@ -153,7 +154,7 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
             {
                 DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, "
                     "before amc decay %s\n", __func__, genDecayEventHandler);
-                genDecayEventHandler->setCache(this);
+                // genDecayEventHandler->setCache(this);
 
                 // number of dedicated sets for each leader team
                 // (needs to be a parameter)
@@ -205,7 +206,9 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
                     (p.size / blk_size) / p.assoc, dedicatedSets,
                     (p.size / blk_size) / dedicatedSets, p.assoc,
                     dThres, uThres, scaleFactor,
-                    clockPeriod(), genDecayEventHandler->getWCycles()
+                    clockPeriod(),
+                    static_cast<tp::TourDecayEventHandler*>
+                        (genDecayEventHandler)->getWCycles()
                 );
                 DPRINTF(TPCacheDecayDebug, "Cache sets: %d, leader sets: %d",
                     (p.size / blk_size) / p.assoc, dedicatedSets);
@@ -2012,7 +2015,8 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
                 decayedHitBlk->decayMechGetTurnOffWindowId());
             if (!decayDuelingMonitor->
                     sample(decayedHitBlk->getDecayDueler())) {
-                genDecayEventHandler->skipWindow();
+                static_cast<tp::TourDecayEventHandler*>(genDecayEventHandler)
+                    ->skipWindow();
             }
 
             //// expl code ////
@@ -3404,7 +3408,7 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
     //             "new global: %u\n",
     //             ticksToCycles(globalDecayCounter));
     // } else
-    if (tourWindowCnt % TOUR_WINDOW_LIMIT == 0) {
+    if (decayDuelingMonitor && tourWindowCnt % TOUR_WINDOW_LIMIT == 0) {
         //// expl code ////
         const int NUM_DUELERS =
             tags->getDecayDuelingMonitor()->getNumOfDuelers();
@@ -3617,8 +3621,7 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
 }
 
 bool
-BaseCache::powerOffRemainingBlks(uint64_t &globalDecayCounter,
-        uint64_t tourWindowCnt, bool isLastTime)
+BaseCache::powerOffRemainingBlks(bool isLastTime)
 {
     //// extra code ////
     assert(onDecayPhase);

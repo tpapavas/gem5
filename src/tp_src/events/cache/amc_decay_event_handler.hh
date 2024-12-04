@@ -4,14 +4,14 @@
 #include "mem/cache/base.hh"
 #include "params/AMCDecayEventHandler.hh"
 #include "sim/sim_object.hh"
-#include "tp_src/events/cache/decay_event_handler.hh"
+#include "tp_src/events/cache/tour_decay_event_handler.hh"
 
 namespace gem5
 {
 namespace tp
 {
 
-class AMCDecayEventHandler : public DecayEventHandler
+class AMCDecayEventHandler : public TourDecayEventHandler
 {
     public:
         AMCDecayEventHandler(const AMCDecayEventHandlerParams &p);

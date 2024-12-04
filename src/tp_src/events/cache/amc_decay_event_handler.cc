@@ -14,10 +14,16 @@ namespace tp
 
 AMCDecayEventHandler::AMCDecayEventHandler(
         const AMCDecayEventHandlerParams &params) :
-    DecayEventHandler(params)
+    TourDecayEventHandler(params)
 {
+    // Define these for consistency with DecayAMCMonitor.
+    // They are used nowhere.
+    dThres = 0.5;
+    uThres = 0.5;
+    scaleFactor = -1;
+
     DPRINTF(TPCacheDecay,
-        "Created the DecayEventHandler object with the name %s\n"
+        "Created the AMCDecayEventHandler object with the name %s\n"
         "TOUR_WINDOW_LIMIT: %" PRIu64"",
         name(), TOUR_WINDOW_LIMIT);
 

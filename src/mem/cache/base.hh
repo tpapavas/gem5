@@ -1528,9 +1528,8 @@ class BaseCache : public ClockedObject
     }
 
     bool updateDecayAndPowerOff(uint64_t &globalDecayCounter,
-        uint64_t tourWindowCnt, uint64_t);
-    bool powerOffRemainingBlks(uint64_t &globalDecayCounter,
-        uint64_t tourWindowCnt, bool isLastTime);
+        uint64_t tourWindowCnt = 0, uint64_t TOUR_WINDOW_LIMIT = 0);
+    bool powerOffRemainingBlks(bool isLastTime);
 
     void setLocalDecayCounter(int max_decay)
     {

@@ -4,7 +4,6 @@
 
 #include "debug/TPCacheDecay.hh"
 #include "debug/TPCacheDecayDebug.hh"
-#include "debug/TPDecayPolicies.hh"
 #include "mem/cache/base.hh"
 
 namespace gem5
@@ -31,16 +30,12 @@ DecayEventHandler::DecayEventHandler(const DecayEventHandlerParams &params) :
         this->cyclesToTicks(Cycles(16384))
     ),
     timesRemainingFired(0),
-    timesRemainingLimit(INT_MAX),
-    tournamentWindow(0)  // extra code
-    // timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1),
+    timesRemainingLimit(INT_MAX)  // extra code
+    // timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1)
 {
-    TW_CYCLES = Cycles(params.window_size * 9 * 128000);
-    TOUR_WINDOW_LIMIT = TW_CYCLES / ticksToCycles(decayPeriod);
     DPRINTF(TPCacheDecay,
-        "Created the DecayEventHandler object with the name %s\n"
-        "TOUR_WINDOW_LIMIT: %" PRIu64"",
-        name(), TOUR_WINDOW_LIMIT);
+        "Created the DecayEventHandler object with the name %s\n",
+        name());
 }
 
 void
@@ -58,15 +53,12 @@ DecayEventHandler::processEvent()
             return;
     }
 
-    tournamentWindow++;
-
     timesFired++;
     timesRemainingFired = 0;
 
     DPRINTF(TPCacheDecayDebug, "Processing the decay event! #%d fired\n",
         timesFired);
-    if (!cache->updateDecayAndPowerOff(decayPeriod,
-            tournamentWindow, TOUR_WINDOW_LIMIT)) {
+    if (!cache->updateDecayAndPowerOff(decayPeriod)) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
     } else if (tillSimEnd || timesFired < numOfFires) {
         schedule(event, curTick() + decayPeriod);
@@ -76,15 +68,7 @@ DecayEventHandler::processEvent()
     }
 
     if (!calcDecayEvent.scheduled()) {
-       schedule(calcDecayEvent, curTick() + calcDecayPeriod);
-    }
-
-    if (tournamentWindow % TOUR_WINDOW_LIMIT == 0) {
-        tournamentWindow = 0;
-
-        TOUR_WINDOW_LIMIT = TW_CYCLES / ticksToCycles(decayPeriod);
-        DPRINTF(TPDecayPolicies, "TOUR_WINDOW_LIMIT: %" PRIu64"\n",
-            TOUR_WINDOW_LIMIT);
+        schedule(calcDecayEvent, curTick() + calcDecayPeriod);
     }
 }
 
@@ -97,7 +81,7 @@ DecayEventHandler::processPowerOffRemainingEvent()
 
     bool lastTime = timesRemainingFired >= timesRemainingLimit;
 
-    if (!cache->powerOffRemainingBlks(decayPeriod, tournamentWindow, lastTime)
+    if (!cache->powerOffRemainingBlks(lastTime)
         && timesRemainingFired < timesRemainingLimit) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
     } else {

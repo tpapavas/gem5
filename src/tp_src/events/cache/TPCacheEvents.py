@@ -80,12 +80,6 @@ class IATACDecayEventHandler(TimingEventHandler):
     )
 
 
-class AMCDecayEventHandler(DecayEventHandler):
-    type = "AMCDecayEventHandler"
-    cxx_header = "tp_src/events/cache/amc_decay_event_handler.hh"
-    cxx_class = "gem5::tp::AMCDecayEventHandler"
-
-
 class TourDecayEventHandler(DecayEventHandler):
     type = "TourDecayEventHandler"
     cxx_header = "tp_src/events/cache/tour_decay_event_handler.hh"
@@ -106,3 +100,9 @@ class TourDecayEventHandler(DecayEventHandler):
         "Type of tournamen variation"
         "PLAIN(0), JUMP(1), E_JUMP(2), OPT(3), OPT_S(4), EN_AWARE(5)",
     )
+
+
+class AMCDecayEventHandler(TourDecayEventHandler):
+    type = "AMCDecayEventHandler"
+    cxx_header = "tp_src/events/cache/amc_decay_event_handler.hh"
+    cxx_class = "gem5::tp::AMCDecayEventHandler"

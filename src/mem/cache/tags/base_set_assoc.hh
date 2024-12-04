@@ -269,7 +269,7 @@ class BaseSetAssoc : public BaseTags
             uint64_t &i) override
     {
         size_t blksSize = blks.size();
-        for (i; i < blksSize; i++) {
+        for (; i < blksSize; i++) {
             CacheBlk& blk = blks.at(i);
             if (visitor(blk)) {
                 return true;

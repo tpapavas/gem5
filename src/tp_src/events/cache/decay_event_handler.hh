@@ -14,7 +14,7 @@ namespace tp
 class DecayEventHandler : public TimingEventHandler
 {
     protected:
-        void processEvent() override;
+        virtual void processEvent() override;
 
         uint64_t decayPeriod;
 
@@ -27,10 +27,10 @@ class DecayEventHandler : public TimingEventHandler
         bool isOn = true;
 
         EventFunctionWrapper powerOffRemainingEvent;
+        int powerOffRemainingPeriod;
+
         EventFunctionWrapper calcDecayEvent;
         int calcDecayPeriod;
-
-        int powerOffRemainingPeriod;
 
         int timesRemainingFired;
 
@@ -38,11 +38,6 @@ class DecayEventHandler : public TimingEventHandler
 
         void processPowerOffRemainingEvent();
         void processCalcDecayEvent();
-
-        uint64_t tournamentWindow;
-
-        uint64_t TOUR_WINDOW_LIMIT = 36;
-        Cycles TW_CYCLES; // factor to scale GDI to get the window size
     public:
         DecayEventHandler(const DecayEventHandlerParams &p);
 
@@ -50,11 +45,7 @@ class DecayEventHandler : public TimingEventHandler
 
         void enable();
 
-        void skipWindow() { tournamentWindow = TOUR_WINDOW_LIMIT - 1; }
-
         virtual void retreiveParams(int &, int &, float &, float &) {}
-
-        Cycles getWCycles() { return TW_CYCLES; }
 };
 
 } // namespace tp
