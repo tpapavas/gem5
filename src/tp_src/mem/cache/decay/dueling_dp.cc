@@ -21,6 +21,8 @@ Dueling::Dueling()
     }
 
     duelerData = new DecayDueler();
+
+    _keepTagOn = true;
     DPRINTF(TPCacheDecayDebug, "DuelingDP: constructor\n");
 }
 

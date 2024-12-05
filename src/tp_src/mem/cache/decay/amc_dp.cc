@@ -17,6 +17,8 @@ AMC::AMC()
     : Constant()
 {
     duelerData = new DecayDueler();
+
+    _keepTagOn = true;
     DPRINTF(TPCacheDecayDebug, "AMCDP: constructor\n");
 }
 

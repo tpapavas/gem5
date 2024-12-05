@@ -40,10 +40,6 @@ class DecayEventHandler(TimingEventHandler):
 
     is_on = Param.Bool(True, "Whether the event is doing its thing")
 
-    window_size = Param.Float(
-        4, "Size of sense window (in millions of cycles)"
-    )
-
 
 class IATACDecayEventHandler(TimingEventHandler):
     type = "IATACDecayEventHandler"
@@ -94,6 +90,10 @@ class TourDecayEventHandler(DecayEventHandler):
     u_threshold = Param.Float(0.02, "Threshold for upscale.")
 
     s_factor = Param.UInt32(4, "Factor for jump upscale.")
+
+    window_size = Param.Float(
+        4, "Size of sense window (in millions of cycles)"
+    )
 
     dueling_type = Param.UInt32(
         0,

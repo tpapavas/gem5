@@ -31,6 +31,7 @@ namespace decay_policy
 IATAC::IATAC()
     : Base()
 {
+    _keepTagOn = true;
     // if (_first_iatac_obj) {
     //     _setupGlobalStructs();
     // }

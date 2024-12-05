@@ -131,7 +131,6 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
       stats(*this),
       writebackLimit(p.write_buffers), //my code
       flushEventHandler(p.flush_event_handler), //my code
-      decayEventHandler(p.decay_event_handler), //my code
       iatacDecayEventHandler(p.iatac_decay_event_handler), //my code
       genDecayEventHandler(p.gen_decay_event_handler), // my code
       decayWndDist(80) // expl code
@@ -214,6 +213,14 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
                     (p.size / blk_size) / p.assoc, dedicatedSets);
                 tags->setDecayDuelingMonitor(decayDuelingMonitor);
                 //// extra code ////
+                break;
+            }
+
+            case gem5::tp::EventType::DECAY_CONST:
+            {
+                DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, "
+                    "before constant decay %s\n", __func__,
+                    genDecayEventHandler);
                 break;
             }
         }
@@ -1508,13 +1515,11 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
     // for IATAC
     /* DPRINTF(TPCacheDecayDebug, "blk: %s, "
         "iatacHandler: %s, "
-        "decayHandler: %s, "
         "decayOn: %d\n",
-        iatacDecayEventHandler, decayEventHandler,
+        iatacDecayEventHandler,
         blk, decayOn); */
     if (blk != nullptr &&
             (iatacDecayEventHandler != nullptr
-            || decayEventHandler != nullptr
             || genDecayEventHandler != nullptr) &&
             decayOn) {
         if (blk->isDecayMechPoweredOff()) {
@@ -3522,19 +3527,16 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
             poweredOffCnt++;
 
             uint64_t leaderTeam;
-            if (blk.getDecayDueler()->isSample(leaderTeam)) {
+            if (blk.getDecayDueler()
+                && blk.getDecayDueler()->isSample(leaderTeam)) {
                 this->decayDuelingMonitor->incTOff(leaderTeam);
             }
-        //    onBlksCnt++;
         } else {
-            // blk.constDecayMechUpdate();
             blk.decayMechUpdate();
-            // if (blk.getDecayCounter() < 0) {
             if (blk.constDecayMechGetDecayCounter() < 0 &&
                     !blk.isDecayMechPoweredOff()) {
                 // do not writeback more than it can handle
                 if (writebacks.size() < writebackLimit) {
-                    // blk.resetDecayCounter(tags->getLocalDecayCounter());
                     blk.constDecayMechResetDecayCounter(
                         tags->getLocalDecayCounter());
                     //// IMPORTANT! Changing constant decay
@@ -3558,28 +3560,14 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
                     stats.numOfDecayedBlks++;
 
                     uint64_t leaderTeam;
-                    if (blk.getDecayDueler()->isSample(leaderTeam)) {
+                    if (blk.getDecayDueler()
+                        && blk.getDecayDueler()->isSample(leaderTeam)) {
                         this->decayDuelingMonitor->incTOff(leaderTeam);
                     }
                 } else {
                     powerOffFinished = false;
-
-                    //how to count these blocks?
-                    //onBlksCnt++;
                 }
             }
-        ////     else if (blk.isDecayMechPoweredOff()) {
-        ////        DPRINTF(TPCacheDecay,
-        ////            "TPCacheDecay: readable and powered off: %s",
-        ////            blk.print());
-        ////        poweredOffCnt++;
-        ////        stats.numOfDecayedBlks++;
-        ////    } //else {
-              //  onBlksCnt++; //we should find a way
-            //} //to get number of cache block once
-    ////    } else if (blk.isPoweredOff()) {
-    ////        poweredOffCnt++;
-        //    onBlksCnt++;
         }
     });
 
@@ -3602,20 +3590,14 @@ BaseCache::updateDecayAndPowerOff(uint64_t &globalDecayCounter,
     // writeback block if necessary
     doWritebacks(writebacks, forward_time); // what delay we need?
 
-    // stats.decayedBlksWindowPercnt += poweredOffCnt/(float)numBlocks;
-
-    // DPRINTF(TPCacheDecay, "Powered-off percentage: %f\n",
-    //     poweredOffCnt/(float)numBlocks);
-    // DPRINTF(TPCacheDecay,
-        // "Powered-off percentage: %f\t num of powered off: %d\n",
-        // poweredOffCnt/(float)numBlocks, poweredOffCnt);
-        //(poweredOffCnt+onBlksCnt));
     DPRINTF(TPCacheDecayDebug,
         "TPCacheDecay: updateDecay: "
         "writebuffer empty positions: %d\tallocated: %d\n\n",
         writeBuffer.getFreeEntries(), writeBuffer.getAllocatedEntries());
 
-    decayDuelingMonitor->updateGlobalCounter();
+    if (decayDuelingMonitor) {
+        decayDuelingMonitor->updateGlobalCounter();
+    }
 
     return powerOffFinished;
 }
@@ -3655,12 +3637,10 @@ BaseCache::powerOffRemainingBlks(bool isLastTime)
                 (CacheBlk &blk)
             {
             //// if (blk.isSet(CacheBlk::ReadableBit)) {
-                // if (blk.getDecayCounter() < 0) {
                 if (blk.constDecayMechGetDecayCounter() < 0 &&
                         !blk.isDecayMechPoweredOff()) {
                     // do not writeback more than it can handle
                     if (writebacks.size() < writebackLimit) {
-                        // blk.resetDecayCounter(tags->getLocalDecayCounter());
                         blk.constDecayMechResetDecayCounter(
                             tags->getLocalDecayCounter());
                         // blk.powerOff();

@@ -36,6 +36,8 @@ DecayEventHandler::DecayEventHandler(const DecayEventHandlerParams &params) :
     DPRINTF(TPCacheDecay,
         "Created the DecayEventHandler object with the name %s\n",
         name());
+
+    eventType = tp::EventType::DECAY_CONST;
 }
 
 void

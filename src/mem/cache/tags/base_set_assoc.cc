@@ -73,23 +73,27 @@ BaseSetAssoc::BaseSetAssoc(const Params &p)
 void
 BaseSetAssoc::tagsInit()
 {
-    std::shared_ptr<tp::decay_policy::GlobalDecayData> constDecayData;
+    std::shared_ptr<tp::decay_policy::GlobalDecayData> globDecayData;
 
     bool haveDecay = decayType != tp::EventType::PLAIN_TIMING;
     //// refactor code ////
     if (haveDecay) {
         if (decayType == tp::EventType::DECAY_AMC) {
-            constDecayData =
+            globDecayData =
                 std::shared_ptr<tp::decay_policy::GlobalDecayData>(
                 new tp::decay_policy::AMCDecayData());
         } else if (decayType == tp::EventType::DECAY_TOUR) {
-            constDecayData =
+            globDecayData =
                 std::shared_ptr<tp::decay_policy::GlobalDecayData>(
                 new tp::decay_policy::DuelingDecayData());
         } else if (decayType == tp::EventType::DECAY_IATAC) {
-            constDecayData =
+            globDecayData =
                 std::shared_ptr<tp::decay_policy::GlobalDecayData>(
                 new tp::decay_policy::IATACdata());
+        } else if (decayType == tp::EventType::DECAY_CONST) {
+            globDecayData =
+                std::shared_ptr<tp::decay_policy::GlobalDecayData>(
+                new tp::decay_policy::ConstantDecayData());
         }
     }
     //// eof refactor code ////
@@ -117,7 +121,7 @@ BaseSetAssoc::tagsInit()
 
         if (haveDecay) {
             DPRINTF(TPCacheDecayDebug, "before instantiateDecay\n");
-            blk->instantiateDecay(constDecayData);
+            blk->instantiateDecay(globDecayData);
 
             if (decayType == tp::EventType::DECAY_AMC) {
                 // DPRINTF(TPCacheDecayDebug, "before amcDuelingData init\n");
@@ -160,6 +164,10 @@ BaseSetAssoc::tagsInit()
                 blk->getIATAC()->setLetOverflow(iatacData->doLetOverflow());
                 blk->getIATAC()->setResetCounterOnHit(
                     iatacData->doResetCounterOnHit());
+            } else if (decayType == tp::DECAY_CONST) {
+                DPRINTF(TPCacheDecayDebug,
+                        "before resetDecayCounter constant\n");
+                blk->constDecayMechResetDecayCounter(localDecayCounter);
             }
             //// eof extra code ////
         }

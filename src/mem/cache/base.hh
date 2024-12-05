@@ -1482,7 +1482,6 @@ class BaseCache : public ClockedObject
 ////////--MY_CODE--////////
   protected:
     tp::FlushEventHandler *flushEventHandler;
-    tp::DecayEventHandler *decayEventHandler;
     tp::IATACDecayEventHandler *iatacDecayEventHandler;
     tp::DecayEventHandler *genDecayEventHandler = nullptr;
     CacheBlk *iatacDecayedBlk = nullptr;

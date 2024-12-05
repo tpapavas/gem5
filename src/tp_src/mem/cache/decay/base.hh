@@ -60,6 +60,8 @@ class Base
       return nullptr;
     }
 
+    virtual bool keepTagOn() { return _keepTagOn; }
+
   protected:
     /** if the block is on or off */
     bool _onoff = true;
@@ -69,6 +71,8 @@ class Base
 
     /** access counter */
     int _counter = 1;
+
+    bool _keepTagOn = false;
 };
 
 class GlobalDecayData

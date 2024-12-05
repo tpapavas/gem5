@@ -185,9 +185,6 @@ class BaseCache(ClockedObject):
     flush_event_handler = Param.FlushEventHandler(
         NULL, "An event handler for flush operation"
     )
-    decay_event_handler = Param.DecayEventHandler(
-        NULL, "An event handler for decay operation"
-    )
     iatac_decay_event_handler = Param.IATACDecayEventHandler(
         NULL, "An event handler for IATAC decay operation"
     )

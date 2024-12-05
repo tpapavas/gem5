@@ -427,7 +427,7 @@ class CacheBlk : public TaggedEntry
         assert(!isDecayMechPoweredOff());
 
         if (isValid()) {
-            _onIATACDecayProc = true;
+            _onIATACDecayProc = _decay->keepTagOn();
         }
         if (_decay) {
             _decay->setPower(false);
