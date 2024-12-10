@@ -41,9 +41,9 @@ class DecayEventHandler(TimingEventHandler):
     is_on = Param.Bool(True, "Whether the event is doing its thing")
 
 
-class IATACDecayEventHandler(TimingEventHandler):
+class IATACDecayEventHandler(DecayEventHandler):
     type = "IATACDecayEventHandler"
-    cxx_header = "tp_src/events/cache/iatac_decay_event_handler.hh"
+    cxx_header = "tp_src/events/cache/decay_event_handler.hh"
     cxx_class = "gem5::tp::IATACDecayEventHandler"
 
     @cxxMethod

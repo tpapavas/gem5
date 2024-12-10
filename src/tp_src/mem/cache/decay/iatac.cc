@@ -13,21 +13,6 @@ namespace tp
 namespace decay_policy
 {
 
-// bool IATAC::isOn() {
-//     return _mechOn;
-// }
-
-// void IATAC::setOn() {
-//     _mechOn = true;
-// }
-
-// bool IATAC::_mechOn = false;
-// bool IATAC::_first_iatac_obj = true;
-
-// int IATAC::_acumcounter[_MAX_ACCESS];
-// int IATAC::_globalDecay[_MAX_ACCESS];
-// int IATAC::_maxGlobalDecay[_MAX_ACCESS];
-
 IATAC::IATAC()
     : Base()
 {
@@ -76,41 +61,31 @@ IATAC::handleHit(std::shared_ptr<GlobalDecayData>& iatac)
 void
 IATAC::handleMiss(std::shared_ptr<GlobalDecayData>& iatac)
 {
+    std::shared_ptr<IATACdata> iatacData =
+        std::static_pointer_cast<IATACdata>(iatac);
     if (!_accessOverflow) {
         // DPRINTF(TPCacheDecay, "on miss\n");
         // DPRINTF(TPCacheDecay, "counter: %d, thits: %d\n",
         //           _counter, _thits);
-        if (_thits > std::static_pointer_cast<IATACdata>(iatac)->
-                _globalDecay[_counter]) {
+        if (_thits > iatacData->_globalDecay[_counter]) {
             DPRINTF(TPDecayPolicies, "thits greater than global\n");
-            std::static_pointer_cast<IATACdata>(iatac)
-                ->_globalDecay[_counter] =
-                    std::static_pointer_cast<IATACdata>(iatac)
-                        ->_globalDecay[_counter] << 1; // x2
+            iatacData->_globalDecay[_counter] =
+                    iatacData->_globalDecay[_counter] << 1; // x2
             // iatac->setGlobal(_counter, iatac->_globalDecay[_counter] << 1);
-            std::static_pointer_cast<IATACdata>(iatac)
-                ->updateMaxGlobals(_counter);
-        } else if (_thits * 2 < std::static_pointer_cast<IATACdata>(iatac)
-                ->_globalDecay[_counter]) {
+            iatacData->updateMaxGlobals(_counter);
+        } else if (_thits * 2 < iatacData->_globalDecay[_counter]) {
             DPRINTF(TPDecayPolicies, "thits smaller than global/2\n");
-            std::static_pointer_cast<IATACdata>(iatac)
-                ->_globalDecay[_counter] =
-                    std::static_pointer_cast<IATACdata>(iatac)
-                        ->_globalDecay[_counter] > 1 ?
-                    std::static_pointer_cast<IATACdata>(iatac)
-                        ->_globalDecay[_counter] >> 1 : 1; // /2
+            iatacData->_globalDecay[_counter] =
+                    iatacData->_globalDecay[_counter] > 1 ?
+                        iatacData->_globalDecay[_counter] >> 1 : 1; // /2
             // iatac->setGlobal(_counter, iatac->_globalDecay[_counter] >> 1);
-            std::static_pointer_cast<IATACdata>(iatac)
-                ->updateMaxGlobals(_counter);
+            iatacData->updateMaxGlobals(_counter);
         }
 
-        std::static_pointer_cast<IATACdata>(iatac)
-            ->_acumcounter[_counter]++;
-        std::static_pointer_cast<IATACdata>(iatac)
-            ->checkAcumOverflow(_counter);
+        iatacData->_acumcounter[_counter]++;
+        iatacData->checkAcumOverflow(_counter);
 
-        _decay = std::static_pointer_cast<IATACdata>(iatac)
-            ->_maxGlobalDecay[_counter+1];
+        _decay = iatacData->_maxGlobalDecay[_counter+1];
     }
 
     _onoff = true;

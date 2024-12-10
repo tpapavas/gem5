@@ -27,11 +27,8 @@ class IATAC : public Base
     // static void printGlobals();
 
     void updateDecay();
-    // int getDecay() { return _decay; }
 
     int getElapsed() { return _elapsed; }
-
-    // int getCounter() { return _counter; }
 
     bool isDecayable() override { return !getWrong(); }
     bool getWrong() { return _wrongBit; }
@@ -55,27 +52,14 @@ class IATAC : public Base
     }
 
     void resetDecayCounter() { _counter = 1; }
-    //// eof extra code ////
 
     std::string print() const;
 
   protected:
     static const int _MAX_ACCESS = 32;
 
-    // static int _acumcounter[];
-    // static int _globalDecay[];
-    // static int _maxGlobalDecay[];
-
-    // static bool _first_iatac_obj;
-
     /** If the block was prematurely turned off. */
     bool _wrongBit = false;
-
-    /** if the block is on or off */
-    // bool _onoff = true;
-
-    /** decay interval that has to elapse. */
-    // int _decay = 8192;
 
     /** max interaccess interval. */
     int _thits = 0;
@@ -83,17 +67,12 @@ class IATAC : public Base
     /** ticks elapsed since last access. */
     int _elapsed = 0;
 
-    /** access counter */
-    // int _counter = 1;
-
     bool _accessOverflow = false;
 
     //// extra code ////
     bool _letOverflow = false;
 
     bool _resetCounterOnHit = false;
-    //// eof extra code ////
-    // void _setupGlobalStructs();
 
     bool _decayIsSet = false;
 };
@@ -149,13 +128,11 @@ class IATACdata : public GlobalDecayData
 
     bool _isMax[_MAX_ACCESS];
 
-    //// extra code ////
     int _initLocalDecay = 8192;
 
     bool _letOverflow = false;
 
     bool _resetCounterOnHit = false;
-    //// eof extra code ////
 
   friend IATAC;
 };

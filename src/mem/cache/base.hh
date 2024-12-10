@@ -79,7 +79,6 @@
 ////MY INLCUDES////
 #include "tp_src/events/cache/decay_event_handler.hh"
 #include "tp_src/events/cache/flush_event_handler.hh"
-#include "tp_src/events/cache/iatac_decay_event_handler.hh"
 #include "tp_src/mem/cache/decay/dueling.hh"
 #include "tp_src/mem/cache/decay/iatac.hh"
 

@@ -132,8 +132,6 @@ BaseSetAssoc::tagsInit()
                 DPRINTF(TPCacheDecayDebug, "before resetDecayCounter\n");
                 blk->constDecayMechResetDecayCounter(localDecayCounter);
                 //// extra code ////
-            // } else if (decayDuelingMonitor != nullptr) {
-            //// refactor code ////
             } else if (decayType == tp::EventType::DECAY_TOUR) {
                 // DPRINTF(TPCacheDecayDebug, "before duelingData init\n");
                 // tp::decay_policy::GlobalDecayData* constDecayData =

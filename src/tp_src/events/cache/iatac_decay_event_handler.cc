@@ -1,10 +1,9 @@
-#include "tp_src/events/cache/iatac_decay_event_handler.hh"
-
 #include <iostream>
 
 #include "debug/TPCacheDecay.hh"
 #include "debug/TPCacheDecayDebug.hh"
 #include "mem/cache/base.hh"
+#include "tp_src/events/cache/decay_event_handler.hh"
 
 namespace gem5
 {
@@ -13,32 +12,19 @@ namespace tp
 
 IATACDecayEventHandler::IATACDecayEventHandler(
         const IATACDecayEventHandlerParams &params) :
-    TimingEventHandler(params),
-    decayPeriod(period),
-    isOn(params.is_on),
-    powerOffRemainingEvent(
-            [this]{processPowerOffRemainingEvent();},
-            "powerOffRemainingEvent"),
-    powerOffRemainingPeriod(
-        this->cyclesToTicks(Cycles(params.post_decay_period))
-    ),
-    calcDecayEvent(
-            [this]{processCalcDecayEvent();},
-            "calcDecayEvent"),
-    calcDecayPeriod(
-        this->cyclesToTicks(Cycles(16384))
-    ),
-    timesRemainingFired(0),
-    timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1),
+    DecayEventHandler(params),
     globalCounter(params.init_global_counter),
     initDecay(params.init_local_counter),
     letOverflow(params.let_overflow),
     resetCounterOnHit(params.reset_on_decay_hit)
+    // timesRemainingLimit(decayPeriod / powerOffRemainingPeriod - 1),
     // timesRemainingLimit(INT_MAX),
 {
     DPRINTF(TPCacheDecay,
         "Created the IATACDecayEventHandler object with the name %s\n",
         name());
+
+    eventType = tp::EventType::DECAY_IATAC;
 }
 
 void
@@ -98,13 +84,6 @@ IATACDecayEventHandler::processPowerOffRemainingEvent()
     //// else {
     ////    schedule(event, curTick() + decayPeriod);
     //// }
-}
-
-void
-IATACDecayEventHandler::processCalcDecayEvent()
-{
-    cache->calcDecayPercentage();
-    schedule(calcDecayEvent, curTick() + calcDecayPeriod);
 }
 
 void

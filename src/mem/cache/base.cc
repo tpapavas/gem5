@@ -175,7 +175,6 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
                 DPRINTF(TPCacheDecayDebug, "Cache sets: %d, leader sets: %d",
                     totalSets, dedicatedSets);
                 tags->setDecayDuelingMonitor(decayDuelingMonitor);
-                // tags->setDecayType(tp::EventType::DECAY_AMC);
                 break;
             }
 
@@ -189,9 +188,6 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
                 int dedicatedSets, scaleFactor;
                 float dThres, uThres;
                 ////////////////////////////////////////
-                // number of dedicated sets for each leader team
-                // (needs to be a parameter)
-                // int dedicatedSets = 32;
                 genDecayEventHandler->retreiveParams(
                     dedicatedSets, scaleFactor, dThres, uThres);
 
@@ -223,6 +219,28 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
                     genDecayEventHandler);
                 break;
             }
+
+            case gem5::tp::EventType::DECAY_IATAC:
+            {
+                DPRINTF(TPCacheDecayDebug,
+                    "TPCacheDecay: %s, before iatac\n", __func__);
+                globDecayData =
+                    std::shared_ptr<tp::decay_policy::GlobalDecayData>(
+                    new tp::decay_policy::IATACdata());
+                tags->setIATACdata(globDecayData);
+                iatacDecayEventHandler =
+                    (tp::IATACDecayEventHandler*) genDecayEventHandler;
+
+                // set cache and iatacData parameters
+                iatacDecayEventHandler->setCache(this);
+                if (iatacDecayEventHandler->isMechOn()) {
+                    decayOn = true;
+                }
+                // tp::IATAC::setOn();
+
+                tags->setDecayType(tp::EventType::DECAY_IATAC);
+                break;
+            }
         }
         genDecayEventHandler->setCache(this); //// SHOULD IT BE HIGHER?
         tags->setDecayType(genDecayEventHandler->getEventType());
@@ -231,21 +249,22 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
 
 
     //// extra code ////
-    DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, before iatac\n", __func__);
-    if (iatacDecayEventHandler) {
-        globDecayData = std::shared_ptr<tp::decay_policy::GlobalDecayData>(
-            new tp::decay_policy::IATACdata());
-        tags->setIATACdata(globDecayData);
+    // DPRINTF(TPCacheDecayDebug,
+    //      "TPCacheDecay: %s, before iatac\n", __func__);
+    // if (iatacDecayEventHandler) {
+    //     globDecayData = std::shared_ptr<tp::decay_policy::GlobalDecayData>(
+    //         new tp::decay_policy::IATACdata());
+    //     tags->setIATACdata(globDecayData);
 
-        // set cache and iatacData parameters
-        iatacDecayEventHandler->setCache(this);
-        if (iatacDecayEventHandler->isMechOn()) {
-            decayOn = true;
-        }
-        // tp::IATAC::setOn();
+    //     // set cache and iatacData parameters
+    //     iatacDecayEventHandler->setCache(this);
+    //     if (iatacDecayEventHandler->isMechOn()) {
+    //         decayOn = true;
+    //     }
+    //     // tp::IATAC::setOn();
 
-        tags->setDecayType(tp::EventType::DECAY_IATAC);
-    }
+    //     tags->setDecayType(tp::EventType::DECAY_IATAC);
+    // }
     //// eof extra code ////
     DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, before tagsInit\n",
         __func__);
