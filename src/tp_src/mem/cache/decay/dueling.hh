@@ -180,6 +180,8 @@ class DecayDuelingMonitor
     DuelingType duelingType = DuelingType::PLAIN;
     //// eof tour-var code ////
 
+    double a,b,c;
+
   public:
     /**
      * Number of times this class has been instantiated. It is used to assign

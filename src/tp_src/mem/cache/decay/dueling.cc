@@ -34,6 +34,7 @@
 #include "debug/TPCacheDecayDebug.hh"
 #include "debug/TPDecayPolicies.hh"
 #include "debug/TPDecayPoliciesStats.hh"
+#include "math.h"
 
 namespace gem5
 {
@@ -79,7 +80,8 @@ DecayDuelingMonitor::DecayDuelingMonitor(std::size_t total_sets,
     constituencyCounter(0), // new code
     winner(2),
     wInCycles(w_cycles),
-    duelingType(dueling_type)
+    duelingType(dueling_type),
+    a(0), b(1), c(1)
     // standardLeaderTeamMisses(0)
 {
     fatal_if(constituencySize < (NUM_DUELERS * teamSize),
@@ -107,7 +109,8 @@ DecayDuelingMonitor::DecayDuelingMonitor(std::size_t total_sets,
 
     LSetsToSetsRatio = double(numOfLeaderTeamSets) / numOfSets;
     std::size_t maxDIMs = 320 * LSetsToSetsRatio;
-    udLimit = 2*maxDIMs + (maxDIMs * maxDIMs)/2;
+    // udLimit = 2*maxDIMs + (maxDIMs * maxDIMs)/2;
+    udLimit = a*maxDIMs + pow(maxDIMs, b)/c;
     // udLimit = 200;
     printf("LIM: %ld\n", udLimit);
 
@@ -219,12 +222,12 @@ DecayDuelingMonitor::getWinner()
     if ((duelingType < DuelingType::OPT_S
             && selectors[0] <= lowLimit * selectors[2])
         || (duelingType == DuelingType::OPT_S
-            && ((2*(selectors[0]-selectors[2]) + selectors[0]*selectors[0]/2)
+            && ((a*(selectors[0]-selectors[2]) + pow(selectors[0], b)/c)
                 < udLimit))) {
         winner = 0;
     } else if (
         (duelingType == DuelingType::OPT_S
-            && ((2*(selectors[2]-selectors[1]) + selectors[2]*selectors[2]/2)
+            && ((a*(selectors[2]-selectors[1]) + pow(selectors[2], b)/c)
                 > udLimit))
         || (duelingType < DuelingType::OPT_S
             && selectors[1] < highLimit * selectors[2])
