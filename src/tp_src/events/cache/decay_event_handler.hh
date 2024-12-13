@@ -46,6 +46,8 @@ class DecayEventHandler : public TimingEventHandler
 
         void enable();
 
+        bool isMechOn() { return isOn; }
+
         virtual void retreiveParams(int &, int &, float &, float &) {}
 };
 
@@ -70,10 +72,6 @@ class IATACDecayEventHandler : public DecayEventHandler
         IATACDecayEventHandler(const IATACDecayEventHandlerParams &p);
 
         void setCache(BaseCache *_cache) override;
-
-        void enable();
-
-        bool isMechOn() { return isOn; }
 };
 
 } // namespace tp

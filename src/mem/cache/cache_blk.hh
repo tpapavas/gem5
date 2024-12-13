@@ -208,10 +208,10 @@ class CacheBlk : public TaggedEntry
     virtual void invalidate() override
     {
         //// MY CODE ////
-        // if (!_onIATACDecayProc) {
+        // if (!_onTurnOffProc) {
             TaggedEntry::invalidate();
         // } else {
-            // _onIATACDecayProc = false;
+            // _onTurnOffProc = false;
         // }
         //// EOF MY CODE ////
 
@@ -423,11 +423,12 @@ class CacheBlk : public TaggedEntry
 
     void
     decayMechPowerOff() {
-        assert(!_onIATACDecayProc);
+        assert(!_onTurnOffProc);
         assert(!isDecayMechPoweredOff());
 
         if (isValid()) {
-            _onIATACDecayProc = _decay->keepTagOn();
+            _onTurnOffProc = true;
+            // _decay->keepTagOn();
         }
         if (_decay) {
             _decay->setPower(false);
@@ -498,14 +499,14 @@ class CacheBlk : public TaggedEntry
     hasDecayMechRealDIM() { return _hasRealDIM; }
 
     bool
-    isOnIATACDecayProc() { return _onIATACDecayProc; }
+    doKeepTagOn() { return _onTurnOffProc && _decay->keepTagOn(); }
 
     void
-    setOnIATACDecayProc(bool state) { _onIATACDecayProc = state; }
+    setOnTurnOffProc(bool state) { _onTurnOffProc = state; }
 
     //// extra code ////
     void
-    resetIATACDecayCounter()
+    decayMechResetCounter()
     {
         if (_decay) {
             _decay->resetCounter();
@@ -716,7 +717,7 @@ class CacheBlk : public TaggedEntry
 
     tp::decay_policy::Constant _constantDecay;
     tp::decay_policy::Base *_decay;
-    bool _onIATACDecayProc = false;
+    bool _onTurnOffProc = false;
     bool _decayedHit = false;
     bool _hasRealDIM = false;
 

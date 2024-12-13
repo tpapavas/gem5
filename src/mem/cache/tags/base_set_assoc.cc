@@ -52,6 +52,7 @@
 #include "tp_src/mem/cache/decay/amc_dp.hh"
 #include "tp_src/mem/cache/decay/constant_dp.hh"
 #include "tp_src/mem/cache/decay/dueling_dp.hh"
+#include "tp_src/mem/cache/decay/iatac.hh"
 
 namespace gem5
 {
@@ -73,8 +74,6 @@ BaseSetAssoc::BaseSetAssoc(const Params &p)
 void
 BaseSetAssoc::tagsInit()
 {
-    std::shared_ptr<tp::decay_policy::GlobalDecayData> globDecayData;
-
     bool haveDecay = decayType != tp::EventType::PLAIN_TIMING;
     //// refactor code ////
     if (haveDecay) {
@@ -86,10 +85,6 @@ BaseSetAssoc::tagsInit()
             globDecayData =
                 std::shared_ptr<tp::decay_policy::GlobalDecayData>(
                 new tp::decay_policy::DuelingDecayData());
-        } else if (decayType == tp::EventType::DECAY_IATAC) {
-            globDecayData =
-                std::shared_ptr<tp::decay_policy::GlobalDecayData>(
-                new tp::decay_policy::IATACdata());
         } else if (decayType == tp::EventType::DECAY_CONST) {
             globDecayData =
                 std::shared_ptr<tp::decay_policy::GlobalDecayData>(
@@ -120,7 +115,7 @@ BaseSetAssoc::tagsInit()
         // blk->resetDecayCounter(localDecayCounter);
 
         if (haveDecay) {
-            DPRINTF(TPCacheDecayDebug, "before instantiateDecay\n");
+            // DPRINTF(TPCacheDecayDebug, "before instantiateDecay\n");
             blk->instantiateDecay(globDecayData);
 
             if (decayType == tp::EventType::DECAY_AMC) {
@@ -148,7 +143,8 @@ BaseSetAssoc::tagsInit()
                 DPRINTF(TPCacheDecayDebug, "before resetDecayCounter\n");
                 blk->constDecayMechResetDecayCounter(localDecayCounter);
                 //// extra code ////
-            } else if (decayType == tp::DECAY_IATAC || iatacData != nullptr) {
+            } else if (decayType == tp::DECAY_IATAC
+                       || globDecayData != nullptr) {
                 // tp::decay_policy::GlobalDecayData* constDecayData =
                 //     new tp::decay_policy::IATACdata();
                 // std::shared_ptr<tp::decay_policy::GlobalDecayData>
@@ -157,6 +153,9 @@ BaseSetAssoc::tagsInit()
                 //             new tp::decay_policy::IATACdata());
                 // blk->instantiateDecay(constDecayData);
                 // tp::decay_policy::IATAC* iatac = blk->getIATAC();
+                std::shared_ptr<tp::decay_policy::IATACdata> iatacData =
+                    std::static_pointer_cast<tp::decay_policy::IATACdata>
+                        (globDecayData);
 
                 blk->getIATAC()->setDecay(iatacData->getInitLocalDecay());
                 blk->getIATAC()->setLetOverflow(iatacData->doLetOverflow());

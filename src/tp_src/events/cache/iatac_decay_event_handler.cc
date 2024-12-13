@@ -57,14 +57,15 @@ IATACDecayEventHandler::processEvent()
 
     if (!cache->iatacUpdateDecay()) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
-    }
-    if (tillSimEnd || timesFired < numOfFires) {
+    } else if (tillSimEnd || timesFired < numOfFires) {
         schedule(event, curTick() + decayPeriod);
-        if (!calcDecayEvent.scheduled()) {
-            schedule(calcDecayEvent, curTick() + calcDecayPeriod);
-        }
     } else {
         DPRINTF(TPCacheDecay, "Done firing!\n");
+        return;
+    }
+
+    if (!calcDecayEvent.scheduled()) {
+        schedule(calcDecayEvent, curTick() + calcDecayPeriod);
     }
 }
 
@@ -80,17 +81,9 @@ IATACDecayEventHandler::processPowerOffRemainingEvent()
     if (!cache->iatacPowerOffRemainingBlks(lastTime) &&
         timesRemainingFired < timesRemainingLimit) {
         schedule(powerOffRemainingEvent, curTick() + powerOffRemainingPeriod);
+    } else {
+       schedule(event, curTick() + decayPeriod);
     }
-    //// else {
-    ////    schedule(event, curTick() + decayPeriod);
-    //// }
-}
-
-void
-IATACDecayEventHandler::enable()
-{
-    isOn = true;
-    cache->setDecayOn(true);
 }
 
 } // namespace tp

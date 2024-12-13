@@ -100,7 +100,6 @@ struct BaseCacheParams;
 namespace tp
 {
     class DecayEventHandler;
-    class IATACDecayEventHandler;
 }
 //// EOF MY CODE ////
 
@@ -1481,10 +1480,7 @@ class BaseCache : public ClockedObject
 ////////--MY_CODE--////////
   protected:
     tp::FlushEventHandler *flushEventHandler;
-    tp::IATACDecayEventHandler *iatacDecayEventHandler;
     tp::DecayEventHandler *genDecayEventHandler = nullptr;
-    CacheBlk *iatacDecayedBlk = nullptr;
-    bool iatacDecayedHit = false;
     bool decayOn = false;
 
     //// refactor code ////
@@ -1511,12 +1507,6 @@ class BaseCache : public ClockedObject
     bool iatacPowerOffRemainingBlks(bool isLastTime);
 
     //// extra code ////
-    std::shared_ptr<tp::decay_policy::IATACdata> getIATACdata()
-    {
-        return std::static_pointer_cast<tp::decay_policy::IATACdata>(
-            globDecayData);
-    }
-
     bool calcDecayPercentage();
     //// eof extra code ////
 

@@ -30,7 +30,7 @@ class IATAC : public Base
 
     int getElapsed() { return _elapsed; }
 
-    bool isDecayable() override { return !getWrong(); }
+    bool isDecayable() override { return !_wrongBit; }
     bool getWrong() { return _wrongBit; }
 
     //// extra code ////
@@ -43,7 +43,7 @@ class IATAC : public Base
       }
     }
 
-    void setLetOverflow(bool let_overflow) { _letOverflow =let_overflow; }
+    void setLetOverflow(bool let_overflow) { _letOverflow = let_overflow; }
 
     bool doResetCounterOnDecayedHit() { return _resetCounterOnHit; }
     void setResetCounterOnHit(bool reset_counter_on_hit)

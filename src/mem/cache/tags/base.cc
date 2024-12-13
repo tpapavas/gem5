@@ -77,7 +77,7 @@ BaseTags::BaseTags(const Params &p)
 
     //// extra code ////
     decayDuelingMonitor = nullptr;
-    iatacData = nullptr;
+    globDecayData = nullptr;
     //// eof extra code ////
 }
 

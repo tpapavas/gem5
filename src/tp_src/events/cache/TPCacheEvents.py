@@ -50,18 +50,6 @@ class IATACDecayEventHandler(DecayEventHandler):
     def enable():
         pass
 
-    decay_period = Param.Cycles(
-        1000, "the period (in cycles) of a decay window."
-    )
-
-    post_decay_period = Param.Cycles(
-        100,
-        "the period (in cycles) for trying to decay blocks "
-        "not decayed on time.",
-    )
-
-    is_on = Param.Bool(True, "Whether the event is doing its thing")
-
     init_global_counter = Param.Int(1, "Initial value for global counters.")
 
     init_local_counter = Param.Int(8192, "Initial value for local counter.")

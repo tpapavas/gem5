@@ -63,7 +63,6 @@
 //// extra code ////
 #include "tp_src/events/timing_event_handler.hh"
 #include "tp_src/mem/cache/decay/dueling.hh"
-#include "tp_src/mem/cache/decay/iatac.hh"
 
 //// eof extra code ////
 
@@ -114,9 +113,7 @@ class BaseTags : public ClockedObject
     //// EOF MY CODE ////
 
     //// extra code ////
-    int initIATACDecay = 8192;
-
-    std::shared_ptr<tp::decay_policy::IATACdata> iatacData;
+    std::shared_ptr<tp::decay_policy::GlobalDecayData> globDecayData;
 
     tp::DecayDuelingMonitor* decayDuelingMonitor;
     tp::EventType decayType = tp::EventType::PLAIN_TIMING;
@@ -378,13 +375,10 @@ class BaseTags : public ClockedObject
 
     int getLocalDecayCounter() { return localDecayCounter; }
 
-    // void setIATACInitDecay(int init_decay) { initIATACDecay = init_decay; }
-
-    void setIATACdata(std::shared_ptr<tp::decay_policy::GlobalDecayData>
-        iatac_data)
+    void setGlobDecayData(std::shared_ptr<tp::decay_policy::GlobalDecayData>
+        glob_decay_data)
     {
-        iatacData = std::static_pointer_cast<tp::decay_policy::IATACdata>(
-            iatac_data);
+        globDecayData = glob_decay_data;
     }
 
     void setDecayDuelingMonitor(tp::DecayDuelingMonitor* monitor)
