@@ -34,7 +34,6 @@
 #include "debug/TPCacheDecayDebug.hh"
 #include "debug/TPDecayPolicies.hh"
 #include "debug/TPDecayPoliciesStats.hh"
-#include "math.h"
 
 namespace gem5
 {
@@ -81,7 +80,7 @@ DecayDuelingMonitor::DecayDuelingMonitor(std::size_t total_sets,
     winner(2),
     wInCycles(w_cycles),
     duelingType(dueling_type),
-    a(0), b(1), c(1)
+    _a(0), _b(1), _c(1)
     // standardLeaderTeamMisses(0)
 {
     fatal_if(constituencySize < (NUM_DUELERS * teamSize),
@@ -107,13 +106,19 @@ DecayDuelingMonitor::DecayDuelingMonitor(std::size_t total_sets,
         standardLeaderTeamMisses[i] = 0;
     }
 
+    lowLimit = 1.0 + lowThreshold;
+    highLimit = 1.0 - highThreshold;
+
     LSetsToSetsRatio = double(numOfLeaderTeamSets) / numOfSets;
+
+    //// tour-ud-s code ////
     std::size_t maxDIMs = 320 * LSetsToSetsRatio;
     // udLimit = 2*maxDIMs + (maxDIMs * maxDIMs)/2;
-    udLimit = a*maxDIMs + pow(maxDIMs, b)/c;
+    udLimit = _a*maxDIMs + pow(maxDIMs, _b)/_c;
     // udLimit = 200;
     printf("LIM: %ld\n", udLimit);
 
+    //// tour-en-aware code ////
     double clkFreq = 1000.0 / clock_ticks;  // GHz
     size_t numBlks = numOfSets * teamSize;
     numOfLTBlks = numBlks * LSetsToSetsRatio;
@@ -150,21 +155,9 @@ DecayDuelingMonitor::sample(const DecayDueler* dueler)
 
             if (duelingType > DuelingType::JUMP
                 && duelingType < DuelingType::EN_AWARE) {
-                int maxSleepMisses =
-                    // std::max(selectors[0],
-                    //      std::max(selectors[1], selectors[2]));
-                    // // std::max(selectors[1], selectors[2]);
-                    std::max(
-                        selectors[0] *
-                            (duelingType == DuelingType::E_JUMP ? 1 : 0),
-                        std::max(selectors[1], selectors[2])
-                    );
-                if ((maxSleepMisses > 30 && idealMisses[2] > 0)
-                    && maxSleepMisses >= 0.1 * idealMisses[2]) {
-                    // dim: decay-induced misses
-                    // if dim(2d) >= 10% increase to dim(d), go to 4x decay.
-                    return false;
-                }
+                // dim: decay-induced misses
+                // if dim(2d) >= 10% increase to dim(d), go to 4x decay.
+                return !jumpscaleCondition(idealMisses[2]);
             }
         }
     }
@@ -204,7 +197,6 @@ DecayDuelingMonitor::getWinner()
     }
 
     winner = 2;
-    int minMisses = 10000000;
 
     int idealMisses = standardLeaderTeamMisses[2] - selectors[2];
     /**
@@ -216,50 +208,23 @@ DecayDuelingMonitor::getWinner()
 
 
 ////////////// THRESHOLD MECHANISM ///////////////////////////////////////
-    float lowLimit = 1.0 + lowThreshold;
-    float highLimit = 1.0 - highThreshold;
+    // float lowLimit = 1.0 + lowThreshold;
+    // float highLimit = 1.0 - highThreshold;
 // /*
-    if ((duelingType < DuelingType::OPT_S
-            && selectors[0] <= lowLimit * selectors[2])
-        || (duelingType == DuelingType::OPT_S
-            && ((a*(selectors[0]-selectors[2]) + pow(selectors[0], b)/c)
-                < udLimit))) {
+    if (downscaleCondition()) {
         winner = 0;
-    } else if (
-        (duelingType == DuelingType::OPT_S
-            && ((a*(selectors[2]-selectors[1]) + pow(selectors[2], b)/c)
-                > udLimit))
-        || (duelingType < DuelingType::OPT_S
-            && selectors[1] < highLimit * selectors[2])
-        || (duelingType < DuelingType::OPT
-            && selectors[1] == highLimit * selectors[2])) {
+    } else if (upscaleCondition()) {
         winner = 1;
     } else {
         winner = 2;
     }
 
     // bool gotInsideIf = false;
-    if (!((duelingType == DuelingType::PLAIN)
-          || (duelingType == DuelingType::JUMP && winner !=2)))
-    {
-        int maxSleepMisses =
-            std::max(
-                selectors[0] * (duelingType == DuelingType::E_JUMP ? 1 : 0),
-                std::max(selectors[1],
-                         selectors[2] *
-                            (duelingType == DuelingType::JUMP ? 0 : 1))
-            );
-        if ((maxSleepMisses > 30 && idealMisses > 0)
-            && maxSleepMisses >= 0.1 * idealMisses) {
-            // DIM: decay-induced misses
-            // if maxDIM >= 10% increase to dim(d), go to sf (4x/8x) decay.
-            winner = 3;
-            // gotInsideIf = true;
-            // printf("sleep misses: %d, ideal misses: %d\n",
-                // maxSleepMisses, idealMisses);
-        }
+    if (jumpscaleCondition(idealMisses)) {
+        // DIM: decay-induced misses
+        // if maxDIM >= 10% increase to dim(d), go to sf (4x/8x) decay.
+        winner = 3;
     }
-    // assert(!gotInsideIf);
     // */
 //////////////// EOF THRESHOLD MECHANISM /////////////////////////////////
 

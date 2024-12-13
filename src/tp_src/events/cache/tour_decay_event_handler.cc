@@ -22,7 +22,7 @@ TourDecayEventHandler::TourDecayEventHandler(
     dThres(params.d_threshold),
     uThres(params.u_threshold),
     scaleFactor(params.s_factor),
-    duelingType(params.dueling_type)
+    duelingTypeId(params.dueling_type)
 {
     TW_CYCLES = Cycles(params.window_size * 9 * 128000);
     TOUR_WINDOW_LIMIT = TW_CYCLES / ticksToCycles(decayPeriod);
@@ -37,9 +37,90 @@ TourDecayEventHandler::TourDecayEventHandler(
 void TourDecayEventHandler::setCache(BaseCache *_cache)
 {
     DecayEventHandler::setCache(_cache);
-    cache->getDecayDuelingMonitor()->setDuelingType(
-        static_cast<DecayDuelingMonitor::DuelingType>(duelingType));
+    // cache->getDecayDuelingMonitor()->setDuelingType(
+    //     static_cast<DecayDuelingMonitor::DuelingType>(duelingTypeId));
 }
+
+DecayDuelingMonitor *
+TourDecayEventHandler::createTourMonitor(size_t total_sets,
+    size_t constituency_size, size_t team_size, Tick clk_ticks)
+{
+    DecayDuelingMonitor* decayDuelingMonitor = nullptr;
+    DecayDuelingMonitor::DuelingType duelingType =
+        static_cast<DecayDuelingMonitor::DuelingType>(duelingTypeId);
+
+    switch (duelingType)
+    {
+        case DecayDuelingMonitor::DuelingType::PLAIN:
+        {
+            decayDuelingMonitor = new TourPlain(
+                total_sets, dedicatedSets, constituency_size,
+                team_size, dThres, uThres, scaleFactor, clk_ticks,
+                TW_CYCLES);
+            break;
+        }
+
+        case DecayDuelingMonitor::DuelingType::JUMP:
+        {
+            decayDuelingMonitor = new TourJump(
+                total_sets, dedicatedSets, constituency_size,
+                team_size, dThres, uThres, scaleFactor, clk_ticks,
+                TW_CYCLES);
+            break;
+        }
+
+        case DecayDuelingMonitor::DuelingType::E_JUMP:
+        {
+            decayDuelingMonitor = new TourEJump(
+                total_sets, dedicatedSets, constituency_size,
+                team_size, dThres, uThres, scaleFactor, clk_ticks,
+                TW_CYCLES);
+            break;
+        }
+
+        case DecayDuelingMonitor::DuelingType::E_JUMP_C:
+        {
+            decayDuelingMonitor = new TourEJumpC(
+                total_sets, dedicatedSets, constituency_size,
+                team_size, dThres, uThres, scaleFactor, clk_ticks,
+                TW_CYCLES);
+            break;
+        }
+
+        case DecayDuelingMonitor::DuelingType::UD_S:
+        {
+            decayDuelingMonitor = new TourUD_S(
+                total_sets, dedicatedSets, constituency_size,
+                team_size, dThres, uThres, scaleFactor, clk_ticks,
+                TW_CYCLES);
+            break;
+        }
+
+        case DecayDuelingMonitor::DuelingType::UD_S_SIMPLE:
+        {
+            decayDuelingMonitor = new TourUD_S_Simple(
+                total_sets, dedicatedSets, constituency_size,
+                team_size, dThres, uThres, scaleFactor, clk_ticks,
+                TW_CYCLES);
+            break;
+        }
+
+        case DecayDuelingMonitor::DuelingType::EN_AWARE:
+        {
+            decayDuelingMonitor = new TourEnAware(
+                total_sets, dedicatedSets, constituency_size,
+                team_size, dThres, uThres, scaleFactor, clk_ticks,
+                TW_CYCLES);
+            break;
+        }
+
+        default:
+            break;
+    }
+
+    return decayDuelingMonitor;
+}
+
 
 void
 TourDecayEventHandler::processEvent()

@@ -196,14 +196,19 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
                 DPRINTF(TPCacheDecayDebug, "Constituency size %d\n",
                     (p.size / blk_size) / dedicatedSets);
                 DPRINTF(TPCacheDecayDebug, "Team size %d\n", p.assoc);
-                decayDuelingMonitor = new tp::DecayDuelingMonitor(
-                    (p.size / blk_size) / p.assoc, dedicatedSets,
-                    (p.size / blk_size) / dedicatedSets, p.assoc,
-                    dThres, uThres, scaleFactor,
-                    clockPeriod(),
-                    static_cast<tp::TourDecayEventHandler*>
-                        (genDecayEventHandler)->getWCycles()
-                );
+                // decayDuelingMonitor = new tp::DecayDuelingMonitor(
+                //     (p.size / blk_size) / p.assoc, dedicatedSets,
+                //     (p.size / blk_size) / dedicatedSets, p.assoc,
+                //     dThres, uThres, scaleFactor,
+                //     clockPeriod(),
+                //     static_cast<tp::TourDecayEventHandler*>
+                //         (genDecayEventHandler)->getWCycles()
+                // );
+                decayDuelingMonitor = static_cast<tp::TourDecayEventHandler*>
+                    (genDecayEventHandler)->createTourMonitor(
+                        (p.size / blk_size) / p.assoc,
+                        (p.size / blk_size) / dedicatedSets,
+                        p.assoc, clockPeriod());
                 DPRINTF(TPCacheDecayDebug, "Cache sets: %d, leader sets: %d",
                     (p.size / blk_size) / p.assoc, dedicatedSets);
                 tags->setDecayDuelingMonitor(decayDuelingMonitor);

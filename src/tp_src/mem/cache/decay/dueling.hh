@@ -29,6 +29,7 @@
 #ifndef __BASE_DUELING_HH__
 #define __BASE_DUELING_HH__
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 
@@ -94,8 +95,9 @@ class DecayDuelingMonitor
         PLAIN,
         JUMP,
         E_JUMP,
-        OPT,
-        OPT_S,
+        E_JUMP_C,
+        UD_S,
+        UD_S_SIMPLE,
         EN_AWARE
       };
 
@@ -155,6 +157,8 @@ class DecayDuelingMonitor
      */
     const double highThreshold;
 
+    double lowLimit, highLimit;
+
     /**
      * Counter that determines which dueler is winning.
      * In the DIP paper they propose using a 10-11 bit saturating counter.
@@ -180,7 +184,11 @@ class DecayDuelingMonitor
     DuelingType duelingType = DuelingType::PLAIN;
     //// eof tour-var code ////
 
-    double a,b,c;
+    double _a, _b, _c;
+
+    virtual bool downscaleCondition() { return false; }
+    virtual bool upscaleCondition() { return false; }
+    virtual bool jumpscaleCondition(int im) { return false; }
 
   public:
     /**
@@ -264,6 +272,148 @@ class DecayDuelingMonitor
         toffRatios[i] /= (globCounter * numOfLTBlks);
       }
     }
+};
+
+class TourPlain : public DecayDuelingMonitor
+{
+  protected:
+    virtual bool downscaleCondition() override {
+      return selectors[0] <= lowLimit * selectors[2];
+    }
+    virtual bool upscaleCondition() override {
+      return selectors[1] <= highLimit * selectors[2];
+    }
+
+  public:
+    TourPlain(std::size_t sets, std::size_t l_sets, std::size_t c_size,
+      std::size_t t_size = 1, double l_thres = 0.01, double h_thres = 0.02,
+      int sf = 4, Tick clk_ticks = 0, Cycles w_cycles = Cycles(0),
+      DuelingType dueling_type = DuelingType::PLAIN):
+    DecayDuelingMonitor(sets, l_sets, c_size, t_size, l_thres, h_thres, sf,
+      clk_ticks, w_cycles, dueling_type) {};
+};
+
+class TourJump : public TourPlain
+{
+  protected:
+    virtual bool jumpscaleCondition(int idealMisses) override {
+      return ((winner == 2)
+               && (selectors[1] > 30 && idealMisses > 0)
+               && (selectors[1] >= 0.1 * idealMisses));
+    }
+
+  public:
+    TourJump(std::size_t sets, std::size_t l_sets, std::size_t c_size,
+      std::size_t t_size = 1, double l_thres = 0.01, double h_thres = 0.02,
+      int sf = 4, Tick clk_ticks = 0, Cycles w_cycles = Cycles(0),
+      DuelingType dueling_type = DuelingType::JUMP):
+    TourPlain(sets, l_sets, c_size, t_size, l_thres, h_thres, sf,
+      clk_ticks, w_cycles, dueling_type) {};
+};
+
+class TourEJump : public TourJump
+{
+  protected:
+    virtual bool jumpscaleCondition(int idealMisses) override {
+      int maxSleepMisses =
+            std::max(selectors[0], std::max(selectors[1], selectors[2]));
+      return ((maxSleepMisses > 30 && idealMisses > 0)
+                && (maxSleepMisses >= 0.1 * idealMisses));
+    }
+
+  public:
+    TourEJump(std::size_t sets, std::size_t l_sets, std::size_t c_size,
+      std::size_t t_size = 1, double l_thres = 0.01, double h_thres = 0.02,
+      int sf = 4, Tick clk_ticks = 0, Cycles w_cycles = Cycles(0),
+      DuelingType dueling_type = DuelingType::E_JUMP):
+    TourJump(sets, l_sets, c_size, t_size, l_thres, h_thres, sf,
+      clk_ticks, w_cycles, dueling_type) {};
+};
+
+class TourEJumpC : public TourEJump
+{
+  protected:
+    virtual bool upscaleCondition() override {
+      return selectors[1] < highLimit * selectors[2];
+    }
+    virtual bool jumpscaleCondition(int idealMisses) override {
+      int maxSleepMisses = std::max(selectors[1], selectors[2]);
+      return ((maxSleepMisses > 30 && idealMisses > 0)
+               && (maxSleepMisses >= 0.1 * idealMisses));
+    }
+
+  public:
+    TourEJumpC(std::size_t sets, std::size_t l_sets, std::size_t c_size,
+      std::size_t t_size = 1, double l_thres = 0.01, double h_thres = 0.02,
+      int sf = 4, Tick clk_ticks = 0, Cycles w_cycles = Cycles(0),
+      DuelingType dueling_type = DuelingType::E_JUMP_C):
+    TourEJump(sets, l_sets, c_size, t_size, l_thres, h_thres, sf,
+      clk_ticks, w_cycles, dueling_type) {};
+};
+
+class TourUD_S : public DecayDuelingMonitor
+{
+  protected:
+    virtual bool downscaleCondition() override {
+      return (_a*(selectors[0]-selectors[2]) + pow(selectors[0], _b) / _c)
+                < udLimit;
+    }
+    virtual bool upscaleCondition() override {
+      return (_a*(selectors[2]-selectors[1]) + pow(selectors[2], _b) / _c)
+                > udLimit;
+    }
+    virtual bool jumpscaleCondition(int idealMisses) override {
+      int maxSleepMisses = std::max(selectors[1], selectors[2]);
+      return ((maxSleepMisses > 30 && idealMisses > 0)
+               && (maxSleepMisses >= 0.1 * idealMisses));
+    }
+
+  public:
+    TourUD_S(std::size_t sets, std::size_t l_sets, std::size_t c_size,
+      std::size_t t_size = 1, double l_thres = 0.01, double h_thres = 0.02,
+      int sf = 4, Tick clk_ticks = 0, Cycles w_cycles = Cycles(0),
+      DuelingType dueling_type = DuelingType::UD_S,
+      double a = 2, double b = 2, double c = 2):
+    DecayDuelingMonitor(sets, l_sets, c_size, t_size, l_thres, h_thres, sf,
+      clk_ticks, w_cycles, dueling_type)
+    {
+      _a = a; _b = b; _c = c;
+      std::size_t maxDIMs = 320 * LSetsToSetsRatio;
+      // udLimit = 2*maxDIMs + (maxDIMs * maxDIMs)/2;
+      udLimit = _a*maxDIMs + pow(maxDIMs, _b)/_c;
+      // udLimit = 200;
+      printf("LIM: %ld\n", udLimit);
+    };
+};
+
+class TourUD_S_Simple : public TourUD_S
+{
+  public:
+    TourUD_S_Simple(std::size_t sets, std::size_t l_sets, std::size_t c_size,
+      std::size_t t_size = 1, double l_thres = 0.01, double h_thres = 0.02,
+      int sf = 4, Tick clk_ticks = 0, Cycles w_cycles = Cycles(0),
+      DuelingType dueling_type = DuelingType::UD_S_SIMPLE):
+    TourUD_S(sets, l_sets, c_size, t_size, l_thres, h_thres, sf,
+      clk_ticks, w_cycles, dueling_type, 0, 1, 1) {};
+};
+
+class TourEnAware : public DecayDuelingMonitor
+{
+  // protected:
+  //   virtual bool downscaleCondition() override {
+  //     return ;
+  //   }
+  //   virtual bool upscaleCondition() override {
+  //     return ;
+  //   }
+
+  public:
+    TourEnAware(std::size_t sets, std::size_t l_sets, std::size_t c_size,
+      std::size_t t_size = 1, double l_thres = 0.01, double h_thres = 0.02,
+      int sf = 4, Tick clk_ticks = 0, Cycles w_cycles = Cycles(0),
+      DuelingType dueling_type = DuelingType::EN_AWARE):
+    DecayDuelingMonitor(sets, l_sets, c_size, t_size, l_thres, h_thres, sf,
+      clk_ticks, w_cycles, dueling_type) {};
 };
 
 class DecayAMCMonitor : public DecayDuelingMonitor

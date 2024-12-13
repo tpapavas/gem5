@@ -22,7 +22,7 @@ class TourDecayEventHandler : public DecayEventHandler
         float dThres = 0.01;
         float uThres = 0.02;
         float scaleFactor = 4;
-        uint32_t duelingType = 0;
+        uint32_t duelingTypeId = 0;
 
         uint64_t TOUR_WINDOW_LIMIT = 36;
         Cycles TW_CYCLES; // the window size in cycles
@@ -36,6 +36,9 @@ class TourDecayEventHandler : public DecayEventHandler
         void skipWindow() { tournamentWindow = TOUR_WINDOW_LIMIT - 1; }
 
         Cycles getWCycles() { return TW_CYCLES; }
+
+        DecayDuelingMonitor *createTourMonitor(size_t total_sets,
+            size_t constituency_size, size_t team_size, Tick clk_ticks);
 };
 
 } // namespace tp
