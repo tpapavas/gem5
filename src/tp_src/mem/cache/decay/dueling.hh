@@ -137,7 +137,11 @@ class DecayDuelingMonitor
     std::size_t numOfLTBlks;
     uint64_t standardLeaderTeamMisses[4];
     double toffRatios[4];
-    std::size_t udLimit;
+    uint64_t udLimit;
+
+    uint64_t leastDIMs;
+    uint64_t dimLimit;
+    double dimToImRatio;
 
     Cycles wInCycles;
 
@@ -272,6 +276,13 @@ class DecayDuelingMonitor
         toffRatios[i] /= (globCounter * numOfLTBlks);
       }
     }
+
+    void setTourParams(uint64_t dim_limit, uint64_t least_dims,
+        double d_to_i_ratio) {
+      dimLimit = dim_limit;
+      leastDIMs = least_dims;
+      dimToImRatio = d_to_i_ratio;
+    }
 };
 
 class TourPlain : public DecayDuelingMonitor
@@ -364,8 +375,8 @@ class TourUD_S : public DecayDuelingMonitor
     }
     virtual bool jumpscaleCondition(int idealMisses) override {
       int maxSleepMisses = std::max(selectors[1], selectors[2]);
-      return ((maxSleepMisses > 30 && idealMisses > 0)
-               && (maxSleepMisses >= 0.1 * idealMisses));
+      return ((maxSleepMisses > leastDIMs && idealMisses > 0)
+               && (maxSleepMisses >= dimToImRatio * idealMisses));
     }
 
   public:
@@ -378,7 +389,8 @@ class TourUD_S : public DecayDuelingMonitor
       clk_ticks, w_cycles, dueling_type)
     {
       _a = a; _b = b; _c = c;
-      std::size_t maxDIMs = 320 * LSetsToSetsRatio;
+      std::size_t maxDIMs = dimLimit * LSetsToSetsRatio;
+      // std::size_t maxDIMs = 320 * LSetsToSetsRatio;
       // udLimit = 2*maxDIMs + (maxDIMs * maxDIMs)/2;
       udLimit = _a*maxDIMs + pow(maxDIMs, _b)/_c;
       // udLimit = 200;

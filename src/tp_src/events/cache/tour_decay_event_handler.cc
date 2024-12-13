@@ -22,7 +22,10 @@ TourDecayEventHandler::TourDecayEventHandler(
     dThres(params.d_threshold),
     uThres(params.u_threshold),
     scaleFactor(params.s_factor),
-    duelingTypeId(params.dueling_type)
+    duelingTypeId(params.dueling_type),
+    dimLimit(params.dim_limit),
+    leastDIMs(params.least_dims),
+    dimToImRatio(params.dim_to_im_ratio)
 {
     TW_CYCLES = Cycles(params.window_size * 9 * 128000);
     TOUR_WINDOW_LIMIT = TW_CYCLES / ticksToCycles(decayPeriod);
@@ -117,6 +120,7 @@ TourDecayEventHandler::createTourMonitor(size_t total_sets,
         default:
             break;
     }
+    decayDuelingMonitor->setTourParams(dimLimit, leastDIMs, dimToImRatio);
 
     return decayDuelingMonitor;
 }

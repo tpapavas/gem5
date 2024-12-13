@@ -24,6 +24,10 @@ class TourDecayEventHandler : public DecayEventHandler
         float scaleFactor = 4;
         uint32_t duelingTypeId = 0;
 
+        uint64_t dimLimit;
+        uint64_t leastDIMs;
+        double dimToImRatio;
+
         uint64_t TOUR_WINDOW_LIMIT = 36;
         Cycles TW_CYCLES; // the window size in cycles
     public:

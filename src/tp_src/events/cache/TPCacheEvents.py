@@ -89,6 +89,14 @@ class TourDecayEventHandler(DecayEventHandler):
         "PLAIN(0), JUMP(1), E_JUMP(2), OPT(3), OPT_S(4), EN_AWARE(5)",
     )
 
+    dim_limit = Param.UInt64(320, "Limit for downscale/upscale")
+
+    least_dims = Param.UInt64(
+        30, "Low limit for beginning to check jumpscale condition"
+    )
+
+    dim_to_im_ratio = Param.Float(0.1, "parameter for jumpscale condition")
+
 
 class AMCDecayEventHandler(TourDecayEventHandler):
     type = "AMCDecayEventHandler"

@@ -112,11 +112,11 @@ DecayDuelingMonitor::DecayDuelingMonitor(std::size_t total_sets,
     LSetsToSetsRatio = double(numOfLeaderTeamSets) / numOfSets;
 
     //// tour-ud-s code ////
-    std::size_t maxDIMs = 320 * LSetsToSetsRatio;
-    // udLimit = 2*maxDIMs + (maxDIMs * maxDIMs)/2;
-    udLimit = _a*maxDIMs + pow(maxDIMs, _b)/_c;
-    // udLimit = 200;
-    printf("LIM: %ld\n", udLimit);
+    // uint64_t maxDIMs = 320 * LSetsToSetsRatio;
+    // // udLimit = 2*maxDIMs + (maxDIMs * maxDIMs)/2;
+    // udLimit = _a*maxDIMs + pow(maxDIMs, _b)/_c;
+    // // udLimit = 200;
+    // printf("LIM: %ld\n", udLimit);
 
     //// tour-en-aware code ////
     double clkFreq = 1000.0 / clock_ticks;  // GHz
