@@ -33,7 +33,10 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "base/logging.hh"
 #include "base/sat_counter.hh"
+#include "base/trace.hh"
+#include "debug/TPDecayPoliciesStats.hh"
 
 namespace gem5
 {
@@ -383,18 +386,24 @@ class TourUD_S : public DecayDuelingMonitor
     TourUD_S(std::size_t sets, std::size_t l_sets, std::size_t c_size,
       std::size_t t_size = 1, double l_thres = 0.01, double h_thres = 0.02,
       int sf = 4, Tick clk_ticks = 0, Cycles w_cycles = Cycles(0),
-      DuelingType dueling_type = DuelingType::UD_S,
-      double a = 2, double b = 2, double c = 2):
+      uint64_t dim_limit = 320, uint64_t least_dims = 30,
+      double dim_to_im_ratio = 0.1, double a = 2, double b = 2, double c = 2,
+      DuelingType dueling_type = DuelingType::UD_S):
     DecayDuelingMonitor(sets, l_sets, c_size, t_size, l_thres, h_thres, sf,
       clk_ticks, w_cycles, dueling_type)
     {
+      dimLimit = dim_limit;
+      leastDIMs = least_dims;
+      dimToImRatio = dim_to_im_ratio;
       _a = a; _b = b; _c = c;
       std::size_t maxDIMs = dimLimit * LSetsToSetsRatio;
       // std::size_t maxDIMs = 320 * LSetsToSetsRatio;
       // udLimit = 2*maxDIMs + (maxDIMs * maxDIMs)/2;
       udLimit = _a*maxDIMs + pow(maxDIMs, _b)/_c;
       // udLimit = 200;
-      printf("LIM: %ld\n", udLimit);
+      DPRINTF(TPDecayPoliciesStats, "SF: %d, LIM: %ld, leastDIMs: %ld, "
+        "DIMsToIMs-ratio: %f\n",
+        sFactor, udLimit, leastDIMs, dimToImRatio);
     };
 };
 
@@ -404,9 +413,12 @@ class TourUD_S_Simple : public TourUD_S
     TourUD_S_Simple(std::size_t sets, std::size_t l_sets, std::size_t c_size,
       std::size_t t_size = 1, double l_thres = 0.01, double h_thres = 0.02,
       int sf = 4, Tick clk_ticks = 0, Cycles w_cycles = Cycles(0),
+      uint64_t dim_limit = 320, uint64_t least_dims = 30,
+      double dim_to_im_ratio = 0.1,
       DuelingType dueling_type = DuelingType::UD_S_SIMPLE):
     TourUD_S(sets, l_sets, c_size, t_size, l_thres, h_thres, sf,
-      clk_ticks, w_cycles, dueling_type, 0, 1, 1) {};
+      clk_ticks, w_cycles, dim_limit, least_dims, dim_to_im_ratio,
+      0, 1, 1, dueling_type) {};
 };
 
 class TourEnAware : public DecayDuelingMonitor

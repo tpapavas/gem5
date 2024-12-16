@@ -95,7 +95,7 @@ TourDecayEventHandler::createTourMonitor(size_t total_sets,
             decayDuelingMonitor = new TourUD_S(
                 total_sets, dedicatedSets, constituency_size,
                 team_size, dThres, uThres, scaleFactor, clk_ticks,
-                TW_CYCLES);
+                TW_CYCLES, dimLimit, leastDIMs, dimToImRatio);
             break;
         }
 
@@ -104,7 +104,7 @@ TourDecayEventHandler::createTourMonitor(size_t total_sets,
             decayDuelingMonitor = new TourUD_S_Simple(
                 total_sets, dedicatedSets, constituency_size,
                 team_size, dThres, uThres, scaleFactor, clk_ticks,
-                TW_CYCLES);
+                TW_CYCLES, dimLimit, leastDIMs, dimToImRatio);
             break;
         }
 
@@ -120,7 +120,7 @@ TourDecayEventHandler::createTourMonitor(size_t total_sets,
         default:
             break;
     }
-    decayDuelingMonitor->setTourParams(dimLimit, leastDIMs, dimToImRatio);
+    // decayDuelingMonitor->setTourParams(dimLimit, leastDIMs, dimToImRatio);
 
     return decayDuelingMonitor;
 }

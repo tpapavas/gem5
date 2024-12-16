@@ -29,11 +29,11 @@
 #include "tp_src/mem/cache/decay/dueling.hh"
 
 #include "base/bitfield.hh"
-#include "base/logging.hh"
-#include "base/trace.hh"
+//#include "base/logging.hh"
+//#include "base/trace.hh"
 #include "debug/TPCacheDecayDebug.hh"
 #include "debug/TPDecayPolicies.hh"
-#include "debug/TPDecayPoliciesStats.hh"
+//#include "debug/TPDecayPoliciesStats.hh"
 
 namespace gem5
 {
