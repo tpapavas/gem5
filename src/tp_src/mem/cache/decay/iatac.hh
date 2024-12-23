@@ -26,7 +26,7 @@ class IATAC : public Base
     bool decayElapsed() override { return (_elapsed >= _decay) && _onoff; }
     // static void printGlobals();
 
-    void updateDecay();
+    void updateDecay() override;
 
     int getElapsed() { return _elapsed; }
 

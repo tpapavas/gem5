@@ -52,7 +52,6 @@ from m5.objects import (
 from m5.objects.TPCacheEvents import (
     FlushEventHandler,
     DecayEventHandler,
-    IATACDecayEventHandler,
 )
 
 from gem5.utils.override import *
@@ -103,19 +102,9 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
         L3PrefetcherCls: Type[BasePrefetcher] = StridePrefetcher,
         l1d_flush_event_handler: Type[FlushEventHandler] = None,
         l1i_flush_event_handler: Type[FlushEventHandler] = None,
-        l1d_decay_event_handler: Type[DecayEventHandler] = None,
-        l1i_decay_event_handler: Type[DecayEventHandler] = None,
-        l2_decay_event_handler: Type[DecayEventHandler] = None,
-        l3_decay_event_handler: Type[DecayEventHandler] = None,
-        l1d_iatac_decay_event_handler: Type[
-            IATACDecayEventHandler
-        ] = None,  # new code for IATAC
-        l2_iatac_decay_event_handler: Type[
-            IATACDecayEventHandler
-        ] = None,  # new code for IATAC
-        l3_iatac_decay_event_handler: Type[
-            IATACDecayEventHandler
-        ] = None,  # new code for IATAC
+        l1d_gen_decay_event_handler: Type[DecayEventHandler] = None,
+        l1i_gen_decay_event_handler: Type[DecayEventHandler] = None,
+        l2_gen_decay_event_handler: Type[DecayEventHandler] = None,
         l3_gen_decay_event_handler: Type[DecayEventHandler] = None,
         membus: BaseXBar = _get_default_membus.__func__(),
     ) -> None:
@@ -168,16 +157,9 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
         self._l1i_flush_event_handler = l1i_flush_event_handler
         self._l1d_flush_event_handler = l1d_flush_event_handler
 
-        self._l1i_decay_event_handler = l1i_decay_event_handler
-        self._l1d_decay_event_handler = l1d_decay_event_handler
-        self._l2_decay_event_handler = l2_decay_event_handler
-        self._l3_decay_event_handler = l3_decay_event_handler
-
-        # new code for IATAC
-        self._l1d_iatac_decay_event_handler = l1d_iatac_decay_event_handler
-        self._l2_iatac_decay_event_handler = l2_iatac_decay_event_handler
-        self._l3_iatac_decay_event_handler = l3_iatac_decay_event_handler
-
+        self._l1i_gen_decay_event_handler = l1i_gen_decay_event_handler
+        self._l1d_gen_decay_event_handler = l1d_gen_decay_event_handler
+        self._l2_gen_decay_event_handler = l2_gen_decay_event_handler
         self._l3_gen_decay_event_handler = l3_gen_decay_event_handler
 
         self.membus = membus
@@ -212,11 +194,11 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
                 self.l1icaches[
                     i
                 ].flush_event_handler = self._l1i_flush_event_handler
-        if self._l1i_decay_event_handler is not None:
+        if self._l1i_gen_decay_event_handler is not None:
             for i in range(board.get_processor().get_num_cores()):
                 self.l1icaches[
                     i
-                ].decay_event_handler = self._l1i_decay_event_handler
+                ].gen_decay_event_handler = self._l1i_gen_decay_event_handler
         self.l1dcaches = [
             L1DCache(
                 size=self._l1d_size,
@@ -231,19 +213,11 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
                 self.l1dcaches[
                     i
                 ].flush_event_handler = self._l1d_flush_event_handler
-        if self._l1d_decay_event_handler is not None:
+        if self._l1d_gen_decay_event_handler is not None:
             for i in range(board.get_processor().get_num_cores()):
                 self.l1dcaches[
                     i
-                ].decay_event_handler = self._l1d_decay_event_handler
-        # new code for IATAC
-        if self._l1d_iatac_decay_event_handler is not None:
-            for i in range(board.get_processor().get_num_cores()):
-                self.l1dcaches[
-                    i
-                ].iatac_decay_event_handler = (
-                    self._l1d_iatac_decay_event_handler
-                )
+                ].gen_decay_event_handler = self._l1d_gen_decay_event_handler
         self.l2buses = [
             L2XBar() for i in range(board.get_processor().get_num_cores())
         ]
@@ -256,18 +230,11 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
             )
             for i in range(board.get_processor().get_num_cores())
         ]
-        if self._l2_decay_event_handler is not None:
+        if self._l2_gen_decay_event_handler is not None:
             for i in range(board.get_processor().get_num_cores()):
                 self.l2caches[
                     i
-                ].decay_event_handler = self._l2_decay_event_handler
-        if self._l2_iatac_decay_event_handler is not None:
-            for i in range(board.get_processor().get_num_cores()):
-                self.l2caches[
-                    i
-                ].iatac_decay_event_handler = (
-                    self._l2_iatac_decay_event_handler
-                )
+                ].gen_decay_event_handler = self._l2_gen_decay_event_handler
         self.l3bus = L2XBar()
         self.l3cache = L2Cache(
             size=self._l3_size,
@@ -275,12 +242,6 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
             data_latency=self._l3_latency,
             PrefetcherCls=self._L3PrefetcherCls,
         )
-        if self._l3_decay_event_handler is not None:
-            self.l3cache.decay_event_handler = self._l3_decay_event_handler
-        if self._l3_iatac_decay_event_handler is not None:
-            self.l3cache.iatac_decay_event_handler = (
-                self._l3_iatac_decay_event_handler
-            )
         if self._l3_gen_decay_event_handler is not None:
             self.l3cache.gen_decay_event_handler = (
                 self._l3_gen_decay_event_handler

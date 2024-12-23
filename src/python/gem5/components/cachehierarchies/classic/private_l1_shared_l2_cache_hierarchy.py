@@ -37,6 +37,10 @@ from m5.objects import Cache, L2XBar, BaseXBar, SystemXBar, BadAddr, Port
 
 from ....utils.override import *
 
+from m5.objects import BasePrefetcher, StridePrefetcher
+from m5.objects.TPCacheEvents import DecayEventHandler
+from typing import Type
+
 
 class PrivateL1SharedL2CacheHierarchy(
     AbstractClassicCacheHierarchy, AbstractTwoLevelCacheHierarchy
@@ -71,6 +75,15 @@ class PrivateL1SharedL2CacheHierarchy(
         l1d_assoc: int = 8,
         l1i_assoc: int = 8,
         l2_assoc: int = 16,
+        l1d_latency: int = 1,
+        l1i_latency: int = 1,
+        l2_latency: int = 10,
+        L1DPrefetcherCls: Type[BasePrefetcher] = StridePrefetcher,
+        L1IPrefetcherCls: Type[BasePrefetcher] = StridePrefetcher,
+        L2PrefetcherCls: Type[BasePrefetcher] = StridePrefetcher,
+        l1i_gen_decay_event_handler: Type[DecayEventHandler] = None,
+        l1d_gen_decay_event_handler: Type[DecayEventHandler] = None,
+        l2_gen_decay_event_handler: Type[DecayEventHandler] = None,
         membus: BaseXBar = _get_default_membus.__func__(),
     ) -> None:
         """
@@ -94,6 +107,18 @@ class PrivateL1SharedL2CacheHierarchy(
             l2_size=l2_size,
             l2_assoc=l2_assoc,
         )
+
+        self._l1i_latency = l1i_latency
+        self._l1d_latency = l1d_latency
+        self._l2_latency = l2_latency
+
+        self._L1IPrefetcherCls = L1IPrefetcherCls
+        self._L1DPrefetcherCls = L1DPrefetcherCls
+        self._L2PrefetcherCls = L2PrefetcherCls
+
+        self._l1i_gen_decay_event_handler = l1i_gen_decay_event_handler
+        self._l1d_gen_decay_event_handler = l1d_gen_decay_event_handler
+        self._l2_gen_decay_event_handler = l2_gen_decay_event_handler
 
         self.membus = membus
 
@@ -119,15 +144,44 @@ class PrivateL1SharedL2CacheHierarchy(
                 size=self._l1i_size,
                 assoc=self._l1i_assoc,
                 writeback_clean=False,
+                tag_latency=self._l1i_latency,
+                data_latency=self._l1i_latency,
+                PrefetcherCls=self._L1IPrefetcherCls,
             )
             for i in range(board.get_processor().get_num_cores())
         ]
+        if self._l1i_gen_decay_event_handler is not None:
+            for i in range(board.get_processor().get_num_cores()):
+                self.l1icaches[
+                    i
+                ].gen_decay_event_handler = self._l1i_gen_decay_event_handler
         self.l1dcaches = [
-            L1DCache(size=self._l1d_size, assoc=self._l1d_assoc)
+            L1DCache(
+                size=self._l1d_size,
+                assoc=self._l1d_assoc,
+                tag_latency=self._l1d_latency,
+                data_latency=self._l1d_latency,
+                PrefetcherCls=self._L1DPrefetcherCls,
+            )
             for i in range(board.get_processor().get_num_cores())
         ]
+        if self._l1d_gen_decay_event_handler is not None:
+            for i in range(board.get_processor().get_num_cores()):
+                self.l1dcaches[
+                    i
+                ].gen_decay_event_handler = self._l1d_gen_decay_event_handler
         self.l2bus = L2XBar()
-        self.l2cache = L2Cache(size=self._l2_size, assoc=self._l2_assoc)
+        self.l2cache = L2Cache(
+            size=self._l2_size,
+            assoc=self._l2_assoc,
+            tag_latency=self._l2_latency,
+            data_latency=self._l2_latency,
+            PrefetcherCls=self._L2PrefetcherCls,
+        )
+        if self._l2_gen_decay_event_handler is not None:
+            self.l2cache.gen_decay_event_handler = (
+                self._l2_gen_decay_event_handler
+            )
         # ITLB Page walk caches
         self.iptw_caches = [
             MMUCache(size="8KiB", writeback_clean=False)

@@ -3251,6 +3251,7 @@ BaseCache::iatacUpdateDecay() {
     assert(!isSetDecayState());
     setDecayState();
     //// eof extra code ////
+    postDecayBlkIndex = 0;
 
     // stats.numOfDecayWindows++;
     PacketList writebacks;
@@ -3348,47 +3349,44 @@ BaseCache::iatacPowerOffRemainingBlks(bool isLastTime) {
     if (writebackLimit <= 0) {
         powerOffFinished = false;
     } else {
-        powerOffFinished = !tags->anyBlk(
+        powerOffFinished = !tags->anyBlkFromI(
                 [this, &writebacks, &forward_time]
                 (CacheBlk &blk)
             {
-                if (blk.isDecayMechPoweredOff()) {
-                    // pass
-                } else {
-                    if (blk.hasDecayMechDecayElapsed() && blk.isDecayable()) {
-                        // do not writeback more than it can handle
-                        if (writebacks.size() < writebackLimit) {
-                            const MSHR* mshr =
-                                mshrQueue.findMatch(regenerateBlkAddr(&blk),
-                                                        blk.isSecure());
-                            if (mshr) {
-                                // Must be an outstanding upgrade or clean
-                                // request
-                                // on a block we're about to replace
-                                assert((!blk.isSet(CacheBlk::WritableBit) &&
-                                    mshr->needsWritable()) ||
-                                    mshr->isCleaning());
-                            } else {
-                                blk.decayMechPowerOff();
-
-                                DPRINTF(TPCacheDecayDebug,
-                                    "iatac rem: block %s got powered off\n",
-                                    blk.print());
-                                // evict block from cache
-                                if (blk.isValid()) {
-                                    evictBlock(&blk, writebacks);
-                                }
-
-                                stats.numOfDecayedBlks++;
-                            }
+                if (blk.hasDecayMechDecayElapsed()
+                    && !blk.isDecayMechPoweredOff()
+                    && blk.isDecayable()) {
+                    // do not writeback more than it can handle
+                    if (writebacks.size() < writebackLimit) {
+                        const MSHR* mshr =
+                            mshrQueue.findMatch(regenerateBlkAddr(&blk),
+                                                    blk.isSecure());
+                        if (mshr) {
+                            // Must be an outstanding upgrade or clean
+                            // request
+                            // on a block we're about to replace
+                            assert((!blk.isSet(CacheBlk::WritableBit) &&
+                                mshr->needsWritable()) ||
+                                mshr->isCleaning());
                         } else {
-                            return true;
+                            blk.decayMechPowerOff();
+
+                            DPRINTF(TPCacheDecayDebug,
+                                "iatac rem: block %s got powered off\n",
+                                blk.print());
+                            // evict block from cache
+                            if (blk.isValid()) {
+                                evictBlock(&blk, writebacks);
+                            }
+
+                            stats.numOfDecayedBlks++;
                         }
+                    } else {
+                        return true;
                     }
                 }
-
                 return false;
-            });
+            }, postDecayBlkIndex);
     }
 
     //// extra code ////

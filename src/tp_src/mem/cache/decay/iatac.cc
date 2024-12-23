@@ -48,14 +48,16 @@ IATAC::handleHit(std::shared_ptr<GlobalDecayData>& iatac)
     if (_elapsed > _thits) {
         _thits = _elapsed;
     }
+    _elapsed = 0;
 
     if (!_onoff) {
         // must not be capable of being decayed until replacement.
         _wrongBit = true;
     }
 
+    //// IMPORTANT! Investigate "_counter+1". Update: it was wrong.
     _decay = std::static_pointer_cast<IATACdata>(iatac)->
-        _maxGlobalDecay[_counter+1];
+        _maxGlobalDecay[_counter];
 }
 
 void
@@ -71,26 +73,23 @@ IATAC::handleMiss(std::shared_ptr<GlobalDecayData>& iatac)
             DPRINTF(TPDecayPolicies, "thits greater than global\n");
             iatacData->_globalDecay[_counter] =
                     iatacData->_globalDecay[_counter] << 1; // x2
-            // iatac->setGlobal(_counter, iatac->_globalDecay[_counter] << 1);
-            iatacData->updateMaxGlobals(_counter);
         } else if (_thits * 2 < iatacData->_globalDecay[_counter]) {
             DPRINTF(TPDecayPolicies, "thits smaller than global/2\n");
             iatacData->_globalDecay[_counter] =
                     iatacData->_globalDecay[_counter] > 1 ?
                         iatacData->_globalDecay[_counter] >> 1 : 1; // /2
-            // iatac->setGlobal(_counter, iatac->_globalDecay[_counter] >> 1);
-            iatacData->updateMaxGlobals(_counter);
         }
 
         iatacData->_acumcounter[_counter]++;
+        iatacData->updateMaxGlobals(_counter);
         iatacData->checkAcumOverflow(_counter);
 
-        _decay = iatacData->_maxGlobalDecay[_counter+1];
+        _decay = iatacData->_maxGlobalDecay[_counter];
     }
 
     _onoff = true;
     _wrongBit = false;
-    _counter = 1;
+    _counter = 0;  // this (_counter = 1; ) was wrong.
     _thits = 0;
     _elapsed = 0;
 
@@ -135,7 +134,7 @@ IATACdata::printGlobals()
     for (int i = 0; i < _MAX_ACCESS; i++) {
         printf("%6d ", _maxGlobalDecay[i]);
     }
-    printf("\n");
+    printf("\n\n");
 }
 
 IATACdata::IATACdata()
