@@ -143,8 +143,8 @@ BaseSetAssoc::tagsInit()
                 DPRINTF(TPCacheDecayDebug, "before resetDecayCounter\n");
                 blk->constDecayMechResetDecayCounter(localDecayCounter);
                 //// extra code ////
-            } else if (decayType == tp::DECAY_IATAC
-                       || globDecayData != nullptr) {
+            } else if (decayType == tp::DECAY_IATAC) {
+                    //    || globDecayData != nullptr) {
                 // tp::decay_policy::GlobalDecayData* constDecayData =
                 //     new tp::decay_policy::IATACdata();
                 // std::shared_ptr<tp::decay_policy::GlobalDecayData>
