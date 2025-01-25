@@ -1094,6 +1094,13 @@ class BaseCache : public ClockedObject
 
         const BaseCache &cache;
 
+        void preDumpStats() override {
+            statistics::Group::preDumpStats();
+
+            totalIdleTime += cache.tags->calcRestIdleTimes();
+            totalTime = (curTick() - startTime) * cache.numBlocks;
+        }
+
         void resetStats() override {
             statistics::Group::resetStats();
 

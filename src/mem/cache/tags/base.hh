@@ -396,6 +396,7 @@ class BaseTags : public ClockedObject
     }
 
     virtual void resetBlksLastHit() {};
+    virtual Tick calcRestIdleTimes() {};
 
     int isMissInLT(Addr addr);
     //// EOF MY CODE ////

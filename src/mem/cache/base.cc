@@ -1214,9 +1214,9 @@ BaseCache::handleEvictions(std::vector<CacheBlk*> &evict_blks,
         }
     }
 
-    // Evict valid blocks associated to this victim block
+    // Calculate idle times
     for (auto& blk : evict_blks) {
-        //// MY CODE ////
+    //     //// MY CODE ////
         Tick block_idle_time = curTick() - blk->getLastHitTick();
         if (printIdleTime) {
             DPRINTF(TPIdle,
@@ -1229,7 +1229,7 @@ BaseCache::handleEvictions(std::vector<CacheBlk*> &evict_blks,
                 stats.minIdleTime.value(),
                 stats.maxIdleTime.value());
         }
-        stats.totalIdleTime += block_idle_time;
+    //     stats.totalIdleTime += block_idle_time;
         // added non zero check because I can't set an initial value
         if (block_idle_time < stats.minIdleTime.value() ||
                 stats.minIdleTime.value() == 0) {
@@ -1238,7 +1238,7 @@ BaseCache::handleEvictions(std::vector<CacheBlk*> &evict_blks,
         if (block_idle_time > stats.maxIdleTime.value()) {
             stats.maxIdleTime = block_idle_time;
         }
-        //// MY CODE ////
+    //     //// MY CODE ////
 
         // stats.perfectDecayInterval.sample(ticksToCycles(block_idle_time));
         uint64_t perfectDecayIndex =
@@ -1250,7 +1250,7 @@ BaseCache::handleEvictions(std::vector<CacheBlk*> &evict_blks,
     }
 
     //// MY PERFECT DECAY CODE ////
-    stats.totalTime = (curTick() - stats.startTime) * numBlocks;
+    // stats.totalTime = (curTick() - stats.startTime) * numBlocks;
     //// EOF MY PERFECT DECAY CODE ////
 
     return true;
@@ -2089,6 +2089,13 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
     //     decayWBsLeft--;
     // }
     //// eof extra code ////
+
+    //// PERFECT DECAY CODE ////
+    Tick block_idle_time = curTick() - victim->getLastHitTick();
+    stats.totalIdleTime += block_idle_time;
+    stats.totalTime = (curTick() - stats.startTime) * numBlocks;
+    //// EOF PERFECT DECAY CODE ////
+
     tags->insertBlock(pkt, victim);
 
     // If using a compressor, set compression data. This must be done after

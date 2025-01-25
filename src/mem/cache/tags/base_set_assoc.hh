@@ -288,6 +288,20 @@ class BaseSetAssoc : public BaseTags
             blk->updateLastHitTick();
         }
     }
+
+    Tick calcRestIdleTimes() override {
+        Tick currentTick = curTick();
+        Tick restIdleTime = 0;
+
+        for (unsigned blk_index = 0; blk_index < numBlocks; blk_index++) {
+            // Locate next cache block
+            CacheBlk* blk = &blks[blk_index];
+
+            restIdleTime += (currentTick - blk->getLastHitTick());
+        }
+
+        return restIdleTime;
+    }
     //// EOF MY PERFECT DECAY CODE ////
 };
 
