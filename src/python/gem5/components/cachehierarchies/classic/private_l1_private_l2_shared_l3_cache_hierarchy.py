@@ -183,6 +183,7 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
         self.l1icaches = [
             L1ICache(
                 size=self._l1i_size,
+                assoc=self._l1i_assoc,
                 tag_latency=self._l1i_latency,
                 data_latency=self._l1i_latency,
                 PrefetcherCls=self._L1IPrefetcherCls,
@@ -202,6 +203,7 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
         self.l1dcaches = [
             L1DCache(
                 size=self._l1d_size,
+                assoc=self._l1d_assoc,
                 tag_latency=self._l1d_latency,
                 data_latency=self._l1d_latency,
                 PrefetcherCls=self._L1DPrefetcherCls,
@@ -224,6 +226,7 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
         self.l2caches = [
             L2Cache(
                 size=self._l2_size,
+                assoc=self._l2_assoc,
                 tag_latency=self._l2_latency,
                 data_latency=self._l2_latency,
                 PrefetcherCls=self._L2PrefetcherCls,
@@ -238,6 +241,7 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
         self.l3bus = L2XBar()
         self.l3cache = L2Cache(
             size=self._l3_size,
+            assoc=self._l3_assoc,
             tag_latency=self._l3_latency,
             data_latency=self._l3_latency,
             PrefetcherCls=self._L3PrefetcherCls,
