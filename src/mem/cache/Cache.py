@@ -143,6 +143,12 @@ class BaseCache(ClockedObject):
         [AllMemory], "Address range for the CPU-side port (to allow striping)"
     )
 
+    faulty_cache = Param.Bool(
+        False, "Parameter to enable faulty (sub)blocks " "functionality"
+    )
+
+    number_of_subblocks = Param.Unsigned(1, "Number of sub-blocks per block")
+
     system = Param.System(Parent.any, "System we belong to")
 
     # Determine if this cache sends out writebacks for clean lines, or

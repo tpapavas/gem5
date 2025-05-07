@@ -53,12 +53,14 @@
 
 #include "base/logging.hh"
 #include "base/types.hh"
+#include "debug/CacheFaulty.hh"
 #include "mem/cache/base.hh"
 #include "mem/cache/cache_blk.hh"
 #include "mem/cache/replacement_policies/base.hh"
 #include "mem/cache/replacement_policies/replaceable_entry.hh"
 #include "mem/cache/tags/base.hh"
 #include "mem/cache/tags/indexing_policies/base.hh"
+#include "mem/cache/tags/indexing_policies/set_associative.hh"
 #include "mem/packet.hh"
 #include "params/BaseSetAssoc.hh"
 
@@ -83,6 +85,14 @@ class BaseSetAssoc : public BaseTags
 
     /** Whether tags and data are accessed sequentially. */
     const bool sequentialAccess;
+
+    //// FAULTY-BLKS CODE ////
+    /** Whether this cache has faulty (sub-)blocks. */
+    const bool isFaultyCache;
+
+    /** How may sub-blocks there are per block. **/
+    const unsigned numOfSubBlks;
+    //// EOF FAULTY-BLKS CODE ////
 
     /** Replacement policy */
     replacement_policy::Base *replacementPolicy;
@@ -176,6 +186,15 @@ class BaseSetAssoc : public BaseTags
         // Choose replacement victim from replacement candidates
         CacheBlk* victim = static_cast<CacheBlk*>(replacementPolicy->getVictim(
                                 entries));
+
+        //// FAULTY-BLKS CODE ////
+        // assertion for whole faulty block (not faulty subblocks assertion)
+        // DPRINTF(CacheFaulty, "set %d\n",
+        //   static_cast<SetAssociative*>(indexingPolicy)->extractSet(addr));
+        if (victim != nullptr) {
+            assert(!victim->getFaulty(0));
+        }
+        //// EOF FAULTY-BLKS CODE ////
 
         // There is only one eviction for this replacement
         evict_blks.push_back(victim);

@@ -977,6 +977,13 @@ class BaseCache : public ClockedObject
      * Normally this is all possible memory addresses. */
     const AddrRangeList addrRanges;
 
+    //// FAULTY-BLKS CODE ////
+
+    /** Stores whether the cache has faulty blocks. */
+    const bool isFaultyCache;
+
+    //// EOF FAULTY-BLKS CODE ////
+
   public:
     /** System we are currently operating in. */
     System *system;

@@ -89,6 +89,14 @@ class BaseSetAssoc(BaseTags):
     # Get the cache associativity
     assoc = Param.Int(Parent.assoc, "associativity")
 
+    # Get faulty cache
+    faulty_cache = Param.Bool(Parent.faulty_cache, "If the cache is faulty")
+
+    # Get subblocks
+    number_of_subblocks = Param.Unsigned(
+        Parent.number_of_subblocks, "Number of subblocks"
+    )
+
     # Get replacement policy from the parent (cache)
     replacement_policy = Param.BaseReplacementPolicy(
         Parent.replacement_policy, "Replacement policy"

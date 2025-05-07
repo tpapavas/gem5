@@ -35,6 +35,10 @@ class BaseReplacementPolicy(SimObject):
     cxx_class = "gem5::replacement_policy::Base"
     cxx_header = "mem/cache/replacement_policies/base.hh"
 
+    number_of_subblocks = Param.Int(
+        Parent.number_of_subblocks, "Number of sub-blocks"
+    )
+
 
 class DuelingRP(BaseReplacementPolicy):
     type = "DuelingRP"

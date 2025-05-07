@@ -59,6 +59,8 @@
 #include "mem/request.hh"
 #include "sim/cur_tick.hh"
 
+#define MAX_SUBBLOCKS 16
+
 namespace gem5
 {
 
@@ -305,6 +307,18 @@ class CacheBlk : public TaggedEntry
         return curTick() - _tickInserted;
     }
 
+    //// FAULTY-BLKS CODE ////
+    /** Set block as faulty. */
+    void setFaulty(bool flag, unsigned subBlk) {
+        _isFaulty[subBlk] = flag;
+    }
+
+    /**
+     * @return if the block contains a faulty bit
+     */
+    bool getFaulty(unsigned subBlk) { return _isFaulty[subBlk]; }
+    //// EOF FAULTY-BLKS CODE ////
+
     /**
      * Set member variables when a block insertion occurs. Resets reference
      * count to 1 (the insertion counts as a reference), and touch block if
@@ -490,6 +504,9 @@ class CacheBlk : public TaggedEntry
 
     /** Whether this block is an unaccessed hardware prefetch. */
     bool _prefetched = 0;
+
+    /** Whether this block's sub-blocks are set as faulty or not. */
+    bool _isFaulty[MAX_SUBBLOCKS] = {false};
 };
 
 /**

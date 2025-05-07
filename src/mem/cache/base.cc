@@ -110,6 +110,7 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
       noTargetMSHR(nullptr),
       missCount(p.max_miss_count),
       addrRanges(p.addr_ranges.begin(), p.addr_ranges.end()),
+      isFaultyCache(p.faulty_cache),
       system(p.system),
       stats(*this)
 {

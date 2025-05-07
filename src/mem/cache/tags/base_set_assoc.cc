@@ -48,6 +48,8 @@
 #include <string>
 
 #include "base/intmath.hh"
+#include "debug/CacheFaulty.hh"
+#include "mem/cache/tags/create_subblk_map.hh"
 
 namespace gem5
 {
@@ -55,6 +57,8 @@ namespace gem5
 BaseSetAssoc::BaseSetAssoc(const Params &p)
     :BaseTags(p), allocAssoc(p.assoc), blks(p.size / p.block_size),
      sequentialAccess(p.sequential_access),
+     isFaultyCache(p.faulty_cache),
+     numOfSubBlks(p.number_of_subblocks),
      replacementPolicy(p.replacement_policy)
 {
     // There must be a indexing policy
@@ -69,6 +73,11 @@ BaseSetAssoc::BaseSetAssoc(const Params &p)
 void
 BaseSetAssoc::tagsInit()
 {
+    // Initialize fault map
+    if (isFaultyCache){
+        updateSubBlkMap(size/1024, allocAssoc, numOfSubBlks);
+    }
+
     // Initialize all blocks
     for (unsigned blk_index = 0; blk_index < numBlocks; blk_index++) {
         // Locate next cache block
@@ -82,7 +91,37 @@ BaseSetAssoc::tagsInit()
 
         // Associate a replacement data entry to the block
         blk->replacementData = replacementPolicy->instantiateEntry();
+        // Set the subblocks as faulty according to the faultmap
+        if (isFaultyCache){
+            for (int subBlk = 0; subBlk < numOfSubBlks; subBlk++){
+                blk->setFaulty(
+                        sblkmap[blk_index/allocAssoc][subBlk +
+                            (blk_index%allocAssoc)*numOfSubBlks],
+                        subBlk
+                );
+                if (blk->getFaulty(subBlk)) {
+                    DPRINTF(CacheFaulty,
+                        "Block of set %d way %d and subblock %d is faulty\n",
+                        blk_index/allocAssoc, blk_index%allocAssoc, subBlk
+                    );
+                }
+            }
+        }
     }
+
+// checking for assigning faulty blocks in correct positions
+//
+// for (unsigned blk_index = 0; blk_index < numBlocks; blk_index+=4) {
+//     int set = blk_index / allocAssoc;
+//     DPRINTF(CacheFaulty,
+//  "Set %3d:\tWay 0: %d, %d, Way 1: %d, %d, Way 2: %d, %d, Way 3: %d, %d\n",
+//         set,
+//         blks[blk_index+0].getFaulty(0), blks[blk_index+0].getFaulty(1),
+//         blks[blk_index+1].getFaulty(0), blks[blk_index+0].getFaulty(15),
+//         blks[blk_index+2].getFaulty(0), blks[blk_index+0].getFaulty(4),
+//         blks[blk_index+3].getFaulty(0), blks[blk_index+0].getFaulty(12)
+//     );
+// }
 }
 
 void

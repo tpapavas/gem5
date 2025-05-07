@@ -53,9 +53,15 @@ namespace replacement_policy
  */
 class Base : public SimObject
 {
+    protected:
+
+    int numOfSubBlks = 1;
   public:
     typedef BaseReplacementPolicyParams Params;
-    Base(const Params &p) : SimObject(p) {}
+    Base(const Params &p)
+        : SimObject(p),
+          numOfSubBlks(p.number_of_subblocks)
+    {}
     virtual ~Base() = default;
 
     /**

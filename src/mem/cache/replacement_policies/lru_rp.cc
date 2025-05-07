@@ -31,6 +31,8 @@
 #include <cassert>
 #include <memory>
 
+#include "debug/CacheFaulty.hh"
+#include "mem/cache/cache_blk.hh"
 #include "params/LRURP.hh"
 #include "sim/cur_tick.hh"
 
@@ -76,8 +78,31 @@ LRU::getVictim(const ReplacementCandidates& candidates) const
     assert(candidates.size() > 0);
 
     // Visit all candidates to find victim
-    ReplaceableEntry* victim = candidates[0];
+    ReplaceableEntry* victim = nullptr; // candidates[0];
+    // ReplaceableEntry* victim = candidates[0];
     for (const auto& candidate : candidates) {
+        //// FAULTY-BLKS CODE ////
+        CacheBlk* blk = static_cast<CacheBlk*>(candidate);
+
+        // If the candidate block is faulty, skip it and go
+        // to the next candidate
+        int wayFaults = 0;
+        for (int i = 0; i < numOfSubBlks; i++) {
+            if (blk->getFaulty(i)) {
+                assert(name().find("l1dcaches") != name().npos);
+                wayFaults++;
+            }
+        }
+
+        if (victim == nullptr && wayFaults < numOfSubBlks){
+            victim = candidate;
+        }
+
+        // faulty block condition; ignore block/way.
+        if (wayFaults == numOfSubBlks)
+            continue;
+        //// EOF FAULTY-BLKS CODE ////
+
         // Update victim entry if necessary
         if (std::static_pointer_cast<LRUReplData>(
                     candidate->replacementData)->lastTouchTick <
@@ -86,6 +111,28 @@ LRU::getVictim(const ReplacementCandidates& candidates) const
             victim = candidate;
         }
     }
+
+    /** TODO: We don't handle case where all ways of a set are faulty. */
+
+    //// FAULTY-BLKS CODE ////
+    // We should get a victim (as long as there is at least on non-faulty blk)
+    if (victim == nullptr) {
+        DPRINTF(CacheFaulty,
+            "In set %d there was no victim. Set has %sfaulty blocks.\n",
+            candidates[0]->getSet(),
+            static_cast<CacheBlk*>(candidates[0])->getFaulty(0) ? "" : "not "
+        );
+        DPRINTF(CacheFaulty, "\tWay 0: %s faulty\n",
+            static_cast<CacheBlk*>(candidates[0])->getFaulty(0) ? "" : "not");
+        DPRINTF(CacheFaulty, "\tWay 1: %s faulty\n",
+            static_cast<CacheBlk*>(candidates[1])->getFaulty(0) ? "" : "not");
+        DPRINTF(CacheFaulty, "\tWay 2: %s faulty\n",
+            static_cast<CacheBlk*>(candidates[2])->getFaulty(0) ? "" : "not");
+        DPRINTF(CacheFaulty, "\tWay 3: %s faulty\n",
+            static_cast<CacheBlk*>(candidates[3])->getFaulty(0) ? "" : "not");
+    }
+    assert(victim != nullptr);
+    //// EOF FAULTY-BLKS CODE ////
 
     return victim;
 }
