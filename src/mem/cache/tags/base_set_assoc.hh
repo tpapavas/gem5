@@ -90,7 +90,7 @@ class BaseSetAssoc : public BaseTags
     /** Whether this cache has faulty (sub-)blocks. */
     const bool isFaultyCache;
 
-    /** How may sub-blocks there are per block. **/
+    /** How may sub-blocks there are per block. */
     const unsigned numOfSubBlks;
     //// EOF FAULTY-BLKS CODE ////
 

@@ -45,11 +45,13 @@
 
 #include "mem/cache/tags/base_set_assoc.hh"
 
+#include <bitset>
 #include <string>
 
 #include "base/intmath.hh"
 #include "debug/CacheFaulty.hh"
-#include "mem/cache/tags/create_subblk_map.hh"
+// #include "mem/cache/tags/create_subblk_map.hh"
+#include "mem/cache/tags/create_stuck_bit_map.hh"
 
 namespace gem5
 {
@@ -75,7 +77,13 @@ BaseSetAssoc::tagsInit()
 {
     // Initialize fault map
     if (isFaultyCache){
-        updateSubBlkMap(size/1024, allocAssoc, numOfSubBlks);
+        // updateSubBlkMap(size/1024, allocAssoc, numOfSubBlks);
+        unsigned int sblksPerSet = allocAssoc * numOfSubBlks;
+        unsigned int sblkBytes = blkSize / numOfSubBlks;
+        unsigned int sets = size / blkSize / allocAssoc;
+
+        resetFaultyCacheMaps(sets, sblksPerSet, sblkBytes);
+        updateFaultyCacheMaps(size/1024, allocAssoc, numOfSubBlks);
     }
 
     // Initialize all blocks
@@ -91,8 +99,13 @@ BaseSetAssoc::tagsInit()
 
         // Associate a replacement data entry to the block
         blk->replacementData = replacementPolicy->instantiateEntry();
+
+        //// FAULTY-BLKS CODE ////
         // Set the subblocks as faulty according to the faultmap
         if (isFaultyCache){
+            unsigned int set = blk_index/allocAssoc;
+            unsigned int way = blk_index%allocAssoc;
+
             for (int subBlk = 0; subBlk < numOfSubBlks; subBlk++){
                 blk->setFaulty(
                         sblkmap[blk_index/allocAssoc][subBlk +
@@ -102,11 +115,32 @@ BaseSetAssoc::tagsInit()
                 if (blk->getFaulty(subBlk)) {
                     DPRINTF(CacheFaulty,
                         "Block of set %d way %d and subblock %d is faulty\n",
-                        blk_index/allocAssoc, blk_index%allocAssoc, subBlk
+                        set, way, subBlk
                     );
+                }
+
+                // blk should point to its mask
+                blk->maskOnes =
+                    stuckBitMaskOnesMap[set][way*numOfSubBlks+subBlk];
+                blk->maskZeros =
+                    stuckBitMaskZerosMap[set][way*numOfSubBlks+subBlk];
+                for (int i = 0; i < blkSize; i++) {
+                    if (blk->maskOnes[i] > 0) {
+                        DPRINTF(CacheFaulty,
+                            "Byte %d mask of Ones: %s\n",
+                            i, std::bitset<8>(blk->maskOnes[i]).to_string()
+                        );
+                    }
+                    if (blk->maskZeros[i] < UINT8_MAX) {
+                        DPRINTF(CacheFaulty,
+                            "Byte %d mask of Zeros: %s\n",
+                            i, std::bitset<8>(blk->maskZeros[i]).to_string()
+                        );
+                    }
                 }
             }
         }
+        //// EOF FAULTY-BLKS CODE ////
     }
 
 // checking for assigning faulty blocks in correct positions

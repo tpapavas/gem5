@@ -39,6 +39,7 @@ Source('fa_lru.cc')
 Source('sector_blk.cc')
 Source('sector_tags.cc')
 Source('super_blk.cc')
-Source('create_subblk_map.cc')
+# Source('create_subblk_map.cc')
+Source('create_stuck_bit_map.cc')
 
 GTest('dueling.test', 'dueling.test.cc', 'dueling.cc')

@@ -104,6 +104,11 @@ class CacheBlk : public TaggedEntry
      */
     uint8_t *data = nullptr;
 
+    //// FAULTY-BLKS CODE ////
+    uint8_t *maskOnes = nullptr;
+    uint8_t *maskZeros = nullptr;
+    //// EOF FAULTY-BLKS CODE ////
+
     /**
      * Which curTick() will this block be accessible. Its value is only
      * meaningful if the block is valid.
@@ -485,6 +490,14 @@ class CacheBlk : public TaggedEntry
 
     /** Set the current tick as this block's insertion tick. */
     void setTickInserted() { _tickInserted = curTick(); }
+
+    //// FAULTY CACHE CODE ////
+    void applyStuckBitMasks(unsigned size) {
+        for (int i = 0; i < size; i++) {
+            data[i] = (data[i] | maskOnes[i]) & maskZeros[i];
+        }
+    }
+    //// EOF FAULTY CACHE CODE ////
 
   private:
     /** Task Id associated with this block */
