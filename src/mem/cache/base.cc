@@ -45,6 +45,8 @@
 
 #include "mem/cache/base.hh"
 
+#include <bitset>
+
 #include "base/compiler.hh"
 #include "base/logging.hh"
 #include "debug/Cache.hh"
@@ -734,6 +736,12 @@ BaseCache::functionalAccess(PacketPtr pkt, bool from_cpu_side)
         && pkt->trySatisfyFunctional(&cbpw, blk_addr, is_secure, blkSize,
                                      blk->data);
 
+    //// FAULTY-BLKS CODE ////
+
+    // Maybe applyStuckBitMasks() should be added here too.
+
+    //// EOF FAULTY-BLKS CODE ////
+
     // data we have is dirty if marked as such or if we have an
     // in-service MSHR that is pending a modified line
     bool have_dirty =
@@ -745,6 +753,12 @@ BaseCache::functionalAccess(PacketPtr pkt, bool from_cpu_side)
         mshrQueue.trySatisfyFunctional(pkt) ||
         writeBuffer.trySatisfyFunctional(pkt) ||
         memSidePort.trySatisfyFunctional(pkt);
+
+    //// FAULTY-BLKS CODE ////
+
+    // Maybe applyStuckBitMasks() should be added here too.
+
+    //// EOF FAULTY-BLKS CODE ////
 
     DPRINTF(CacheVerbose, "%s: %s %s%s%s\n", __func__,  pkt->print(),
             (blk && blk->isValid()) ? "valid " : "",
@@ -783,6 +797,24 @@ BaseCache::updateBlockData(CacheBlk *blk, const PacketPtr cpkt,
     // Actually perform the data update
     if (cpkt) {
         cpkt->writeDataToBlock(blk->data, blkSize);
+
+        //// FAULTY-BLKS CODE ////
+        if (tags->isFaulty(BaseTags::FaultyCacheState::FAULTY_BLKS_ALIVE)) {
+            // assert(name().find("l1dcaches") != name().npos);
+            blk->applyStuckBitMasks(blkSize);
+
+            if (blk->getFaulty(0)) {
+                std::string block_bit_value = "";
+                for (int i = 0; i < blkSize; i++) {
+                    block_bit_value +=
+                        (" "+std::bitset<8>(blk->data[i]).to_string());
+                }
+                DPRINTF(CacheFaulty, "set %3d, way %2d: %s\n",
+                    blk->getSet(), blk->getWay(), block_bit_value);
+            }
+        }
+
+        //// EOF FAULTY-BLKS CODE ////
     }
 
     if (ppDataUpdate->hasListeners()) {
@@ -1122,6 +1154,12 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
             // execute AMO operation
             (*(pkt->getAtomicOp()))(blk_data);
 
+            //// FAULTY-BLKS CODE ////
+
+            // Maybe applyStuckBitMasks() should be added here too.
+
+            //// EOF FAULTY-BLKS CODE ////
+
             // Inform of this block's data contents update
             if (ppDataUpdate->hasListeners()) {
                 data_update.newData = std::vector<uint64_t>(blk->data,
@@ -1133,6 +1171,12 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
             blk->setCoherenceBits(CacheBlk::DirtyBit);
         } else {
             cmpAndSwap(blk, pkt);
+
+            //// FAULTY-BLKS CODE ////
+
+            // Maybe applyStuckBitMasks() should be added here too.
+
+            //// EOF FAULTY-BLKS CODE ////
         }
     } else if (pkt->isWrite()) {
         // we have the block in a writable state and can go ahead,

@@ -349,6 +349,17 @@ class BaseTags : public ClockedObject
      */
     virtual bool anyBlk(std::function<bool(CacheBlk &)> visitor) = 0;
 
+    enum FaultyCacheState
+    {
+        NO_FAULTY,
+        FAULTY_BLKS_NOT_ALIVE,
+        FAULTY_BLKS_ALIVE,
+        INVALID_FAULTY_BEHAVIOR
+    };
+
+    /** Whether this cache has specific faulty behavior */
+    virtual bool isFaulty(FaultyCacheState faultyState) { return false; }
+
   private:
     /**
      * Update the reference stats using data from the input block

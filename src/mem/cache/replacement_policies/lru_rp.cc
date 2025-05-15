@@ -82,25 +82,19 @@ LRU::getVictim(const ReplacementCandidates& candidates) const
     // ReplaceableEntry* victim = candidates[0];
     for (const auto& candidate : candidates) {
         //// FAULTY-BLKS CODE ////
+
         CacheBlk* blk = static_cast<CacheBlk*>(candidate);
 
         // If the candidate block is faulty, skip it and go
         // to the next candidate
-        int wayFaults = 0;
-        for (int i = 0; i < numOfSubBlks; i++) {
-            if (blk->getFaulty(i)) {
-                assert(name().find("l1dcaches") != name().npos);
-                wayFaults++;
-            }
+        if (blk->isDisabled()) {
+            continue;
         }
 
-        if (victim == nullptr && wayFaults < numOfSubBlks){
+        if (victim == nullptr) {
             victim = candidate;
         }
 
-        // faulty block condition; ignore block/way.
-        if (wayFaults == numOfSubBlks)
-            continue;
         //// EOF FAULTY-BLKS CODE ////
 
         // Update victim entry if necessary
@@ -112,9 +106,10 @@ LRU::getVictim(const ReplacementCandidates& candidates) const
         }
     }
 
-    /** TODO: We don't handle case where all ways of a set are faulty. */
-
     //// FAULTY-BLKS CODE ////
+    // In case where all ways of a set are faulty, nullptr is returned.
+    // This is handled like a miss.
+
     // We should get a victim (as long as there is at least on non-faulty blk)
     if (victim == nullptr) {
         DPRINTF(CacheFaulty,
@@ -131,7 +126,6 @@ LRU::getVictim(const ReplacementCandidates& candidates) const
         DPRINTF(CacheFaulty, "\tWay 3: %s faulty\n",
             static_cast<CacheBlk*>(candidates[3])->getFaulty(0) ? "" : "not");
     }
-    assert(victim != nullptr);
     //// EOF FAULTY-BLKS CODE ////
 
     return victim;

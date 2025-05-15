@@ -70,13 +70,26 @@ BaseSetAssoc::BaseSetAssoc(const Params &p)
     if (blkSize < 4 || !isPowerOf2(blkSize)) {
         fatal("Block size must be at least 4 and a power of 2");
     }
+
+    //// FAULTY-BLKS CODE ////
+    if (isFaultyCache) {
+        if (p.faulty_blks_alive) {
+            faultyCacheState = FaultyCacheState::FAULTY_BLKS_ALIVE;
+        } else {
+            faultyCacheState = FaultyCacheState::FAULTY_BLKS_NOT_ALIVE;
+        }
+    } else if (p.faulty_blks_alive) {
+        faultyCacheState = FaultyCacheState::INVALID_FAULTY_BEHAVIOR;
+        panic("Invalid set of faulty-cache flags");
+    }
+    //// EOF FAULTY-BLKS CODE ////
 }
 
 void
 BaseSetAssoc::tagsInit()
 {
     // Initialize fault map
-    if (isFaultyCache){
+    if (isFaultyCache) {
         // updateSubBlkMap(size/1024, allocAssoc, numOfSubBlks);
         unsigned int sblksPerSet = allocAssoc * numOfSubBlks;
         unsigned int sblkBytes = blkSize / numOfSubBlks;
@@ -102,11 +115,11 @@ BaseSetAssoc::tagsInit()
 
         //// FAULTY-BLKS CODE ////
         // Set the subblocks as faulty according to the faultmap
-        if (isFaultyCache){
+        if (isFaultyCache) {
             unsigned int set = blk_index/allocAssoc;
             unsigned int way = blk_index%allocAssoc;
 
-            for (int subBlk = 0; subBlk < numOfSubBlks; subBlk++){
+            for (int subBlk = 0; subBlk < numOfSubBlks; subBlk++) {
                 blk->setFaulty(
                         sblkmap[blk_index/allocAssoc][subBlk +
                             (blk_index%allocAssoc)*numOfSubBlks],
@@ -130,14 +143,40 @@ BaseSetAssoc::tagsInit()
                             "Byte %d mask of Ones: %s\n",
                             i, std::bitset<8>(blk->maskOnes[i]).to_string()
                         );
+
+                        // Count stuck bits (not tested)
+                        uint8_t blkByte = blk->maskOnes[i];
+                        for (int b = 0; b < 7; b++) {
+                            if (blkByte % 2) blk->incStuckBits();
+                            blkByte /= 2;
+                        }
                     }
                     if (blk->maskZeros[i] < UINT8_MAX) {
                         DPRINTF(CacheFaulty,
                             "Byte %d mask of Zeros: %s\n",
                             i, std::bitset<8>(blk->maskZeros[i]).to_string()
                         );
+
+                        // Count stuck bits (not tested)
+                        uint8_t blkByte = blk->maskZeros[i];
+                        for (int b = 0; b < 7; b++) {
+                            if (blkByte % 2 == 0) blk->incStuckBits();
+                            blkByte /= 2;
+                        }
                     }
                 }
+            }
+
+            // define if blk is disabled (not used)
+            if (isFaulty(FaultyCacheState::FAULTY_BLKS_NOT_ALIVE)) {
+                int wayFaults = 0;
+                for (int i = 0; i < numOfSubBlks; i++) {
+                    if (blk->getFaulty(i)) {
+                        wayFaults++;
+                    }
+                }
+
+                blk->setDisabled(wayFaults == numOfSubBlks);
             }
         }
         //// EOF FAULTY-BLKS CODE ////

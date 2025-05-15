@@ -53,7 +53,9 @@
 #include <string>
 
 #include "base/printable.hh"
+#include "base/trace.hh"
 #include "base/types.hh"
+#include "debug/CacheFaulty.hh"
 #include "mem/cache/tags/tagged_entry.hh"
 #include "mem/packet.hh"
 #include "mem/request.hh"
@@ -319,9 +321,34 @@ class CacheBlk : public TaggedEntry
     }
 
     /**
-     * @return if the block contains a faulty bit
+     * @return if the block is considered faulty.
      */
     bool getFaulty(unsigned subBlk) { return _isFaulty[subBlk]; }
+
+    void incStuckBits() { _numOfStuckBits++; }
+
+    void modifyDisabled() {
+        /** TODO: It needs fix
+         * Stuck bits are accounted even
+         * when they aren't used (case: faulty-blks not alive)
+        */
+        if (_numOfStuckBits > 0) {
+            _isDisabled = false;
+            return;
+        }
+
+        int wayFaults = 0;
+        for (int i = 0; i < MAX_SUBBLOCKS; i++) {
+            if (_isFaulty[i]) {
+                wayFaults++;
+            }
+        }
+
+        _isDisabled = (wayFaults > 0);
+    }
+
+    void setDisabled(bool flag) { _isDisabled = flag;  }
+    bool isDisabled() { return _isDisabled; }
     //// EOF FAULTY-BLKS CODE ////
 
     /**
@@ -470,6 +497,18 @@ class CacheBlk : public TaggedEntry
         }
     }
 
+    //// FAULTY CACHE CODE ////
+    void applyStuckBitMasks(unsigned size) {
+        assert(data != nullptr);
+        assert(maskOnes != nullptr);
+        assert(maskZeros != nullptr);
+
+        for (int i = 0; i < size; i++) {
+            data[i] = (data[i] | maskOnes[i]) & maskZeros[i];
+        }
+    }
+    //// EOF FAULTY CACHE CODE ////
+
   protected:
     /** The current coherence status of this block. @sa CoherenceBits */
     unsigned coherence;
@@ -490,14 +529,6 @@ class CacheBlk : public TaggedEntry
 
     /** Set the current tick as this block's insertion tick. */
     void setTickInserted() { _tickInserted = curTick(); }
-
-    //// FAULTY CACHE CODE ////
-    void applyStuckBitMasks(unsigned size) {
-        for (int i = 0; i < size; i++) {
-            data[i] = (data[i] | maskOnes[i]) & maskZeros[i];
-        }
-    }
-    //// EOF FAULTY CACHE CODE ////
 
   private:
     /** Task Id associated with this block */
@@ -520,6 +551,9 @@ class CacheBlk : public TaggedEntry
 
     /** Whether this block's sub-blocks are set as faulty or not. */
     bool _isFaulty[MAX_SUBBLOCKS] = {false};
+    u_int32_t _numOfStuckBits = 0;
+
+    bool _isDisabled = false;
 };
 
 /**

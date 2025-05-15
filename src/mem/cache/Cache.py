@@ -143,8 +143,14 @@ class BaseCache(ClockedObject):
         [AllMemory], "Address range for the CPU-side port (to allow striping)"
     )
 
-    faulty_cache = Param.Bool(
-        False, "Parameter to enable faulty (sub)blocks " "functionality"
+    faulty_cache = Param.Bool(False, "Whether this cache is faulty.")
+
+    faulty_blks_alive = Param.Bool(
+        False,
+        "Whether faulty blocks can be used"
+        " (in insertion, replacement etc.)."
+        " That is, if true, stuck bits functionality is enabled."
+        " Otherwise, faulty blocks are disabled.",
     )
 
     number_of_subblocks = Param.Unsigned(1, "Number of sub-blocks per block")

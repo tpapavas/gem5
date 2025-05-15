@@ -149,6 +149,12 @@ Cache::satisfyRequest(PacketPtr pkt, CacheBlk *blk,
             }
         }
     }
+
+    //// FAULTY-BLKS CODE ////
+
+    // Maybe applyStuckBitMasks() should be added here too.
+
+    //// EOF FAULTY-BLKS CODE ////
 }
 
 /////////////////////////////////////////////////////

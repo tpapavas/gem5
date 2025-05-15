@@ -312,6 +312,13 @@ Packet::trySatisfyFunctional(Printable *obj, Addr addr, bool is_secure, int size
         std::memcpy(_data + val_offset,
                getConstPtr<uint8_t>() + func_offset,
                overlap_size);
+
+        //// FAULTY-BLKS CODE ////
+
+        // Maybe we should add here check for faulty blk,
+        // in order to modify data according to the stuck bits.
+
+        //// EOF FAULTY-BLKS CODE ////
     } else {
         panic("Don't know how to handle command %s\n", cmdString());
     }

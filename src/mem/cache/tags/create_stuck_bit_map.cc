@@ -32,10 +32,14 @@ void updateFaultyCacheMaps(
         sblkmap[35][1] = 1;
         sblkmap[108][2] = 1;
         sblkmap[115][3] = 1;
+        // sblkmap[70][0] = 1;
+        // sblkmap[127][1] = 1;
 
         stuckBitMaskOnesMap[35][1][4] = 64;
         stuckBitMaskZerosMap[108][2][20] = 191;
         stuckBitMaskZerosMap[115][3][19] = 251;
+        // stuckBitMaskOnesMap[70][0][7] = 2;
+        // stuckBitMaskOnesMap[127][1][4] = 64;
       }
         // cachesize=32(KByte), assoc=4, sets=128, blocks=512,
         //   blk_size=512(bits), data_set_bits=2048, tag_set_bits=76

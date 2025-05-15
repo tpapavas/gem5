@@ -92,6 +92,14 @@ class BaseSetAssoc(BaseTags):
     # Get faulty cache
     faulty_cache = Param.Bool(Parent.faulty_cache, "If the cache is faulty")
 
+    faulty_blks_alive = Param.Bool(
+        Parent.faulty_blks_alive,
+        "Whether faulty blocks can be used"
+        " (in insertion, replacement etc.)."
+        " That is, if true, stuck bits functionality is enabled."
+        " Otherwise, faulty blocks are disabled.",
+    )
+
     # Get subblocks
     number_of_subblocks = Param.Unsigned(
         Parent.number_of_subblocks, "Number of subblocks"

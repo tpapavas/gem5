@@ -92,6 +92,9 @@ class BaseSetAssoc : public BaseTags
 
     /** How may sub-blocks there are per block. */
     const unsigned numOfSubBlks;
+
+    /** What kind of faulty cache we have */
+    FaultyCacheState faultyCacheState;
     //// EOF FAULTY-BLKS CODE ////
 
     /** Replacement policy */
@@ -191,9 +194,9 @@ class BaseSetAssoc : public BaseTags
         // assertion for whole faulty block (not faulty subblocks assertion)
         // DPRINTF(CacheFaulty, "set %d\n",
         //   static_cast<SetAssociative*>(indexingPolicy)->extractSet(addr));
-        if (victim != nullptr) {
-            assert(!victim->getFaulty(0));
-        }
+        // if (victim != nullptr) {
+        //     assert(!victim->getFaulty(0));
+        // }
         //// EOF FAULTY-BLKS CODE ////
 
         // There is only one eviction for this replacement
@@ -266,6 +269,12 @@ class BaseSetAssoc : public BaseTags
         }
         return false;
     }
+
+    //// FAULTY-BLKS CODE ////
+    bool isFaulty(FaultyCacheState desiredFaultyState) override {
+        return faultyCacheState == desiredFaultyState;
+    }
+    //// EOF FAULTY-BLKS CODE ////
 };
 
 } // namespace gem5
