@@ -1,4 +1,4 @@
-# Copyright (c) 2021 The Regents of the University of California
+# Copyright (c) 2022 The Regents of the Yonsei University
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,21 +24,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from gem5.components.cachehierarchies.abstract_cache_hierarchy import (
-    AbstractCacheHierarchy,
-)
-from gem5.components.cachehierarchies.classic.abstract_classic_cache_hierarchy import (
-    AbstractClassicCacheHierarchy,
-)
-from gem5.components.cachehierarchies.abstract_three_level_cache_hierarchy import (
-    AbstractThreeLevelCacheHierarchy,
-)
-from gem5.components.cachehierarchies.classic.caches.l1dcache import L1DCache
-from gem5.components.cachehierarchies.classic.caches.l1icache import L1ICache
-from gem5.components.cachehierarchies.classic.caches.l2cache import L2Cache
-from gem5.components.cachehierarchies.classic.caches.mmu_cache import MMUCache
-from gem5.components.boards.abstract_board import AbstractBoard
-from gem5.isas import ISA
+from ..abstract_cache_hierarchy import AbstractCacheHierarchy
+from .abstract_classic_cache_hierarchy import AbstractClassicCacheHierarchy
+from ..abstract_two_level_cache_hierarchy import AbstractTwoLevelCacheHierarchy
+from .caches.l1dcache import L1DCache
+from .caches.l1icache import L1ICache
+from .caches.l2cache import L2Cache
+from .caches.mmu_cache import MMUCache
+from ...boards.abstract_board import AbstractBoard
+from ....isas import ISA
 from m5.objects import (
     Cache,
     BasePrefetcher,
@@ -50,26 +44,28 @@ from m5.objects import (
     Port,
 )
 
-from gem5.utils.override import *
+from ....utils.override import *
 
 from typing import Type
 
 
-class FaultyPrivateL1PrivateL2SharedL3CacheHierarchy(
-    AbstractClassicCacheHierarchy, AbstractThreeLevelCacheHierarchy
+class FaultyPrivateL1SharedL2CacheHierarchy(
+    AbstractClassicCacheHierarchy, AbstractTwoLevelCacheHierarchy
 ):
     """
-    A cache setup where each core has a private L1 Data and Instruction Cache and
-    a private L2 Cache and an L3 Cache is shared with all cores.
+    A cache setup where each core has a private L1 Data and Instruction Cache,
+    and a L2 cache is shared with all cores. The shared L2 cache is mostly
+    inclusive with respect to the split I/D L1 and MMU caches.
     """
 
     @staticmethod
     def _get_default_membus() -> SystemXBar:
         """
         A method used to obtain the default memory bus of 64 bit in width for
-        the PrivateL1PrivateL2SharedL3 Cache Hierarchy.
+        the PrivateL1SharedL2 CacheHierarchy.
 
-        :returns: The default memory bus for the PrivateL1PrivateL2SharedL3CacheHiearchy.
+        :returns: The default memory bus for the PrivateL1SharedL2
+        CacheHierarchy.
 
         :rtype: SystemXBar
         """
@@ -83,54 +79,36 @@ class FaultyPrivateL1PrivateL2SharedL3CacheHierarchy(
         l1d_size: str,
         l1i_size: str,
         l2_size: str,
-        l3_size: str,
         l1d_assoc: int = 8,
         l1i_assoc: int = 8,
         l2_assoc: int = 16,
-        l3_assoc: int = 16,
         l1d_latency: int = 1,
         l1i_latency: int = 1,
         l2_latency: int = 10,
-        l3_latency: int = 10,
         L1DPrefetcherCls: Type[BasePrefetcher] = StridePrefetcher,
         L1IPrefetcherCls: Type[BasePrefetcher] = StridePrefetcher,
         L2PrefetcherCls: Type[BasePrefetcher] = StridePrefetcher,
-        L3PrefetcherCls: Type[BasePrefetcher] = StridePrefetcher,
         l1d_faulty: bool = False,
         l1d_faulty_blks_alive: bool = False,
         l1i_faulty: bool = False,
         l1i_faulty_blks_alive: bool = False,
         l2_faulty: bool = False,
         l2_faulty_blks_alive: bool = False,
-        l3_faulty: bool = False,
-        l3_faulty_blks_alive: bool = False,
         membus: BaseXBar = _get_default_membus.__func__(),
     ) -> None:
         """
         :param l1d_size: The size of the L1 Data Cache (e.g., "32kB").
-
-        :type l1d_size: str
-
         :param  l1i_size: The size of the L1 Instruction Cache (e.g., "32kB").
-
-        :type l1i_size: str
-
         :param l2_size: The size of the L2 Cache (e.g., "256kB").
-
-        :type l2_size: str
-
-        :param l3_size: The size of the L3 Cache (e.g., "512KiB").
-
-        :type l3_size: str
-
+        :param l1d_assoc: The associativity of the L1 Data Cache.
+        :param l1i_assoc: The associativity of the L1 Instruction Cache.
+        :param l2_assoc: The associativity of the L2 Cache.
         :param membus: The memory bus. This parameter is optional parameter and
         will default to a 64 bit width SystemXBar is not specified.
-
-        :type membus: BaseXBar
         """
 
         AbstractClassicCacheHierarchy.__init__(self=self)
-        AbstractThreeLevelCacheHierarchy.__init__(
+        AbstractTwoLevelCacheHierarchy.__init__(
             self,
             l1i_size=l1i_size,
             l1i_assoc=l1i_assoc,
@@ -138,19 +116,15 @@ class FaultyPrivateL1PrivateL2SharedL3CacheHierarchy(
             l1d_assoc=l1d_assoc,
             l2_size=l2_size,
             l2_assoc=l2_assoc,
-            l3_size=l3_size,
-            l3_assoc=l3_assoc,
         )
 
         self._l1i_latency = l1i_latency
         self._l1d_latency = l1d_latency
         self._l2_latency = l2_latency
-        self._l3_latency = l3_latency
 
         self._L1IPrefetcherCls = L1IPrefetcherCls
         self._L1DPrefetcherCls = L1DPrefetcherCls
         self._L2PrefetcherCls = L2PrefetcherCls
-        self._L3PrefetcherCls = L3PrefetcherCls
 
         self._l1i_faulty = l1i_faulty
         self._l1i_faulty_blks_alive = l1i_faulty_blks_alive
@@ -158,8 +132,6 @@ class FaultyPrivateL1PrivateL2SharedL3CacheHierarchy(
         self._l1d_faulty_blks_alive = l1d_faulty_blks_alive
         self._l2_faulty = l2_faulty
         self._l2_faulty_blks_alive = l2_faulty_blks_alive
-        self._l3_faulty = l3_faulty
-        self._l3_faulty_blks_alive = l3_faulty_blks_alive
 
         self.membus = membus
 
@@ -173,11 +145,12 @@ class FaultyPrivateL1PrivateL2SharedL3CacheHierarchy(
 
     @overrides(AbstractCacheHierarchy)
     def incorporate_cache(self, board: AbstractBoard) -> None:
+
         # Set up the system port for functional access from the simulator.
         board.connect_system_port(self.membus.cpu_side_ports)
 
-        for cntr in board.get_memory().get_memory_controllers():
-            cntr.port = self.membus.mem_side_ports
+        for _, port in board.get_memory().get_mem_ports():
+            self.membus.mem_side_ports = port
 
         self.l1icaches = [
             L1ICache(
@@ -206,32 +179,16 @@ class FaultyPrivateL1PrivateL2SharedL3CacheHierarchy(
         for i in range(board.get_processor().get_num_cores()):
             self.l1dcaches[i].faulty_cache = self._l1d_faulty
             self.l1dcaches[i].faulty_blks_alive = self._l1d_faulty_blks_alive
-        self.l2buses = [
-            L2XBar() for i in range(board.get_processor().get_num_cores())
-        ]
-        self.l2caches = [
-            L2Cache(
-                size=self._l2_size,
-                assoc=self._l2_assoc,
-                tag_latency=self._l2_latency,
-                data_latency=self._l2_latency,
-                PrefetcherCls=self._L2PrefetcherCls,
-            )
-            for i in range(board.get_processor().get_num_cores())
-        ]
-        for i in range(board.get_processor().get_num_cores()):
-            self.l2caches[i].faulty_cache = self._l2_faulty
-            self.l2caches[i].faulty_blks_alive = self._l2_faulty_blks_alive
-        self.l3bus = L2XBar()
-        self.l3cache = L2Cache(
-            size=self._l3_size,
-            assoc=self._l3_assoc,
-            tag_latency=self._l3_latency,
-            data_latency=self._l3_latency,
-            PrefetcherCls=self._L3PrefetcherCls,
+        self.l2bus = L2XBar()
+        self.l2cache = L2Cache(
+            size=self._l2_size,
+            assoc=self._l2_assoc,
+            tag_latency=self._l2_latency,
+            data_latency=self._l2_latency,
+            PrefetcherCls=self._L2PrefetcherCls,
         )
-        self.l3cache.faulty_cache = self._l3_faulty
-        self.l3cache.faulty_blks_alive = self._l3_faulty_blks_alive
+        self.l2cache.faulty_cache = self._l2_faulty
+        self.l2cache.faulty_blks_alive = self._l2_faulty_blks_alive
         # ITLB Page walk caches
         self.iptw_caches = [
             MMUCache(size="8KiB", writeback_clean=False)
@@ -247,16 +204,14 @@ class FaultyPrivateL1PrivateL2SharedL3CacheHierarchy(
             self._setup_io_cache(board)
 
         for i, cpu in enumerate(board.get_processor().get_cores()):
+
             cpu.connect_icache(self.l1icaches[i].cpu_side)
             cpu.connect_dcache(self.l1dcaches[i].cpu_side)
 
-            self.l1icaches[i].mem_side = self.l2buses[i].cpu_side_ports
-            self.l1dcaches[i].mem_side = self.l2buses[i].cpu_side_ports
-            self.iptw_caches[i].mem_side = self.l2buses[i].cpu_side_ports
-            self.dptw_caches[i].mem_side = self.l2buses[i].cpu_side_ports
-
-            self.l2buses[i].mem_side_ports = self.l2caches[i].cpu_side
-            self.l2caches[i].mem_side = self.l3bus.cpu_side_ports
+            self.l1icaches[i].mem_side = self.l2bus.cpu_side_ports
+            self.l1dcaches[i].mem_side = self.l2bus.cpu_side_ports
+            self.iptw_caches[i].mem_side = self.l2bus.cpu_side_ports
+            self.dptw_caches[i].mem_side = self.l2bus.cpu_side_ports
 
             cpu.connect_walker_ports(
                 self.iptw_caches[i].cpu_side, self.dptw_caches[i].cpu_side
@@ -269,8 +224,8 @@ class FaultyPrivateL1PrivateL2SharedL3CacheHierarchy(
             else:
                 cpu.connect_interrupt()
 
-        self.l3bus.mem_side_ports = self.l3cache.cpu_side
-        self.membus.cpu_side_ports = self.l3cache.mem_side
+        self.l2bus.mem_side_ports = self.l2cache.cpu_side
+        self.membus.cpu_side_ports = self.l2cache.mem_side
 
     def _setup_io_cache(self, board: AbstractBoard) -> None:
         """Create a cache for coherent I/O connections"""
@@ -280,7 +235,7 @@ class FaultyPrivateL1PrivateL2SharedL3CacheHierarchy(
             data_latency=50,
             response_latency=50,
             mshrs=20,
-            size="1KiB",
+            size="1kB",
             tgts_per_mshr=12,
             addr_ranges=board.mem_ranges,
         )
