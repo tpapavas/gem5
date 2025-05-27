@@ -194,9 +194,49 @@ class BaseSetAssoc : public BaseTags
         // assertion for whole faulty block (not faulty subblocks assertion)
         // DPRINTF(CacheFaulty, "set %d\n",
         //   static_cast<SetAssociative*>(indexingPolicy)->extractSet(addr));
-        // if (victim != nullptr) {
-        //     assert(!victim->getFaulty(0));
-        // }
+        if (victim == nullptr) {
+            assert(isFaulty(FaultyCacheState::FAULTY_BLKS_NOT_ALIVE));
+
+            int countFaultyWays = 0;
+            int countDisabledWays = 0;
+            for (const auto& entry : entries) {
+                CacheBlk* blk = static_cast<CacheBlk*>(entry);
+
+                if (blk->getFaulty(0)) {
+                    countFaultyWays++;
+                }
+                if (blk->isDisabled()) {
+                    countDisabledWays++;
+                }
+            }
+            // the #faulty must match the #disabled
+            assert(countFaultyWays == countDisabledWays);
+            // the whole set must be faulty
+            assert(countDisabledWays == allocAssoc);
+        } else if (isFaulty(FaultyCacheState::FAULTY_BLKS_NOT_ALIVE)) {
+            int countFaultyWays = 0;
+            int countDisabledWays = 0;
+
+            for (const auto& entry : entries) {
+                CacheBlk* blk = static_cast<CacheBlk*>(entry);
+
+                if (blk->getFaulty(0)) {
+                    countFaultyWays++;
+                }
+                if (blk->isDisabled()) {
+                    countDisabledWays++;
+                }
+            }
+
+            // the #faulty must match the #disabled
+            assert(countFaultyWays == countDisabledWays);
+
+            // we cannot propose a faulty blk as victim.
+            assert(!victim->getFaulty(0));
+        } else if (isFaulty(FaultyCacheState::FAULTY_BLKS_ALIVE)) {
+            // stuck-bits case. think something
+            assert(!victim->isDisabled());
+        }
         //// EOF FAULTY-BLKS CODE ////
 
         // There is only one eviction for this replacement
@@ -271,7 +311,7 @@ class BaseSetAssoc : public BaseTags
     }
 
     //// FAULTY-BLKS CODE ////
-    bool isFaulty(FaultyCacheState desiredFaultyState) override {
+    bool isFaulty(FaultyCacheState desiredFaultyState) const override {
         return faultyCacheState == desiredFaultyState;
     }
     //// EOF FAULTY-BLKS CODE ////

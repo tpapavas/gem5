@@ -91,7 +91,9 @@ BaseTags::findBlock(Addr addr, bool is_secure) const
         CacheBlk* blk = static_cast<CacheBlk*>(location);
         if (blk->matchTag(tag, is_secure)) {
             //// FAULTY-BLKS CODE ////
-            // assert(!blk->getFaulty(0));
+            if (isFaulty(FaultyCacheState::FAULTY_BLKS_NOT_ALIVE)) {
+                assert(!blk->getFaulty(0) && !blk->isDisabled());
+            }
             //// EOF FAULTY-BLKS CODE ////
 
             return blk;

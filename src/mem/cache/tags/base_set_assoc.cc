@@ -82,6 +82,7 @@ BaseSetAssoc::BaseSetAssoc(const Params &p)
         faultyCacheState = FaultyCacheState::INVALID_FAULTY_BEHAVIOR;
         panic("Invalid set of faulty-cache flags");
     }
+    DPRINTF(CacheFaulty, "%s\n", name());
     //// EOF FAULTY-BLKS CODE ////
 }
 
@@ -95,8 +96,9 @@ BaseSetAssoc::tagsInit()
         unsigned int sblkBytes = blkSize / numOfSubBlks;
         unsigned int sets = size / blkSize / allocAssoc;
 
-        resetFaultyCacheMaps(sets, sblksPerSet, sblkBytes);
-        updateFaultyCacheMaps(size/1024, allocAssoc, numOfSubBlks);
+        // resetFaultyCacheMaps(sets, sblksPerSet, sblkBytes);
+        DPRINTF(CacheFaulty, "cache size: %d\n", size);
+        updateFaultyCacheMaps(size / 1024, allocAssoc, numOfSubBlks);
     }
 
     // Initialize all blocks

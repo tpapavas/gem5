@@ -1,16 +1,16 @@
+#include <cstdint>
 #include <cstdlib>
 
 #ifndef CREATE_FAULTY_CACHES_MAPS_H
 #define CREATE_FAULTY_CACHES_MAPS_H
 
-void resetFaultyCacheMaps(
-    unsigned int sets, unsigned int sblks_per_set, unsigned int sblk_bytes);
+void resetFaultyCacheMaps();
 void updateFaultyCacheMaps(
     unsigned int cachesize, unsigned int assoc, unsigned int sblks_per_blk);
 
-extern int sblkmap[128][4];
+extern int sblkmap[64][8];
 
-extern u_int8_t stuckBitMaskOnesMap[128][4][64];
-extern u_int8_t stuckBitMaskZerosMap[128][4][64];
+extern uint8_t stuckBitMaskOnesMap[64][8][64];
+extern uint8_t stuckBitMaskZerosMap[64][8][64];
 
 #endif /* CREATE_FAULTY_CACHES_MAPS_H */

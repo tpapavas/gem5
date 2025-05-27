@@ -358,7 +358,7 @@ class BaseTags : public ClockedObject
     };
 
     /** Whether this cache has specific faulty behavior */
-    virtual bool isFaulty(FaultyCacheState faultyState) { return false; }
+    virtual bool isFaulty(FaultyCacheState faultyState) const { return false; }
 
   private:
     /**
