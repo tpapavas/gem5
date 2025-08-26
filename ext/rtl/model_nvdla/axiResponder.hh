@@ -1,0 +1,183 @@
+/* nvdla.cpp
+ * Driver for Verilator testbench
+ * NVDLA Open Source Project
+ *
+ * Copyright (c) 2017 NVIDIA Corporation.  Licensed under the NVDLA Open
+ * Hardware License.  For more information, see the "LICENSE" file that came
+ * with this distribution.
+ */
+
+#ifndef __AXI_RESPONDER__
+#define __AXI_RESPONDER__
+
+// #define AXI_RESP_FAST_IO
+#ifdef AXI_RESP_FAST_IO
+#define PRINT_16B(str, pos, v64, v32, v8_0, v8_1, v8_2, v4_0, v4_1) \
+    (str)[(pos)++] = v64; (str)[(pos)++] = ((uint64_t)((v32) & 0xffffffff)) + (((uint64_t)(v8_0) & 0xff) << 32) + \
+                                           (((uint64_t)(v8_1) & 0xff) << 40) + (((uint64_t)(v8_2) & 0xff) << 48) + \
+                                           (((uint64_t)(v4_0) & 0xf) << 56) + (((uint64_t)(v4_1) & 0xf) << 60)
+
+#define PRINT_RD_REQ(str, pos, dla, stream, name, tick, addr, burst) \
+    PRINT_16B(str, pos, addr, tick, stream, dla, name, 0, burst)
+#define PRINT_WR_REQ(str, pos, dla, stream, name, tick, addr) PRINT_16B(str, pos, addr, tick, stream, dla, name, 1, 0)
+#define PRINT_EB_HIT(str, pos, dla, tick, addr) PRINT_16B(str, pos, addr, tick, 0, dla, 0, 2, 0)
+#define PRINT_DMA_RD_ISSUE(str, pos, dla, tick, addr) PRINT_16B(str, pos, addr, tick, 0, dla, 0, 3, 0)
+#define PRINT_DATA_USED(str, pos, dla, name, tick, addr) PRINT_16B(str, pos, addr, tick, 0, dla, name, 4, 0)
+#define PRINT_PFT_BACK(str, pos, dla, tick, addr) PRINT_16B(str, pos, addr, tick, 0, dla, 0, 5, 0)
+#define PRINT_AXI_BACK(str, pos, dla, tick, addr) PRINT_16B(str, pos, addr, tick, 0, dla, 0, 6, 0)
+#define PRINT_DMA_BACK(str, pos, dla, tick, addr) PRINT_16B(str, pos, addr, tick, 0, dla, 0, 7, 0)
+#define PRINT_DMA_PFT_ISSUE(str, pos, dla, tick, addr) PRINT_16B(str, pos, addr, tick, 0, dla, 0, 8, 0)
+#define PRINT_PFT_ISSUE(str, pos, dla, tick, addr) PRINT_16B(str, pos, addr, tick, 0, dla, 0, 9, 0)
+#endif
+
+#define PRINT_DEBUG
+
+#define AXI_BLOCK_SIZE 4096
+#define AXI_WIDTH 512
+#include <list>
+#include <unordered_map>
+
+#include "wrapper_nvdla.hh"
+
+class Wrapper_nvdla;
+
+class AXIResponder {
+public:
+    struct connections {
+        uint8_t *aw_awvalid;
+        uint8_t *aw_awready;
+        uint8_t *aw_awid;
+        uint8_t *aw_awlen;
+        uint64_t *aw_awaddr;
+
+        uint8_t *w_wvalid;
+        uint8_t *w_wready;
+        uint32_t *w_wdata;
+        uint64_t *w_wstrb;
+        uint8_t *w_wlast;
+
+        uint8_t *b_bvalid;
+        uint8_t *b_bready;
+        uint8_t *b_bid;
+
+        uint8_t *ar_arvalid;
+        uint8_t *ar_arready;
+        uint8_t *ar_arid;
+        uint8_t *ar_arlen;
+        uint64_t *ar_araddr;
+
+        uint8_t *r_rvalid;
+        uint8_t *r_rready;
+        uint8_t *r_rid;
+        uint8_t *r_rlast;
+        uint32_t *r_rdata;
+    };
+
+private:
+
+    const int AXI_R_LATENCY;    // for non-spm configuration, this fixed latency is modeled by gem5 memory system
+    const static int AXI_R_DELAY = 0;
+
+    struct axi_r_txn {
+        int rvalid;
+        int rlast;
+        bool burst;
+        uint8_t rdata[AXI_WIDTH / 8];
+        uint8_t rid;
+        uint8_t is_prefetch;
+    };
+    std::queue<axi_r_txn> r_fifo;
+    std::queue<axi_r_txn> r0_fifo;
+
+    struct axi_aw_txn {
+        uint8_t awid;
+        uint64_t awaddr;
+        uint8_t awlen;
+    };
+    std::queue<axi_aw_txn> aw_fifo;
+
+    struct axi_w_txn {
+        uint8_t wdata[AXI_WIDTH / 8];
+        uint64_t wstrb;
+        uint8_t wlast;
+    };
+    std::queue<axi_w_txn> w_fifo;
+
+    struct axi_b_txn {
+        uint8_t bid;
+    };
+    std::queue<axi_b_txn> b_fifo;
+
+    std::map<uint64_t, std::vector<uint8_t> > ram;
+
+    struct connections dla;
+    const char *name;
+
+    // gem5 memory
+    // map key:addr, data:txn
+    std::map<uint64_t, std::list<axi_r_txn>> inflight_req;
+    std::list<uint64_t> inflight_req_order;
+    const unsigned int max_req_inflight;
+
+    // dma & spm
+    // function together with inflight_req & inflight_req_order
+    const bool dma_enable;
+
+    struct DMAAttr {
+        bool is_bypass;
+        std::vector<std::pair<uint64_t, std::list<axi_r_txn>::iterator> > deps;
+    };
+    std::map<uint64_t, DMAAttr> inflight_dma_attr;  // record the inflight dma attribute: whether to bypass DMA
+    std::queue<uint64_t> inflight_dma_addr_queue;   // keep dma request order
+    std::vector<uint32_t> inflight_count_for_sets;  // count inflight dma requests for each embedded buffer set
+
+    // prefetch
+    const uint32_t pft_threshold;
+    const uint32_t dma_pft_threshold;
+    std::list<std::tuple<uint64_t, uint32_t, uint32_t>> read_var_log;  // each tuple is (addr, length, issued_len) of a read-only variable
+
+public:
+    AXIResponder(struct connections _dla,
+                 Wrapper_nvdla *_wrapper,
+                 const char *_name,
+                 bool sram,
+                 const unsigned int maxReq,
+                 bool _dma_enable);
+
+    uint32_t getRequestsOnFlight();
+
+    // In this function we read from memory
+    uint8_t read_ram(uint64_t addr);
+
+    // In this function, we get read requests from traceLoaderGem5 and access memory for it
+    void read_for_traceLoaderGem5(uint64_t start_addr, uint32_t length);
+
+    // In this function, we check whether the read requests from traceLoaderGem5 have been responded by memory
+    // If so, we forward the response to traceLoaderGem5
+    uint32_t read_response_for_traceLoaderGem5(uint64_t start_addr, uint8_t* data_buffer);
+
+    // In this function we write to memory
+    void write(uint64_t addr, uint8_t data, bool timing);
+    void write_ram(uint64_t addr, uint8_t data);
+
+    void eval_timing();
+    void eval_ram();
+
+    // called by axiResponder.eval_timing()
+    bool process_read_req();
+    void process_read_resp();
+
+    // callback methods, called by gem5 ports in rtlNVDLA when data is returned
+    void inflight_resp(uint64_t addr, const uint8_t* data);
+    void inflight_dma_resp(const uint8_t* data, uint32_t len);
+
+    // prefetching-related
+    void add_rd_var_log_entry(uint64_t addr, uint32_t size);
+    bool log_req_issue(uint64_t addr);
+    void generate_prefetch_request();
+
+    Wrapper_nvdla *wrapper;
+
+    const bool sram;
+};
+#endif
