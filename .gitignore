@@ -41,8 +41,8 @@ bsc-util/validation_nvdla
 ext/rtl/model_nvdla/verilator_nvdla/
 m5out/
 *m5out/
-*.vcd
-*.dat
+# *.vcd
+# *.dat
 .vscode/
 trace.bin
 NVDLAUtil
