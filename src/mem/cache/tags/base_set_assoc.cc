@@ -49,6 +49,7 @@
 #include "base/intmath.hh"
 
 #include "debug/TPCacheDecayDebug.hh"
+#include "debug/TPSetSamplingPolicyDebug.hh"
 #include "tp_src/mem/cache/decay/amc_dp.hh"
 #include "tp_src/mem/cache/decay/constant_dp.hh"
 #include "tp_src/mem/cache/decay/dueling_dp.hh"
@@ -106,6 +107,12 @@ BaseSetAssoc::tagsInit()
 
         // Associate a replacement data entry to the block
         blk->replacementData = replacementPolicy->instantiateEntry();
+
+        //// MY SSP CODE ////
+        // DPRINTF(TPSetSamplingPolicyDebug,
+        //    "Before setSamplingPolicy->initEntry(...)\n");
+        setSamplingPolicy->initEntry(blk->getSetSampler());
+        //// EOF MY SSP CODE ////
 
         //// extra code ////
         // if (iatacData != nullptr) {

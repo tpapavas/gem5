@@ -44,6 +44,7 @@ from m5.objects.ClockedObject import ClockedObject
 from m5.objects.Compressors import BaseCacheCompressor
 from m5.objects.Prefetcher import BasePrefetcher
 from m5.objects.ReplacementPolicies import *
+from m5.objects.SetSamplingPolicies import *
 from m5.objects.Tags import *
 
 #### My Code ####
@@ -127,6 +128,12 @@ class BaseCache(ClockedObject):
     replacement_policy = Param.BaseReplacementPolicy(
         LRURP(), "Replacement policy"
     )
+
+    #### MY SSP CODE ####
+    set_sampling_policy = Param.BaseSetSamplingPolicy(
+        NoSSP(), "Set sampling policy"
+    )
+    #### EOF MY SSP CODE ####
 
     compressor = Param.BaseCacheCompressor(NULL, "Cache compressor.")
     replace_expansions = Param.Bool(

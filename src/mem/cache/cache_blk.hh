@@ -63,6 +63,7 @@
 #include "tp_src/mem/cache/decay/constant_dp.hh"
 #include "tp_src/mem/cache/decay/dueling_dp.hh"
 #include "tp_src/mem/cache/decay/iatac.hh"
+#include "tp_src/mem/cache/set_sampling_policies/base.hh"
 
 //// EOF MY CODE ////
 
@@ -163,6 +164,7 @@ class CacheBlk : public TaggedEntry
     {
         invalidate();
         _decay = nullptr;
+        _setSampler = new tp::set_sampling_policy::SetSampler();
     }
 
     CacheBlk(const CacheBlk&) = delete;
@@ -308,6 +310,13 @@ class CacheBlk : public TaggedEntry
     void increaseRefCount() { _refCount++; }
 
     //// MY CODE ////
+
+    //// MY SSP CODE ////
+    tp::set_sampling_policy::SetSampler* getSetSampler()
+    {
+        return _setSampler;
+    }
+    //// EOF MY SSP CODE ////
 
     //// refactor code ////
     void instantiateDecay(std::shared_ptr<tp::decay_policy::GlobalDecayData>&
@@ -709,6 +718,11 @@ class CacheBlk : public TaggedEntry
     Tick _tickInserted = 0;
 
     //// MY CODE ////
+
+    //// MY SSP CODE ////
+    tp::set_sampling_policy::SetSampler *_setSampler;
+    //// EOF MY SSP CODE ////
+
     Tick _tickLastHitted = 0;
 
     int _decayCounter = 8;

@@ -269,6 +269,10 @@ BaseCache::BaseCache(const BaseCacheParams &p, unsigned blk_size)
     //// eof extra code ////
     DPRINTF(TPCacheDecayDebug, "TPCacheDecay: %s, before tagsInit\n",
         __func__);
+
+    //// MY SSP CODE ////
+    tags->setSetSamplingPolicy(p.set_sampling_policy);
+    //// EOF MY SSP CODE ////
     tags->tagsInit();
     if (prefetcher)
         prefetcher->setCache(this);
@@ -2056,6 +2060,14 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
         // decayedHitBlk->invalidate(); // temporarily
         // evict_blks.push_back(victim);
         // iatacDecayedHit = false;
+
+        /////////// POSSIBLE BUG /////////////
+        // We change the victim,
+        // so the initial victim should not be evicted.
+        //
+        // I think "evict_blks.clear();" should be added.
+        // Or, first "findVictim(...)" call should be removed.
+        /////////////////////////////////////
     } else {
         // find victim for regular misses.
         DPRINTF(TPCacheIATACDebug, "IATAC: find victim on regular miss.\n");

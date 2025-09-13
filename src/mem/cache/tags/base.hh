@@ -63,6 +63,7 @@
 //// extra code ////
 #include "tp_src/events/timing_event_handler.hh"
 #include "tp_src/mem/cache/decay/dueling.hh"
+#include "tp_src/mem/cache/set_sampling_policies/base.hh"
 
 //// eof extra code ////
 
@@ -118,6 +119,10 @@ class BaseTags : public ClockedObject
     tp::DecayDuelingMonitor* decayDuelingMonitor;
     tp::EventType decayType = tp::EventType::PLAIN_TIMING;
     //// eof extra code ////
+
+    //// MY SSP CODE ////
+    tp::set_sampling_policy::Base* setSamplingPolicy;
+    //// EOF MY SSP CODE ////
 
     /**
      * TODO: It would be good if these stats were acquired after warmup.
@@ -388,6 +393,11 @@ class BaseTags : public ClockedObject
 
     tp::DecayDuelingMonitor *getDecayDuelingMonitor() {
         return decayDuelingMonitor;
+    }
+
+    void setSetSamplingPolicy(tp::set_sampling_policy::Base* samplingPolicy)
+    {
+        setSamplingPolicy = samplingPolicy;
     }
 
     void setDecayType(tp::EventType decay_type)

@@ -49,6 +49,11 @@ from m5.objects import (
     BadAddr,
     Port,
 )
+from m5.objects.SetSamplingPolicies import (
+    BaseSetSamplingPolicy,
+    NoSSP,
+    UniformSSP,
+)
 from m5.objects.TPCacheEvents import (
     FlushEventHandler,
     DecayEventHandler,
@@ -102,6 +107,7 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
         L3PrefetcherCls: Type[BasePrefetcher] = StridePrefetcher,
         l1d_flush_event_handler: Type[FlushEventHandler] = None,
         l1i_flush_event_handler: Type[FlushEventHandler] = None,
+        l3_set_sampling_policy: Type[BaseSetSamplingPolicy] = None,
         l1d_gen_decay_event_handler: Type[DecayEventHandler] = None,
         l1i_gen_decay_event_handler: Type[DecayEventHandler] = None,
         l2_gen_decay_event_handler: Type[DecayEventHandler] = None,
@@ -156,6 +162,8 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
 
         self._l1i_flush_event_handler = l1i_flush_event_handler
         self._l1d_flush_event_handler = l1d_flush_event_handler
+
+        self._l3_set_sampling_policy = l3_set_sampling_policy
 
         self._l1i_gen_decay_event_handler = l1i_gen_decay_event_handler
         self._l1d_gen_decay_event_handler = l1d_gen_decay_event_handler
@@ -246,6 +254,8 @@ class PrivateL1PrivateL2SharedL3CacheHierarchy(
             data_latency=self._l3_latency,
             PrefetcherCls=self._L3PrefetcherCls,
         )
+        if self._l3_set_sampling_policy is not None:
+            self.l3cache.set_sampling_policy = self._l3_set_sampling_policy
         if self._l3_gen_decay_event_handler is not None:
             self.l3cache.gen_decay_event_handler = (
                 self._l3_gen_decay_event_handler
