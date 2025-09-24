@@ -64,6 +64,27 @@ UniformSSP::initEntry(SetSampler* sampler)
     }
 }
 
+void
+UniformSSP::initEntry(CacheBlk* blk)
+{
+    unsigned setOffset = blk->getSet() % samplingFactor;
+    //  sample team: entries from 1st set of each constituency
+    //  not-sample team: all other sets in each constituency
+
+    assert(sampler);
+    if (setOffset == 0) {
+        blk->getSetSampler()->setSample();
+        DPRINTF(TPSetSamplingPolicyDebug,
+            "constituency: %d, set: %d, team: SAMPLE\n",
+            constituencyCounter, regionCounter/teamSize);
+    } else {
+      sblk->getSetSampler()->unsetSample();
+          DPRINTF(TPSetSamplingPolicyDebug,
+            "constituency: %d, set: %d, team: NOT SAMPLE\n",
+            constituencyCounter, regionCounter/teamSize);
+    }
+}
+
 }  // namespace set_sampling_policy
 
 }  // namespace tp

@@ -78,6 +78,7 @@ class UniformSSP : public Base
      * @param sampler The entry to be initialized.
      */
     virtual void initEntry(SetSampler* sampler) override;
+    virtual void initEntry(CacheBlk* blk) override;
 };
 
 } // namespace set_selection_policy

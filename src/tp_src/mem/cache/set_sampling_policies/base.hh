@@ -34,6 +34,7 @@
 // #include "base/compiler.hh"
 // #include "mem/cache/replacement_policies/replaceable_entry.hh"
 // #include "mem/packet.hh"
+#include "mem/cache/cache_blk.hh"
 #include "params/BaseSetSamplingPolicy.hh"
 #include "sim/clocked_object.hh"
 
@@ -133,6 +134,8 @@ class Base : public ClockedObject
      * @param dueler The entry to be initialized.
      */
     virtual void initEntry(SetSampler* sampler) = 0;
+
+    virtual void initEntry(CacheBlk* blk) = 0;
 };
 
 } // namespace set_selection_policy
