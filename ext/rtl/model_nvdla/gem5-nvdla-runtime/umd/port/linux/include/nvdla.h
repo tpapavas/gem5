@@ -31,6 +31,8 @@
 
 #include <nvdla_inf.h>
 
+NvU16 MemoryId = 0;
+
 struct NvDlaMemHandleRec{
     NvS32 fd;
     NvS32 prime_handle;
