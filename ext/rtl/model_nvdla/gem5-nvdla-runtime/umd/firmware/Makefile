@@ -24,33 +24,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ROOT := $(TOP)
+ccflags-y += -I$(src)/../../firmware/include
+ccflags-y += -I$(src)/../../firmware
 
-TOOLCHAIN_PREFIX ?=
-
-ifeq ($(TOOLCHAIN_PREFIX),)
-$(error Toolchain prefix missing)
-endif
-
-MODULE := libnvdla_runtime
-
-include $(ROOT)/make/macros.mk
-
-BUILDOUT ?= $(ROOT)/out/core/src/runtime
-BUILDDIR := $(BUILDOUT)/$(MODULE)
-LIB := $(BUILDDIR)/$(MODULE).so
-
-INCLUDES :=
-MODULE_OPTFLAGS ?= -O0 #s
-MODULE_COMPILEFLAGS := -g -fPIC -finline -W -Wall -Wno-multichar -Wno-unused-parameter -Wno-unused-function -Werror-implicit-function-declaration
-MODULE_CFLAGS := --std=c99
-MODULE_CPPFLAGS := --std=c++11 -fexceptions -fno-rtti
-
-all:: $(LIB)
-
-include rules.mk
-
-# the logic to compile and link stuff is in here
-$(LIB): $(ALLMODULE_OBJS)
-	@echo building $(MODULE)  $@
-	$(TOOLCHAIN_PREFIX)g++ -shared $(ALLMODULE_OBJS) -o $@
+opendla-y += ../../firmware/scheduler.o
+opendla-y += ../../firmware/engine.o
+opendla-y += ../../firmware/bdma.o
+opendla-y += ../../firmware/conv.o
+opendla-y += ../../firmware/sdp.o
+opendla-y += ../../firmware/cdp.o
+opendla-y += ../../firmware/pdp.o
+opendla-y += ../../firmware/rubik.o
+opendla-y += ../../firmware/cache.o
+opendla-y += ../../firmware/common.o
+opendla-y += ../../firmware/engine_data.o
+opendla-y += ../../firmware/engine_isr.o
+opendla-y += ../../firmware/engine_debug.o

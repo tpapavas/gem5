@@ -42,6 +42,21 @@ NVDLA_RUNTIME_SRC_FILES := \
     $(ROOT)/core/src/common/Loadable.cpp \
     $(ROOT)/port/linux/nvdla.c \
     $(ROOT)/port/linux/nvdla_os.c \
+    $(ROOT)/port/linux/gem5_nvdla_gem.c \
+    $(ROOT)/port/linux/gem5_nvdla_core_callbacks.c \
+    $(ROOT)/firmware/scheduler.c \
+    $(ROOT)/firmware/engine.c \
+    $(ROOT)/firmware/bdma.c \
+    $(ROOT)/firmware/conv.c \
+    $(ROOT)/firmware/sdp.c \
+    $(ROOT)/firmware/cdp.c \
+    $(ROOT)/firmware/pdp.c \
+    $(ROOT)/firmware/rubik.c \
+    $(ROOT)/firmware/cache.c \
+    $(ROOT)/firmware/common.c \
+    $(ROOT)/firmware/engine_data.c \
+    $(ROOT)/firmware/engine_isr.c \
+    $(ROOT)/firmware/engine_debug.c \
     Emulator.cpp \
     Runtime.cpp
 
@@ -51,6 +66,7 @@ INCLUDES += \
     -I$(ROOT)/core/src/common/include \
     -I$(ROOT)/port/linux/include \
     -I$(ROOT)/external/include \
+    -I$(ROOT)/firmware/include \
     -I$(LOCAL_DIR)/include \
     -I$(LOCAL_DIR)
 
