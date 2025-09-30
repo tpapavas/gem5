@@ -49,6 +49,7 @@
 #include "nvdla_inf.h"
 #include "nvdla_ioctl.h"
 #include "nvdla_os_inf.h"
+#include "gem5_nvdla_interface.h"
 
 #define NVDLA_DEVICE_NODE "/dev/dri/renderD128"
 
@@ -90,12 +91,16 @@ NvDlaAllocMem(void *session_handle, void *device_handle, void **mem_handle,
 
     create_args.size = size;
 
-    err = ioctl(hDlaDev->fd, DRM_IOCTL_NVDLA_GEM_CREATE, &create_args);
+    // creates a drm device and a handle to it
+    // err = ioctl(hDlaDev->fd, DRM_IOCTL_NVDLA_GEM_CREATE, &create_args);
     if (err) {
         printf("Failed to allocate handle err=%d errno=%d\n", err, errno);
         err = -errno;
         goto free_mem_handle;
     }
+
+    // [GEM5] emulate handle creation
+    // create_args.handle = MemoryId;
 
     hMem->prime_handle = create_args.handle;
 
@@ -103,12 +108,16 @@ NvDlaAllocMem(void *session_handle, void *device_handle, void **mem_handle,
     req.handle = create_args.handle;
     req.flags = DRM_CLOEXEC;
 
-    err = ioctl(hDlaDev->fd, DRM_IOCTL_PRIME_HANDLE_TO_FD, &req);
+    // get file descriptor
+    // err = ioctl(hDlaDev->fd, DRM_IOCTL_PRIME_HANDLE_TO_FD, &req);
     if (err) {
         printf("failed to get fd for handle errno=%d\n", errno);
         err = -errno;
         goto free_gem_handle;
     }
+
+    // [GEM5] emulate file descriptor creation
+    // req.fd = MemoryId++;
 
     hMem->fd = req.fd;
 
@@ -116,13 +125,13 @@ NvDlaAllocMem(void *session_handle, void *device_handle, void **mem_handle,
 
     map_args.handle = create_args.handle;
 
-    err = ioctl(hDlaDev->fd, DRM_IOCTL_NVDLA_GEM_MMAP, &map_args);
+    // err = ioctl(hDlaDev->fd, DRM_IOCTL_NVDLA_GEM_MMAP, &map_args);
     if (err) {
         err = -errno;
         goto free_mem_handle;
     }
 
-    err = nvdla_mem_map(pData, size, map_args.offset, hDlaDev->fd, NVDLA_MEM_WRITE | NVDLA_MEM_READ);
+    // err = nvdla_mem_map(pData, size, map_args.offset, hDlaDev->fd, NVDLA_MEM_WRITE | NVDLA_MEM_READ);
     if (err) {
         goto free_mem_handle;
         return err;
@@ -131,10 +140,10 @@ NvDlaAllocMem(void *session_handle, void *device_handle, void **mem_handle,
     return 0;
 
 free_gem_handle:
-    NvDlaFreeMem(session_handle, device_handle, *mem_handle, *pData, size);
+    // NvDlaFreeMem(session_handle, device_handle, *mem_handle, *pData, size);
 free_mem_handle:
-    free(hMem);
-    *mem_handle = NULL;
+    // free(hMem);
+    // *mem_handle = NULL;
     return err;
 }
 
@@ -150,7 +159,11 @@ NvDlaFreeMem(void *session_handle, void *device_handle, void *mem_handle, void *
         return NvDlaError_BadParameter;
 
     /* unmap data */
-    err = munmap(pData, size);
+    // [GEM5] free memory instead of munmap
+    free(pData);
+    err = NvDlaSuccess;
+
+    // err = munmap(pData, size);
     if (err != 0) {
         printf("Failed to unmap memory err=%d, errno=%d\n",err, errno);
         return NvDlaError_BadParameter;
@@ -162,7 +175,7 @@ NvDlaFreeMem(void *session_handle, void *device_handle, void *mem_handle, void *
 
     args.handle = hMem->prime_handle;
 
-    err = ioctl(hDlaDev->fd, DRM_IOCTL_NVDLA_GEM_DESTROY, &args);
+    // err = ioctl(hDlaDev->fd, DRM_IOCTL_NVDLA_GEM_DESTROY, &args);
     if (err) {
         printf("Failed to destroy handle err=%d errno=%d\n", err, errno);
         return NvDlaError_IoctlFailed;
@@ -200,7 +213,8 @@ NvDlaSubmit(void *session_handle, void *device_handle, NvDlaTask *pTasks, NvU32 
         }
     }
 
-    if (ioctl(dla_device->fd, DRM_IOCTL_NVDLA_SUBMIT, &args) < 0) {
+    // if (ioctl(dla_device->fd, DRM_IOCTL_NVDLA_SUBMIT, &args) < 0) {
+    if (gem5_nvdla_submit(&args) < 0) {
         printf("%s: Error IOCTL failed (%s)\n",
                         __func__, strerror(errno));
         return NvDlaError_IoctlFailed;
@@ -246,7 +260,10 @@ NvDlaOpen(void *session_handle, NvU32 instance, void **device_handle)
 
     NvDlaMemset(pContext, 0, sizeof(NvDlaContext));
 
-    pContext->fd = open(NVDLA_DEVICE_NODE, O_RDWR);
+    // pContext->fd = open(NVDLA_DEVICE_NODE, O_RDWR);
+
+    // [GEM5] set a virtual fd
+    pContext->fd = 1;
     if (pContext->fd < 0) {
         e = NvDlaError_ResourceError;
         goto fail;

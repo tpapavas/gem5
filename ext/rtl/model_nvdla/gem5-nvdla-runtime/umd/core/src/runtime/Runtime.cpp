@@ -235,15 +235,18 @@ NvU16 Runtime::getMaxDevices()
 
 NvU16 Runtime::getNumDevices()
 {
-    NvU16 num_devs = 0;
+    // NvU16 num_devs = 0;
 
-    for ( size_t di = 0; di < getMaxDLADevices(); ++di ) {
-        if ( getDLADeviceContext(di) ) {
-            num_devs++;
-        }
-    }
+    // for ( size_t di = 0; di < getMaxDLADevices(); ++di ) {
+    //     if ( getDLADeviceContext(di) ) {
+    //         num_devs++;
+    //     }
+    // }
 
-    return num_devs;
+    // return num_devs;
+
+    // Let's say we have a single dla
+    return 1;
 }
 
 bool Runtime::versionsCompatible(const ILoadable::Version &a, const ILoadable::Version &b)
@@ -652,6 +655,8 @@ NvDlaError Runtime::submitInternal()
 
                 case ILoadable::Interface_DLA1:
                 {
+                    NvDlaDebugPrintf("[GEM5_RUN_NET] task: %d\tin DLA\n", task->id());
+
                     void *dev;
                     NvDlaTask dla_task;
 
@@ -668,6 +673,9 @@ NvDlaError Runtime::submitInternal()
                 break;
                 case ILoadable::Interface_EMU1:
                 {
+                    NvDlaDebugPrintf("[GEM5_RUN_NET] task: %d\tin CPU\n", task->id());
+                    break;
+
                     EMUInterface *emu_if = new EMUInterfaceA();
 
                     NvU8* task_mem = new NvU8[emu_if->taskDescAccessor(0).struct_size()];
@@ -721,6 +729,7 @@ NvDlaError Runtime::allocateSystemMemory(void **phMem, NvU64 size, void **pData)
     NvDlaError e = NvDlaSuccess;
     void *hDla = getDLADeviceContext(m_loaded_instance);
 
+    *pData = malloc(size);
     /* Allocate memory for network */
     PROPAGATE_ERROR_FAIL( NvDlaAllocMem(NULL, hDla, phMem, pData, size, NvDlaHeap_System) );
     m_hmem_memory_map.insert(std::make_pair(*phMem, *pData));
@@ -789,15 +798,18 @@ NvDlaError Runtime::loadMemory(Loadable *l, Memory *memory)
         void *hDla = getDLADeviceContext(m_loaded_instance);
         void *hMem = memory->getHandle();
 
+        mapped_mem = malloc(size);
+
         if (hMem == 0) {
             /* Allocate memory for network */
             PROPAGATE_ERROR_FAIL( NvDlaAllocMem(m_dla_handle, hDla, &hMem, (void **)(&mapped_mem), size, NvDlaHeap_System) );
 
+            NvDlaDebugPrintf("[GEM5_RUN_NET] after allocating memory\n");
             memory->setHandle(hMem);
             memory->setVirtAddr(mapped_mem);
         }
         else {
-            mapped_mem = memory->getVirtAddr();
+            // mapped_mem = memory->getVirtAddr();
         }
 
         if ( memory->flags() & ILoadable::MemoryListEntry::flags_set() )

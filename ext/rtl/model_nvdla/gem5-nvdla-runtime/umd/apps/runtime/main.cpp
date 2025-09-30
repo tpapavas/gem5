@@ -234,6 +234,7 @@ int main(int argc, char* argv[])
     else
     {
         // Launch
+        NvDlaDebugPrintf("[GEM5_RUN_NET] lanch test\n");
         e = launchTest(&testAppArgs);
     }
 

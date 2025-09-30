@@ -376,6 +376,7 @@ double get_elapsed_time(struct timespec *before, struct timespec *after)
 
 NvDlaError runTest(const TestAppArgs* appArgs, TestInfo* i)
 {
+    NvDlaDebugPrintf("[GEM5_RUN_NET] run test\n");
     NvDlaError e = NvDlaSuccess;
     void* pInputBuffer = NULL;
     void* pOutputBuffer = NULL;
@@ -436,13 +437,16 @@ NvDlaError run(const TestAppArgs* appArgs, TestInfo* i)
     if (i->runtime == NULL)
         ORIGINATE_ERROR_FAIL(NvDlaError_BadParameter, "createRuntime() failed");
 
+    NvDlaDebugPrintf("[GEM5_RUN_NET] reading loadable ...\n");
     if (!i->dlaServerRunning)
         PROPAGATE_ERROR_FAIL(readLoadable(appArgs, i));
 
     /* Load loadable */
+    NvDlaDebugPrintf("[GEM5_RUN_NET] loading loadable ...\n");
     PROPAGATE_ERROR_FAIL(loadLoadable(appArgs, i));
 
     /* Start emulator */
+    NvDlaDebugPrintf("[GEM5_RUN_NET] initializing emulator ...\n");
     if (!i->runtime->initEMU())
         ORIGINATE_ERROR(NvDlaError_DeviceNotFound, "runtime->initEMU() failed");
 
