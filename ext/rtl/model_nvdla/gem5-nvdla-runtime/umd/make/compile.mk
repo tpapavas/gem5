@@ -27,10 +27,10 @@
 
 # create a separate list of objects per source type
 MODULE_CSRCS := $(filter %.c,$(MODULE_SRCS))
-MODULE_CPPSRCS := $(filter %.cpp,$(MODULE_SRCS))
+MODULE_CPPSRCS := $(filter %.cc,$(MODULE_SRCS))
 
 MODULE_COBJS := $(call TOBUILDDIR,$(patsubst %.c,%.o,$(MODULE_CSRCS)))
-MODULE_CPPOBJS := $(call TOBUILDDIR,$(patsubst %.cpp,%.o,$(MODULE_CPPSRCS)))
+MODULE_CPPOBJS := $(call TOBUILDDIR,$(patsubst %.cc,%.o,$(MODULE_CPPSRCS)))
 
 MODULE_OBJS := $(MODULE_COBJS) $(MODULE_CPPOBJS)
 
@@ -57,7 +57,7 @@ $(MODULE_COBJS): $(BUILDDIR)/%.o: %.c $(SRCDEPS)
 	@echo compiling $<
 	$(MODULE_CC) $(MODULE_OPTFLAGS) $(MODULE_COMPILEFLAGS) $(MODULE_CFLAGS) $(MODULE_INCLUDES) $(INCLUDES) -c $< -MD -MT $@ -MF $(@:%o=%d) -o $@
 
-$(MODULE_CPPOBJS): $(BUILDDIR)/%.o: %.cpp $(SRCDEPS)
+$(MODULE_CPPOBJS): $(BUILDDIR)/%.o: %.cc $(SRCDEPS)
 	@$(MKDIR)
 	@echo compiling $<
 	$(MODULE_CC) $(MODULE_OPTFLAGS) $(MODULE_COMPILEFLAGS) $(MODULE_CPPFLAGS) $(INCLUDES) $(MODULE_INCLUDES) -c $< -MD -MT $@ -MF $(@:%o=%d) -o $@

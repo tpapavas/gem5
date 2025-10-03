@@ -28,6 +28,8 @@
 
 #define _GNU_SOURCE
 
+#include <iostream>
+
 #include <dlaerror.h>
 #include <dlatypes.h>
 
@@ -49,7 +51,9 @@
 #include "nvdla_inf.h"
 #include "nvdla_ioctl.h"
 #include "nvdla_os_inf.h"
-#include "gem5_nvdla_interface.h"
+#include "gem5_nvdla_interface.hh"
+
+#include <nvdla_linux.h>
 
 #define NVDLA_DEVICE_NODE "/dev/dri/renderD128"
 
@@ -102,7 +106,7 @@ NvDlaAllocMem(void *session_handle, void *device_handle, void **mem_handle,
     // [GEM5] emulate handle creation
     // create_args.handle = MemoryId;
 
-    hMem->prime_handle = create_args.handle;
+    hMem->prime_handle = create_args.handle;;
 
     memset(&req, 0, sizeof(req));
     req.handle = create_args.handle;
@@ -134,17 +138,17 @@ NvDlaAllocMem(void *session_handle, void *device_handle, void **mem_handle,
     // err = nvdla_mem_map(pData, size, map_args.offset, hDlaDev->fd, NVDLA_MEM_WRITE | NVDLA_MEM_READ);
     if (err) {
         goto free_mem_handle;
-        return err;
+        return static_cast<NvDlaError>(err);
     }
 
-    return 0;
+    return static_cast<NvDlaError>(0);
 
 free_gem_handle:
     // NvDlaFreeMem(session_handle, device_handle, *mem_handle, *pData, size);
 free_mem_handle:
     // free(hMem);
     // *mem_handle = NULL;
-    return err;
+    return static_cast<NvDlaError>(err);
 }
 
 NvDlaError
@@ -187,7 +191,7 @@ NvDlaFreeMem(void *session_handle, void *device_handle, void *mem_handle, void *
 }
 
 NvDlaError
-NvDlaSubmit(void *session_handle, void *device_handle, NvDlaTask *pTasks, NvU32 num_tasks)
+NvDlaSubmit(void *session_handle, void *device_handle, struct nvdla_device *dla_dev, NvDlaTask *pTasks, NvU32 num_tasks, nvdla::priv::Runtime *runtime)
 {
     NvDlaDeviceHandle dla_device = (NvDlaDeviceHandle)device_handle;
     struct nvdla_mem_handle address_list[num_tasks][NVDLA_MAX_BUFFERS_PER_TASK];
@@ -214,7 +218,7 @@ NvDlaSubmit(void *session_handle, void *device_handle, NvDlaTask *pTasks, NvU32 
     }
 
     // if (ioctl(dla_device->fd, DRM_IOCTL_NVDLA_SUBMIT, &args) < 0) {
-    if (gem5_nvdla_submit(&args) < 0) {
+    if (gem5_nvdla_submit(&args, dla_dev) < 0) {
         printf("%s: Error IOCTL failed (%s)\n",
                         __func__, strerror(errno));
         return NvDlaError_IoctlFailed;

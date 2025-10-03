@@ -35,11 +35,12 @@
 // #include <drm/drm.h>
 // #include <drm/drm_gem_cma_helper.h>
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #include <nvdla_linux.h>
 #include <nvdla_ioctl.h>
-#include <gem5_nvdla_interface.h>
+#include <gem5_nvdla_interface.hh>
+#include <gem5Global.h>
 
 #define to_nvdla_obj(x) container_of(x, struct nvdla_gem_object, object)
 
@@ -59,7 +60,7 @@ static int32_t gem5_nvdla_fill_task_desc(struct nvdla_ioctl_submit_task *local_t
 	/* update task desc fields */
 	task->num_addresses = local_task->num_addresses;
 
-	handles = malloc(local_task->num_addresses *
+	handles = (struct nvdla_mem_handle *)malloc(local_task->num_addresses *
 				sizeof(struct nvdla_mem_handle));
 	// handles = kzalloc(local_task->num_addresses *
 	// 			sizeof(struct nvdla_mem_handle),GFP_KERNEL);
@@ -67,6 +68,9 @@ static int32_t gem5_nvdla_fill_task_desc(struct nvdla_ioctl_submit_task *local_t
 	if (handles == NULL)
 		return -1;
 		// return -EFAULT;
+
+	// [GEM5]
+	handles = (nvdla_mem_handle*)local_task->address_list;
 
 	/* get user addresses list */
 	// if (copy_from_user(handles,
@@ -83,13 +87,13 @@ static int32_t gem5_nvdla_fill_task_desc(struct nvdla_ioctl_submit_task *local_t
 	return 0;
 }
 
-int32_t gem5_nvdla_submit(void *arg)
+int32_t gem5_nvdla_submit(void *arg, struct nvdla_device *gem5_dla_device)
 {
 	int32_t err = 0;
 	struct nvdla_task *task;
-	struct nvdla_ioctl_submit_task local_task;
+	struct nvdla_ioctl_submit_task *local_task;
 	struct nvdla_ioctl_submit_task __user *user_task;
-	struct nvdla_device *nvdla_dev = NULL; //dev_get_drvdata(drm->dev);
+	struct nvdla_device *nvdla_dev = gem5_dla_device; //dev_get_drvdata(drm->dev);
 	struct nvdla_submit_args *args =
 			(struct nvdla_submit_args *)arg;
 
@@ -99,12 +103,15 @@ int32_t gem5_nvdla_submit(void *arg)
 		return -1;
 		// return -EINVAL;
 
+	// [GEM5] Emulate copy_from_user
+	local_task = user_task;
+
 	/* IOCTL copy descriptors */
 	// if (copy_from_user(&local_task, (void __user *)user_task,
 	// 		(sizeof(*user_task))))
 	//     return -EFAULT;
 
-	task = malloc(sizeof(*task));
+	task = (struct nvdla_task *)malloc(sizeof(*task));
 	// task = kzalloc(sizeof(*task), GFP_KERNEL);
 	if (task == NULL)
 		return -1;
@@ -116,9 +123,13 @@ int32_t gem5_nvdla_submit(void *arg)
 	// task->file = file;
 
 	/* update task desc fields */
-	err = gem5_nvdla_fill_task_desc(&local_task, task);
+	err = gem5_nvdla_fill_task_desc(local_task, task);
 	if (err)
 		goto free_task_desc;
+
+	// [GEM5] not sure if it is valid, but I need to register task to engine
+	// struct dla_engine *engine = (struct dla_engine *)nvdla_dev->engine_context;
+	// engine->task = task;
 
 	err = gem5_nvdla_task_submit(nvdla_dev, task);
 

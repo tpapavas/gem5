@@ -183,7 +183,7 @@ NvDlaThreadCreate( NvDlaThreadFunction function, void *args,
     if (!function || !thread)
         return NvDlaError_BadParameter;
 
-    t = NvDlaAlloc(sizeof(NvDlaThread));
+    t = (NvDlaThread *)NvDlaAlloc(sizeof(NvDlaThread));
     if (!t) {
         e = NvDlaError_InsufficientMemory;
         goto fail_to_allocate_thread;
@@ -197,7 +197,7 @@ NvDlaThreadCreate( NvDlaThreadFunction function, void *args,
     }
     t->handle = (void *)handle;
 
-    a = NvDlaAlloc(sizeof(NvDlaThreadArgs));
+    a = (NvDlaThreadArgs *)NvDlaAlloc(sizeof(NvDlaThreadArgs));
     if (!a) {
         e = NvDlaError_InsufficientMemory;
         goto fail_to_allocate_args;
@@ -330,7 +330,7 @@ NvDlaError NvDlaFopen(const char *path, NvU32 flags,
     if (e != NvDlaSuccess)
         return NvDlaError_BadParameter;
 
-    f = NvDlaAlloc(sizeof(NvDlaFile));
+    f = (NvDlaFile *)NvDlaAlloc(sizeof(NvDlaFile));
     if (!f)
         return NvDlaError_InsufficientMemory;
 

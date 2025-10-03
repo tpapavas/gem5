@@ -35,10 +35,10 @@ MODULE_CPP := g++
 MODULE_LD := ld
 
 NVDLA_SRC_FILES := \
-    main.cpp \
-    CompileTest.cpp \
-    GenerateTest.cpp \
-    ParseTest.cpp \
+    main.cc \
+    CompileTest.cc \
+    GenerateTest.cc \
+    ParseTest.cc \
 
 INCLUDES += \
     -I$(ROOT)/include \
