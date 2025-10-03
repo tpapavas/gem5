@@ -32,6 +32,15 @@
 #include "dlaerror.h"
 #include "dlatypes.h"
 
+#include <nvdla_linux.h>
+
+namespace nvdla {
+namespace priv {
+    class Runtime;
+}
+}
+
+
 #define NVDLA_MAX_BUFFERS_PER_TASK (6144)
 
 struct NvDlaMemDescRec{
@@ -52,9 +61,9 @@ typedef enum NvDlaHeap {
     NvDlaHeap_SRAM,
 } NvDlaHeap;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+// #ifdef __cplusplus
+// extern "C" {
+// #endif
 
 NvDlaError NvDlaInitialize(void **session_handle);
 void NvDlaDestroy(void *session_handle);
@@ -62,7 +71,7 @@ void NvDlaDestroy(void *session_handle);
 NvDlaError NvDlaOpen(void *session_handle, NvU32 instance, void **device_handle);
 void NvDlaClose(void *device_handle);
 
-NvDlaError NvDlaSubmit(void *session_handle, void *device_handle, NvDlaTask *tasks, NvU32 num_tasks);
+NvDlaError NvDlaSubmit(void *session_handle, void *device_handle, struct nvdla_device *dla_dev, NvDlaTask *tasks, NvU32 num_tasks, nvdla::priv::Runtime *runtime);
 
 NvDlaError NvDlaAllocMem(void *session_handle, void *device_handle,
                          void **mem_handle, void **pData, NvU32 size,
@@ -70,8 +79,8 @@ NvDlaError NvDlaAllocMem(void *session_handle, void *device_handle,
 NvDlaError NvDlaFreeMem(void *session_handle, void *device_handle, void *mem_handle,
                         void *pData, NvU32 size);
 
-#ifdef __cplusplus
-}
-#endif
+// #ifdef __cplusplus
+// }
+// #endif
 
 #endif /* end of _NVDLA_INF_H_ */

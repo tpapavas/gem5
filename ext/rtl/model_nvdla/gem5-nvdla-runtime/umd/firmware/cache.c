@@ -28,7 +28,7 @@
 
 #include <stddef.h>
 
-#include <gem5_nvdla_interface.h>
+#include <gem5_nvdla_interface.hh>
 
 #include <opendla.h>
 #include <dla_debug.h>

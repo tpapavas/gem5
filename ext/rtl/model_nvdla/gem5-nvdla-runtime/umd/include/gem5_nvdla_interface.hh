@@ -1,9 +1,11 @@
 #ifndef __GEM5_NVDLA_INTERFACE_H_
 #define __GEM5_NVDLA_INTERFACE_H_
 
-#include <stdint.h>
+#include <cstdint>
 
-int32_t gem5_nvdla_submit(void *arg);
+#include <nvdla_linux.h>
+
+int32_t gem5_nvdla_submit(void *arg, struct nvdla_device *dev);
 
 int32_t dla_execute_task(void *engine_context, void *task_data, void *config_data);
 

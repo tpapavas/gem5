@@ -46,6 +46,8 @@
 #include <cstdio> // snprintf, fopen
 #include <string>
 
+#include <gem5Global.h>
+
 #define OUTPUT_DIMG "output.dimg"
 
 using namespace half_float;

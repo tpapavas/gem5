@@ -1,5 +1,5 @@
 /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/out/apps/runtime/nvdla_runtime/main.o: \
- main.cpp /usr/include/stdc-predef.h \
+ main.cc /usr/include/stdc-predef.h \
  /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/include/ErrorMacros.h \
  /usr/lib/gcc/x86_64-linux-gnu/10/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
@@ -142,6 +142,19 @@
  /usr/include/c++/10/bits/stl_multimap.h \
  /usr/include/c++/10/bits/erase_if.h \
  /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/include/nvdla/c/NvDlaType.h \
+ /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/port/linux/include/nvdla_linux.h \
+ /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/firmware/include/dla_engine.h \
+ /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/firmware/include/dla_interface.h \
+ /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/include/nvdla_interface.h \
+ /usr/include/linux/types.h /usr/include/x86_64-linux-gnu/asm/types.h \
+ /usr/include/asm-generic/types.h /usr/include/asm-generic/int-ll64.h \
+ /usr/include/x86_64-linux-gnu/asm/bitsperlong.h \
+ /usr/include/asm-generic/bitsperlong.h /usr/include/linux/posix_types.h \
+ /usr/include/linux/stddef.h \
+ /usr/include/x86_64-linux-gnu/asm/posix_types.h \
+ /usr/include/x86_64-linux-gnu/asm/posix_types_64.h \
+ /usr/include/asm-generic/posix_types.h \
+ /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/firmware/include/dla_sched.h \
  DlaImage.h /usr/include/c++/10/sstream /usr/include/c++/10/istream \
  /usr/include/c++/10/ios /usr/include/c++/10/bits/ios_base.h \
  /usr/include/c++/10/bits/locale_classes.h \

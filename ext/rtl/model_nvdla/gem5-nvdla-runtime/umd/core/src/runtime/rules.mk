@@ -30,19 +30,19 @@
 
 LOCAL_DIR := $(GET_LOCAL_DIR)
 
-MODULE_CC := $(TOOLCHAIN_PREFIX)gcc
+MODULE_CC := $(TOOLCHAIN_PREFIX)g++
 MODULE_CPP := $(TOOLCHAIN_PREFIX)g++
 MODULE_LD := $(TOOLCHAIN_PREFIX)ld
 
 NVDLA_RUNTIME_SRC_FILES := \
-    $(ROOT)/core/src/common/Check.cpp \
+    $(ROOT)/core/src/common/Check.cc \
     $(ROOT)/core/src/common/ErrorLogging.c \
-    $(ROOT)/core/src/common/EMUInterface.cpp \
-    $(ROOT)/core/src/common/EMUInterfaceA.cpp \
-    $(ROOT)/core/src/common/Loadable.cpp \
-    $(ROOT)/port/linux/nvdla.c \
+    $(ROOT)/core/src/common/EMUInterface.cc \
+    $(ROOT)/core/src/common/EMUInterfaceA.cc \
+    $(ROOT)/core/src/common/Loadable.cc \
+    $(ROOT)/port/linux/nvdla.cc \
     $(ROOT)/port/linux/nvdla_os.c \
-    $(ROOT)/port/linux/gem5_nvdla_gem.c \
+    $(ROOT)/port/linux/gem5_nvdla_gem.cc \
     $(ROOT)/port/linux/gem5_nvdla_core_callbacks.c \
     $(ROOT)/firmware/scheduler.c \
     $(ROOT)/firmware/engine.c \
@@ -57,8 +57,8 @@ NVDLA_RUNTIME_SRC_FILES := \
     $(ROOT)/firmware/engine_data.c \
     $(ROOT)/firmware/engine_isr.c \
     $(ROOT)/firmware/engine_debug.c \
-    Emulator.cpp \
-    Runtime.cpp
+    Emulator.cc \
+    Runtime.cc
 
 INCLUDES += \
     -I$(ROOT)/include \

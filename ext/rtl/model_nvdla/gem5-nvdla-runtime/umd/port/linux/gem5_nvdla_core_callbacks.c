@@ -53,7 +53,7 @@
 // #include <linux/time.h>
 // #include <linux/uaccess.h>
 
-#include <gem5_nvdla_interface.h>
+#include <gem5_nvdla_interface.hh>
 #include <nvdla_linux.h>
 #include <nvdla_ioctl.h>
 
@@ -322,6 +322,7 @@ int32_t gem5_nvdla_task_submit(struct nvdla_device *nvdla_dev, struct nvdla_task
 
 	nvdla_dev->task = task;
 
+	// err = dla_execute_task(nvdla_dev->engine_context, (void *)task, nvdla_dev->config_data);
 	err = dla_execute_task(nvdla_dev->engine_context, (void *)task, nvdla_dev->config_data);
 	if (err) {
 		// pr_err("Task execution failed\n");

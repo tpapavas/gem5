@@ -26,17 +26,17 @@
 
 LOCAL_DIR := $(GET_LOCAL_DIR)
 
-MODULE_CC := $(TOOLCHAIN_PREFIX)gcc
+MODULE_CC := $(TOOLCHAIN_PREFIX)g++
 MODULE_CPP := $(TOOLCHAIN_PREFIX)g++
 MODULE_LD := $(TOOLCHAIN_PREFIX)ld
 
 NVDLA_SRC_FILES := \
-    DlaImage.cpp \
-    DlaImageUtils.cpp \
-    Server.cpp \
-    RuntimeTest.cpp \
-    TestUtils.cpp \
-    main.cpp
+    DlaImage.cc \
+    DlaImageUtils.cc \
+    Server.cc \
+    RuntimeTest.cc \
+    TestUtils.cc \
+    main.cc
 
 INCLUDES += \
     -I$(ROOT)/include \
@@ -44,7 +44,9 @@ INCLUDES += \
     -I$(ROOT)/external/include \
     -I$(ROOT)/external/libjpeg-turbo \
     -I$(LOCAL_DIR)/include \
-    -I$(LOCAL_DIR)
+    -I$(LOCAL_DIR) \
+    -I$(ROOT)/port/linux/include \
+    -I$(ROOT)/firmware/include
 
 MODULE_CPPFLAGS := -DNVDLA_UTILS_ERROR_TAG="\"DLA_TEST\""
 MODULE_CFLAGS := -DNVDLA_UTILS_ERROR_TAG="\"DLA_TEST\""

@@ -38,9 +38,9 @@
 #include "nvdla_inf.h"
 #include "nvdla_os_inf.h"
 
-#include "priv/Emulator.h"
+// #include "priv/Emulator.h"
 #include "priv/Loadable.h"
-#include "priv/Runtime.h"
+#include "priv/Runtime.hh"
 
 #include "priv/loadable_generated.h"
 
@@ -62,6 +62,11 @@ IRuntime::~IRuntime() { }
 IRuntime *createRuntime()
 {
     priv::RuntimeFactory::RuntimePrivPair p = priv::RuntimeFactory::newRuntime();
+
+    // [GEM5] create dla device
+    p.i()->setGEM5dlaDev((struct nvdla_device *) malloc(sizeof(struct nvdla_device)));
+    p.i()->setGEM5dlaEng(malloc(sizeof(struct dla_engine)));
+
     return p.i();
 }
 
@@ -668,7 +673,7 @@ NvDlaError Runtime::submitInternal()
 
                     fillTaskAddressList(task, &dla_task);
 
-                    PROPAGATE_ERROR_FAIL( NvDlaSubmit(NULL, dev, &dla_task, 1) );
+                    PROPAGATE_ERROR_FAIL( NvDlaSubmit(NULL, dev, gem5_dla_device, &dla_task, 1, this) );
                 }
                 break;
                 case ILoadable::Interface_EMU1:
@@ -1401,6 +1406,52 @@ Runtime::TensorDesc::TensorDesc(const ILoadable::TensorDescListEntry &e)
     stride[6] = e.stride[6];
     stride[7] = e.stride[7];
 }
+
+//////////// GEM5 PORTING CODE ///////////////////
+int32_t Runtime::g5_dla_data_read(void *driver_context, void *task_data,
+				uint64_t src, void *dst,
+				uint32_t size, uint64_t offset)
+{
+	int32_t ret;
+// 	void *ptr = NULL;
+// 	struct dma_buf *buf;
+// 	struct nvdla_mem_handle *handles;
+// 	struct nvdla_task *task = (struct nvdla_task *)task_data;
+
+// 	handles = task->address_list;
+
+// 	buf = dma_buf_get(handles[src].handle);
+// 	if (IS_ERR(buf)) {
+// 		pr_err("%s: Failed get dma_buf for handle=%d\n", __func__,
+// 						handles[src].handle);
+// 		return -EFAULT;
+// 	}
+
+// 	ret = dma_buf_begin_cpu_access(buf, DMA_BIDIRECTIONAL);
+// 	if (ret)
+// 		goto put_dma_buf;
+
+// 	ptr = dma_buf_vmap(buf);
+// 	if (!ptr) {
+// 		pr_err("%s: Failed to vmap dma_buf for handle=%d\n", __func__,
+// 						handles[src].handle);
+// 		ret = -ENOMEM;
+// 		goto end_cpu_access;
+// 	}
+
+// 	memcpy(dst, (void *)(((uint8_t *)ptr) + offset), size);
+
+// 	dma_buf_vunmap(buf, ptr);
+
+// end_cpu_access:
+// 	dma_buf_end_cpu_access(buf, DMA_BIDIRECTIONAL);
+
+// put_dma_buf:
+// 	dma_buf_put(buf);
+
+	return ret;
+}
+
 
 } // nvdla::priv
 

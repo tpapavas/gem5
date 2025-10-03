@@ -1,5 +1,5 @@
 /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/out/apps/runtime/nvdla_runtime/DlaImage.o: \
- DlaImage.cpp /usr/include/stdc-predef.h /usr/include/c++/10/math.h \
+ DlaImage.cc /usr/include/stdc-predef.h /usr/include/c++/10/math.h \
  /usr/include/c++/10/cmath \
  /usr/include/x86_64-linux-gnu/c++/10/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/10/bits/os_defines.h \

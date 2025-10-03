@@ -41,6 +41,7 @@
 #include "nvdla/IRuntime.h"
 
 #include "priv/EMUInterface.h"
+#include "priv/Emulator.h"
 
 namespace nvdla
 {
@@ -101,6 +102,11 @@ public: // externally facing
     virtual NvDlaError setOutputTensorDesc(int id, const IRuntime::NvDlaTensor *);
 
     virtual bool submit();
+
+    //////////// GEM5 PORTING CODE ///////////////////
+    int32_t g5_dla_data_read(void *driver_context, void *task_data,
+				uint64_t src, void *dst,
+				uint32_t size, uint64_t offset);
 
 public: // internally facing
     Runtime();

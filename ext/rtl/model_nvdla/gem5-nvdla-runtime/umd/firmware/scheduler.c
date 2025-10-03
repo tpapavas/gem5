@@ -33,7 +33,7 @@
 #include <dla_engine.h>
 #include <dla_err.h>
 #include <dla_interface.h>
-#include <gem5_nvdla_interface.h>
+#include <gem5_nvdla_interface.hh>
 
 #include "dla_engine_internal.h"
 #include "engine_debug.h"
@@ -754,9 +754,9 @@ dla_read_network_config(struct dla_engine *engine)
 	 * Read network descriptor address from address list. It is always
 	 * at index 0.
 	 */
-	ret = dla_get_dma_address(engine->driver_context, task->task_data,
-						0, (void *)&network_addr,
-						DESTINATION_PROCESSOR);
+	// ret = dla_get_dma_address(engine->driver_context, task->task_data,
+	// 					0, (void *)&network_addr,
+	// 					DESTINATION_PROCESSOR);
 	if (ret) {
 		dla_error("Failed to read network desc address");
 		goto exit;
@@ -766,10 +766,10 @@ dla_read_network_config(struct dla_engine *engine)
 	 * Read network descriptor, it has information for a network
 	 * such as all address indexes.
 	 */
-	// ret = dla_data_read(engine->driver_context, task->task_data,
-	// 			network_addr, (void *)&network,
-	// 			sizeof(struct dla_network_desc),
-	// 			0);
+	ret = dla_data_read(engine->driver_context, task->task_data,
+				network_addr, (void *)&network,
+				sizeof(struct dla_network_desc),
+				0);
 	if (ret) {
 		dla_error("Failed to read network descriptor");
 		goto exit;
@@ -783,10 +783,10 @@ dla_read_network_config(struct dla_engine *engine)
 	/**
 	 * Read operation descriptor list address from address list
 	 */
-	ret = dla_get_dma_address(engine->driver_context, task->task_data,
-				network.operation_desc_index,
-				(void *)&task->operation_desc_addr,
-				DESTINATION_PROCESSOR);
+	// ret = dla_get_dma_address(engine->driver_context, task->task_data,
+	// 			network.operation_desc_index,
+	// 			(void *)&task->operation_desc_addr,
+	// 			DESTINATION_PROCESSOR);
 	if (ret) {
 		dla_error("Failed to read operation desc list address");
 		goto exit;
@@ -795,10 +795,10 @@ dla_read_network_config(struct dla_engine *engine)
 	/**
 	 * Read surface descriptor list address from address list
 	 */
-	ret = dla_get_dma_address(engine->driver_context, task->task_data,
-				network.surface_desc_index,
-				(void *)&task->surface_desc_addr,
-				DESTINATION_PROCESSOR);
+	// ret = dla_get_dma_address(engine->driver_context, task->task_data,
+	// 			network.surface_desc_index,
+	// 			(void *)&task->surface_desc_addr,
+	// 			DESTINATION_PROCESSOR);
 	if (ret) {
 		dla_error("Failed to read surface desc list address");
 		goto exit;
@@ -807,10 +807,10 @@ dla_read_network_config(struct dla_engine *engine)
 	/**
 	 * Read dependency graph address from address list
 	 */
-	ret = dla_get_dma_address(engine->driver_context, task->task_data,
-				network.dependency_graph_index,
-				(void *)&task->dependency_graph_addr,
-				DESTINATION_PROCESSOR);
+	// ret = dla_get_dma_address(engine->driver_context, task->task_data,
+	// 			network.dependency_graph_index,
+	// 			(void *)&task->dependency_graph_addr,
+	// 			DESTINATION_PROCESSOR);
 	if (ret) {
 		dla_error("Failed to ready dependency graph address");
 		goto exit;
@@ -820,11 +820,11 @@ dla_read_network_config(struct dla_engine *engine)
 	 * Read LUT data list address from address list
 	 */
 	if (network.num_luts) {
-		ret = dla_get_dma_address(engine->driver_context,
-					task->task_data,
-					network.lut_data_index,
-					(void *)&task->lut_data_addr,
-					DESTINATION_PROCESSOR);
+		// ret = dla_get_dma_address(engine->driver_context,
+		// 			task->task_data,
+		// 			network.lut_data_index,
+		// 			(void *)&task->lut_data_addr,
+		// 			DESTINATION_PROCESSOR);
 		if (ret) {
 			dla_error("Failed to read LUT list address");
 			goto exit;
@@ -838,11 +838,11 @@ dla_read_network_config(struct dla_engine *engine)
 		/**
 		 * Read ROI array address from address list
 		 */
-		ret = dla_get_dma_address(engine->driver_context,
-					task->task_data,
-					network.roi_array_index,
-					(void *)&task->roi_array_addr,
-					DESTINATION_PROCESSOR);
+		// ret = dla_get_dma_address(engine->driver_context,
+		// 			task->task_data,
+		// 			network.roi_array_index,
+		// 			(void *)&task->roi_array_addr,
+		// 			DESTINATION_PROCESSOR);
 		if (ret) {
 			dla_error("Failed to read ROI array address");
 			goto exit;
@@ -873,11 +873,11 @@ dla_read_network_config(struct dla_engine *engine)
 		/**
 		 * Read surface address from address list
 		 */
-		ret = dla_get_dma_address(engine->driver_context,
-						task->task_data,
-						network.surface_index,
-						(void *)&task->surface_addr,
-						DESTINATION_DMA);
+		// ret = dla_get_dma_address(engine->driver_context,
+		// 				task->task_data,
+		// 				network.surface_index,
+		// 				(void *)&task->surface_addr,
+		// 				DESTINATION_DMA);
 		if (ret) {
 			dla_error("Failed to read surface address");
 			goto exit;
@@ -886,11 +886,11 @@ dla_read_network_config(struct dla_engine *engine)
 
 #if STAT_ENABLE
 	if (network.stat_list_index != -1) {
-		ret = dla_get_dma_address(engine->driver_context,
-						task->task_data,
-						network.stat_list_index,
-						(void *)&task->stat_data_addr,
-						DESTINATION_PROCESSOR);
+		// ret = dla_get_dma_address(engine->driver_context,
+		// 				task->task_data,
+		// 				network.stat_list_index,
+		// 				(void *)&task->stat_data_addr,
+		// 				DESTINATION_PROCESSOR);
 		if (ret) {
 			dla_error("Failed to read stat address");
 			goto exit;
@@ -1093,12 +1093,12 @@ dla_execute_task(void *engine_context, void *task_data, void *config_data)
 	}
 
 	engine->task->task_data = task_data;
-	engine->config_data = config_data;
+	engine->config_data = (struct dla_config *) config_data;
 	engine->network = &network;
 	engine->num_proc_hwl = 0;
 	engine->stat_enable = 0;
 
-	LOG_EVENT(0, 0, 0, LOG_TASK_START);
+	// LOG_EVENT(0, 0, 0, LOG_TASK_START);
 
 	ret = dla_read_network_config(engine);
 	if (ret)

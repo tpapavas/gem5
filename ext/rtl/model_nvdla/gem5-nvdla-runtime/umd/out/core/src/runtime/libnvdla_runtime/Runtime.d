@@ -1,5 +1,5 @@
 /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/out/core/src/runtime/libnvdla_runtime/Runtime.o: \
- Runtime.cpp /usr/include/stdc-predef.h /usr/include/c++/10/cstdio \
+ Runtime.cc /usr/include/stdc-predef.h /usr/include/c++/10/cstdio \
  /usr/include/x86_64-linux-gnu/c++/10/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/10/bits/os_defines.h \
  /usr/include/features.h /usr/include/x86_64-linux-gnu/sys/cdefs.h \
@@ -161,34 +161,43 @@
  /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/include/nvdla_inf.h \
  /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/include/dlaerror.h \
  /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/include/dlatypes.h \
+ /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/port/linux/include/nvdla_linux.h \
  /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/include/nvdla_os_inf.h \
  /usr/include/dirent.h /usr/include/x86_64-linux-gnu/bits/dirent.h \
  /usr/include/x86_64-linux-gnu/bits/posix1_lim.h \
  /usr/include/x86_64-linux-gnu/bits/local_lim.h \
  /usr/include/linux/limits.h \
- /usr/include/x86_64-linux-gnu/bits/dirent_ext.h include/priv/Emulator.h \
- /usr/include/c++/10/queue /usr/include/c++/10/deque \
- /usr/include/c++/10/bits/stl_uninitialized.h \
- /usr/include/c++/10/bits/stl_deque.h /usr/include/c++/10/bits/deque.tcc \
- /usr/include/c++/10/vector /usr/include/c++/10/bits/stl_vector.h \
+ /usr/include/x86_64-linux-gnu/bits/dirent_ext.h \
+ /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/src/common/include/priv/Loadable.h \
+ /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/include/nvdla/ILoadable.h \
+ /usr/include/c++/10/vector /usr/include/c++/10/bits/stl_uninitialized.h \
+ /usr/include/c++/10/bits/stl_vector.h \
  /usr/include/c++/10/bits/stl_bvector.h \
- /usr/include/c++/10/bits/vector.tcc /usr/include/c++/10/bits/stl_heap.h \
- /usr/include/c++/10/bits/stl_queue.h \
- /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/src/common/include/priv/EMUInterface.h \
+ /usr/include/c++/10/bits/vector.tcc \
+ /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/include/nvdla/c/NvDlaType.h \
+ /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/include/nvdla/c/NvDlaLoadable.h \
+ /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/include/nvdla/IType.h \
+ /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/include/nvdla/IRuntime.h \
+ /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/firmware/include/dla_engine.h \
+ /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/firmware/include/dla_interface.h \
+ /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/include/nvdla_interface.h \
+ /usr/include/linux/types.h /usr/include/x86_64-linux-gnu/asm/types.h \
+ /usr/include/asm-generic/types.h /usr/include/asm-generic/int-ll64.h \
+ /usr/include/x86_64-linux-gnu/asm/bitsperlong.h \
+ /usr/include/asm-generic/bitsperlong.h /usr/include/linux/posix_types.h \
+ /usr/include/linux/stddef.h \
+ /usr/include/x86_64-linux-gnu/asm/posix_types.h \
+ /usr/include/x86_64-linux-gnu/asm/posix_types_64.h \
+ /usr/include/asm-generic/posix_types.h \
+ /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/firmware/include/dla_sched.h \
  /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/src/common/include/priv/Type.h \
  /usr/include/c++/10/algorithm /usr/include/c++/10/bits/stl_algo.h \
  /usr/include/c++/10/bits/algorithmfwd.h \
+ /usr/include/c++/10/bits/stl_heap.h \
  /usr/include/c++/10/bits/stl_tempbuf.h \
  /usr/include/c++/10/bits/uniform_int_dist.h /usr/include/c++/10/limits \
- /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/include/nvdla/IType.h \
- /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/include/nvdla/c/NvDlaType.h \
  /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/src/common/include/priv/Check.h \
  /usr/include/c++/10/iostream \
- /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/src/common/include/priv/EMUInterfaceEnums.h \
- /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/src/common/include/priv/Loadable.h \
- /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/include/nvdla/ILoadable.h \
- /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/include/nvdla/c/NvDlaLoadable.h \
- /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/include/nvdla/IRuntime.h \
  /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/src/common/include/priv/loadable_generated.h \
  /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/external/include/flatbuffers/flatbuffers.h \
  /usr/include/assert.h /usr/include/c++/10/cstddef \
@@ -205,5 +214,10 @@
  /usr/include/c++/10/bits/atomic_base.h \
  /usr/include/c++/10/bits/atomic_lockfree_defines.h \
  /usr/include/c++/10/backward/auto_ptr.h /usr/include/c++/10/functional \
- /usr/include/c++/10/bits/std_function.h include/priv/Runtime.h \
+ /usr/include/c++/10/bits/std_function.h include/priv/Runtime.hh \
+ /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/src/common/include/priv/EMUInterface.h \
+ /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/src/common/include/priv/EMUInterfaceEnums.h \
+ include/priv/Emulator.h /usr/include/c++/10/queue \
+ /usr/include/c++/10/deque /usr/include/c++/10/bits/stl_deque.h \
+ /usr/include/c++/10/bits/deque.tcc /usr/include/c++/10/bits/stl_queue.h \
  /home/tpapavasileiou/GEM5/gem5-dev/ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/core/include/ErrorMacros.h
