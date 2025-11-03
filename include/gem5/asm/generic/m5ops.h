@@ -67,10 +67,10 @@
 #define M5OP_ADD_SYMBOL         0x53
 #define M5OP_PANIC              0x54
 
-#define M5OP_RESERVED1          0x55 // Reserved for user, used to be annotate
-#define M5OP_RESERVED2          0x56 // Reserved for user
-#define M5OP_RESERVED3          0x57 // Reserved for user
-#define M5OP_RESERVED4          0x58 // Reserved for user
+#define M5OP_START_ACCEL        0x55 // Reserved for user, used to be annotate
+#define M5OP_WAIT_ACCEL         0x56 // Reserved for user
+#define M5OP_START_ACCEL_ID     0x57 // Reserved for user
+#define M5OP_WAIT_ACCEL_ID      0x58 // Reserved for user
 #define M5OP_RESERVED5          0x59 // Reserved for user
 
 #define M5OP_WORK_BEGIN         0x5a
@@ -108,7 +108,10 @@
     M5OP(m5_work_end, M5OP_WORK_END)                            \
     M5OP(m5_dist_toggle_sync, M5OP_DIST_TOGGLE_SYNC)            \
     M5OP(m5_workload, M5OP_WORKLOAD)                            \
-
+    M5OP(m5_start_accel, M5OP_START_ACCEL)                      \
+    M5OP(m5_wait_accel, M5OP_WAIT_ACCEL)                        \
+    M5OP(m5_start_accel_id, M5OP_START_ACCEL_ID)                \
+    M5OP(m5_wait_accel_id, M5OP_WAIT_ACCEL_ID)
 #define M5OP_MERGE_TOKENS_I(a, b) a##b
 #define M5OP_MERGE_TOKENS(a, b) M5OP_MERGE_TOKENS_I(a, b)
 

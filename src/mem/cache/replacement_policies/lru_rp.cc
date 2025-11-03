@@ -77,8 +77,27 @@ LRU::getVictim(const ReplacementCandidates& candidates) const
 
     // Visit all candidates to find victim
     ReplaceableEntry* victim = candidates[0];
+
+    // [RZ CODE]
+    // ReplaceableEntry* victim =  nullptr;
     for (const auto& candidate : candidates) {
         // Update victim entry if necessary
+
+        // [RZ CODE]
+        // CacheBlk* blk = static_cast<CacheBlk*>(candidate);
+        // if (blk->isFaulty()) {
+        //     // If the victim is faulty, we cannot use it
+        //     if (rand() % 2 == 0) {
+        //         std::cout << "Rizos2 Skipping faulty victim at set : "
+        //                   << blk->getSet() << ", way: " << blk->getWay()
+        //                   << std::endl;
+        //         continue;
+        //     }
+        // }
+        // if (!victim) {
+        //     victim = candidate;
+        //     continue;
+        // }
         if (std::static_pointer_cast<LRUReplData>(
                     candidate->replacementData)->lastTouchTick <
                 std::static_pointer_cast<LRUReplData>(
@@ -87,6 +106,14 @@ LRU::getVictim(const ReplacementCandidates& candidates) const
         }
     }
 
+    // [RZ CODE]
+    // CacheBlk* blkVictim = static_cast<CacheBlk*>(victim);
+    // if (blkVictim->isFaulty()) {
+    //     // If the victim is faulty, we cannot use it
+    //     std::cout << "Rizos3 Skipping faulty victim at set : "
+    //               << blkVictim->getSet() << ", way: " << blkVictim->getWay()
+    //               << std::endl;
+    // }
     return victim;
 }
 

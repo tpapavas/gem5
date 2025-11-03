@@ -76,6 +76,9 @@ class CacheBlk : public TaggedEntry
      */
     enum CoherenceBits : unsigned
     {
+        // [RZ CODE]
+        // //Check bit for faulty bit
+        // FaultyBit =         0x01,
         /** write permission */
         WritableBit =       0x02,
         /**
@@ -222,6 +225,20 @@ class CacheBlk : public TaggedEntry
         assert(isValid());
         coherence |= bits;
     }
+
+    // [RZ CODE]
+    // void setFaultyBit(bool is_faulty)
+    // {
+    //     if (is_faulty)
+    //         FaultyBit = true;
+    //     else
+    //         FaultyBit = false;
+    // }
+
+    // bool isFaulty() const
+    // {
+    //     return FaultyBit;
+    // }
 
     /**
      * Clear the corresponding coherence bits.
@@ -473,6 +490,9 @@ class CacheBlk : public TaggedEntry
     void setTickInserted() { _tickInserted = curTick(); }
 
   private:
+    // [RZ CODE]
+    //   // This is the member variable that holds the faulty state
+    // bool FaultyBit = 0;
     /** Task Id associated with this block */
     uint32_t _taskId = 0;
 

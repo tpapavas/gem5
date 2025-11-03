@@ -67,6 +67,7 @@ struct BaseCPUParams;
 class CheckerCPU;
 class ThreadContext;
 
+class rtlNVDLA;
 struct AddressMonitor
 {
     AddressMonitor();
@@ -166,6 +167,103 @@ class BaseCPU : public ClockedObject
     SignalSinkPort<bool> modelResetPort;
 
   public:
+
+  class TimingCPUPort : public RequestPort
+    {
+      public:
+
+        TimingCPUPort(const std::string& _name, BaseCPU* _cpu)
+            : RequestPort(_name, _cpu), cpu(_cpu),
+              retryRespEvent([this]{ sendRetryResp(); }, name())
+        { }
+
+      protected:
+
+        BaseCPU* cpu;
+
+        struct TickEvent : public Event
+        {
+            PacketPtr pkt;
+            BaseCPU *cpu;
+
+            TickEvent(BaseCPU *_cpu) : pkt(NULL), cpu(_cpu) {}
+            const char *description() const { return "Timing CPU tick"; }
+            void schedule(PacketPtr _pkt, Tick t);
+        };
+
+        EventFunctionWrapper retryRespEvent;
+    };
+  class AccelPort : public TimingCPUPort
+    {
+      public:
+
+        AccelPort(BaseCPU *_cpu, std::string id)
+            : TimingCPUPort(_cpu->name() + ".accel_port" + id, _cpu),
+              tickEvent(_cpu)
+        { }
+
+      protected:
+
+        virtual bool recvTimingResp(PacketPtr pkt);
+
+        virtual void recvReqRetry();
+
+        struct ITickEvent : public TickEvent
+        {
+            ITickEvent(BaseCPU *_cpu)
+                : TickEvent(_cpu) {}
+            void process();
+            const char *description() const { return "Timing CPU accel tick"; }
+        };
+
+        ITickEvent tickEvent;
+
+    };
+    AccelPort nvdla_port_0;
+    AccelPort nvdla_port_1;
+    AccelPort nvdla_port_2;
+    AccelPort nvdla_port_3;
+
+    rtlNVDLA* nvdla_0;
+    rtlNVDLA* nvdla_1;
+    rtlNVDLA* nvdla_2;
+    rtlNVDLA* nvdla_3;
+
+    int num_accels;
+
+
+
+    // Method to use when instruction start accel is used
+    virtual void startAccel(Addr addr, int elements, Addr region_nvdla)  {};
+
+    // Method to use when instruction start_accel_id is used
+    virtual void startAccelID(Addr addr, int elements, Addr region_nvdla,
+      int accel_id)  {};
+
+    virtual uint64_t waitAccel(Addr addr, int elements)  {
+        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
+        " HENCE WAIT ACCEL NOT IMPLMENTED" << std::endl;
+        return !finishedAccelerator0;
+    };
+
+    virtual uint64_t waitAccelID(int accel_id)  {
+        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
+        " HENCE WAIT ACCEL ID NOT IMPLMENTED" << std::endl;
+        return !finishedAccelerator0;
+    };
+
+    bool finishedAccelerator0;
+    bool finishedAccelerator1;
+    bool finishedAccelerator2;
+    bool finishedAccelerator3;
+
+    /**
+     * method that returns a reference to the accelerator
+     * port.
+     *
+     * @return a reference to the data port
+     */
+    Port &getAccelPort(int n);
 
     /**
      * Purely virtual method that returns a reference to the data

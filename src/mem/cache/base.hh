@@ -1164,6 +1164,9 @@ class BaseCache : public ClockedObject
         return blkSize;
     }
 
+    // [RZ CODE]
+    // void setDcacheTags();
+
     const AddrRangeList &getAddrRanges() const { return addrRanges; }
 
     MSHR *allocateMissBuffer(PacketPtr pkt, Tick time, bool sched_send = true)

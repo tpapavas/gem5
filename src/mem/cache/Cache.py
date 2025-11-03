@@ -179,6 +179,11 @@ class Cache(BaseCache):
     cxx_header = "mem/cache/cache.hh"
     cxx_class = "gem5::Cache"
 
+    # [RZ CODE]
+    # @cxxMethod
+    # def setDcacheTags():
+    #     pass
+
 
 class NoncoherentCache(BaseCache):
     type = "NoncoherentCache"
