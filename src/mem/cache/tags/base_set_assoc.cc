@@ -85,6 +85,74 @@ BaseSetAssoc::tagsInit()
     }
 }
 
+// void
+// BaseSetAssoc::tagsInit()
+// {
+//     // Initialize fault map
+//     if (isFaultyCache) {
+//         DPRINTF(CacheFaulty, "cache size: %d\n", size);
+//         updateFaultyCacheMaps(size / 1024, allocAssoc, numOfSubBlks);
+//     }
+
+//     // Initialize all blocks
+//     for (unsigned blk_index = 0; blk_index < numBlocks; blk_index++) {
+//         // Locate next cache block
+//         CacheBlk* blk = &blks[blk_index];
+
+//         // Link block to indexing policy
+//         indexingPolicy->setEntry(blk, blk_index);
+
+//         // Associate a data chunk to the block
+//         blk->data = &dataBlks[blkSize*blk_index];
+
+//         // Associate a replacement data entry to the block
+//         blk->replacementData = replacementPolicy->instantiateEntry();
+
+//         //// FAULTY-BLKS CODE ////
+//         // Set the subblocks as faulty according to the faultmap
+//         if (isFaultyCache) {
+//             unsigned int set = blk_index/allocAssoc;
+//             unsigned int way = blk_index%allocAssoc;
+
+//             for (int subBlk = 0; subBlk < numOfSubBlks; subBlk++) {
+//                 blk->setFaulty(
+//                         sblkmap[blk_index/allocAssoc][subBlk +
+//                             (blk_index%allocAssoc)*numOfSubBlks],
+//                         subBlk
+//                 );
+//                 if (blk->getFaulty(subBlk)) {
+//                     DPRINTF(CacheFaulty,
+//                         "Block of set %d way %d and "
+//                         "subblock %d is faulty\n",
+//                         set, way, subBlk
+//                     );
+//                 }
+
+//                 // blk should point to its mask
+//                 blk->maskOnes =
+//                     stuckBitMaskOnesMap[set][way*numOfSubBlks+subBlk];
+//                 blk->maskZeros =
+//                     stuckBitMaskZerosMap[set][way*numOfSubBlks+subBlk];
+//                 for (int i = 0; i < blkSize; i++) {
+//                     if (blk->maskOnes[i] > 0) {
+//                         DPRINTF(CacheFaulty,
+//                             "Byte %d mask of Ones: %s\n",
+//                             i, std::bitset<8>(blk->maskOnes[i]).to_string()
+//                         );
+//                     }
+//                     if (blk->maskZeros[i] < UINT8_MAX) {
+//                         DPRINTF(CacheFaulty,
+//                             "Byte %d mask of Zeros: %s\n",
+//                             i, std::bitset<8>(blk->maskZeros[i]).to_string()
+//                         );
+//                     }
+//                 }
+//             }
+//         }
+//         //// EOF FAULTY-BLKS CODE ////
+//     }
+// }
+
 void
 BaseSetAssoc::invalidate(CacheBlk *blk)
 {

@@ -139,6 +139,11 @@ class BaseIndexingPolicy : public SimObject
     virtual Addr extractTag(const Addr addr) const;
 
     /**
+     * Get the cache associativity (number of ways).
+     * @return The number of ways in each set.
+     */
+    // unsigned getAssociativity() const { return assoc; }
+    /**
      * Find all possible entries for insertion and replacement of an address.
      * Should be called immediately before ReplacementPolicy's findVictim()
      * not to break cache resizing.

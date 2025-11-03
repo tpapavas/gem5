@@ -63,6 +63,8 @@
 #include "params/WriteAllocator.hh"
 #include "sim/cur_tick.hh"
 
+// [RZ CODE]
+// #include "mem/cache/tags/base.hh"
 namespace gem5
 {
 
@@ -472,6 +474,13 @@ BaseCache::recvTimingReq(PacketPtr pkt)
         }
     }
 }
+
+// [RZ CODE]
+// void
+// BaseCache::setDcacheTags(){
+//     const std::string str = "system.cpu.dcache.tags";
+//     tags->setCache2Disable(str);
+// }
 
 void
 BaseCache::handleUncacheableWriteResp(PacketPtr pkt)
@@ -1612,6 +1621,10 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
     // Get secure bit
     const bool is_secure = pkt->isSecure();
 
+    // [RZ CODE]
+    // const std::vector<ReplaceableEntry*> entries = tags->Entries(addr);
+    // //GET THE INDEX TO CHECK IF THE BLOCK IS DISABLED
+    // uint32_t set = entries[0]->getSet();
     // Block size and compression related access latency. Only relevant if
     // using a compressor, otherwise there is no extra delay, and the block
     // is fully sized
@@ -1635,6 +1648,16 @@ BaseCache::allocateBlock(const PacketPtr pkt, PacketList &writebacks)
     CacheBlk *victim = tags->findVictim(addr, is_secure, blk_size_bits,
                                         evict_blks);
 
+// [RZ CODE]
+//    //way to skip the block if it is disabled
+//     if (victim->isFaulty()) {
+//
+//         // If the victim block is faulty, we cannot use it
+//         std::cout << "Skipping allocation of block at addr=0x"
+//                   << std::hex << regenerateBlkAddr(victim)
+//                   << " because it is faulty\n" << "\n" << std::endl;
+//         return nullptr;
+//     }
     // It is valid to return nullptr if there is no victim
     if (!victim)
         return nullptr;
@@ -1683,6 +1706,14 @@ BaseCache::invalidateBlock(CacheBlk *blk)
 void
 BaseCache::evictBlock(CacheBlk *blk, PacketList &writebacks)
 {
+   // [RZ CODE]
+   // const Addr addr = regenerateBlkAddr(blk);
+   // if (isKeyDisabled(addr)) {
+   //     std::cout << "Skipping evict block at addr=0x"
+   //               << std::hex << addr << "EVICT BLOCK\n";
+   //     return;
+   //  }
+   //  else{
     PacketPtr pkt = evictBlock(blk);
     if (pkt) {
         writebacks.push_back(pkt);
@@ -1692,8 +1723,22 @@ BaseCache::evictBlock(CacheBlk *blk, PacketList &writebacks)
 PacketPtr
 BaseCache::writebackBlk(CacheBlk *blk)
 {
+   // [RZ CODE]
+   // assert(blk);
+   // const Addr addr = regenerateBlkAddr(blk);
+   // if (isKeyDisabled(addr)) {
+   //     std::cout << "[writebackBlk] Skipping disabled block at addr=0x"
+   //               << std::hex << addr << std::endl;
+   //     return nullptr;
+   // }
     gem5_assert(!isReadOnly || writebackClean,
                 "Writeback from read-only cache");
+   // [RZ CODE]
+   // if (!blk->isValid()) {
+   // std::cerr << "[writebackBlk] ERROR: "
+   //           << "Trying to write back an invalid block!\n";
+   // return nullptr;
+   // }
     assert(blk && blk->isValid() &&
         (blk->isSet(CacheBlk::DirtyBit) || writebackClean));
 
@@ -1742,6 +1787,13 @@ BaseCache::writebackBlk(CacheBlk *blk)
 PacketPtr
 BaseCache::writecleanBlk(CacheBlk *blk, Request::Flags dest, PacketId id)
 {
+   // [RZ CODE]
+   // const Addr addr = regenerateBlkAddr(blk);
+   // if (isKeyDisabled(addr)) {
+   //     std::cout << "Skipping writeback clean at addr=0x"
+   //               << std::hex << addr << "writebackclean\n";
+   //     return nullptr;
+   //  }
     RequestPtr req = std::make_shared<Request>(
         regenerateBlkAddr(blk), blkSize, 0, Request::wbRequestorId);
 

@@ -63,6 +63,10 @@
 namespace gem5
 {
 
+// [RZ CODE]
+//    void recordDisabledBlock(Addr key);
+//    bool isKeyDisabled(int set, int way);
+//    void recordDisabledSetAndWay(int set, int way);
 class System;
 class IndexingPolicy;
 class ReplaceableEntry;
@@ -75,6 +79,8 @@ class BaseTags : public ClockedObject
   protected:
     /** The block size of the cache. */
     const unsigned blkSize;
+    // [RZ CODE]
+    // std::string cache2DisableName;  // cache to disable
     /** Mask out all bits that aren't part of the block offset. */
     const Addr blkMask;
     /** The size of the cache. */
@@ -82,6 +88,9 @@ class BaseTags : public ClockedObject
     /** The tag lookup latency of the cache. */
     const Cycles lookupLatency;
 
+    // [RZ CODE]
+    // uint32_t set;
+    // uint32_t way;
     /** System we are currently operating in. */
     System *system;
 
@@ -173,6 +182,11 @@ class BaseTags : public ClockedObject
      */
     virtual void tagsInit() = 0;
 
+    // [RZ CODE]
+    // uint64_t calculateIndexFromKey(Addr addr) const;
+    // bool isDisabled(int set, int way) const;
+    // std::vector<ReplaceableEntry*> Entries(Addr addr) const;
+    // void setCache2Disable(std::string in){this->cache2DisableName = in;}
     /**
      * Average in the reference count for valid blocks when the simulation
      * exits.
@@ -357,6 +371,8 @@ class BaseTags : public ClockedObject
      */
     void cleanupRefsVisitor(CacheBlk &blk);
 
+    // [RZ CODE]
+    // uint32_t assoc;
     /**
      * Update the occupancy and age stats using data from the input block
      *

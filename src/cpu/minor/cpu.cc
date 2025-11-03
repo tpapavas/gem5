@@ -331,4 +331,112 @@ MinorCPU::totalOps() const
     return ret;
 }
 
+void
+MinorCPU::startAccel(Addr vaddr, int elements, Addr region_nvdla)
+{
+    if (num_accels>3) {
+        RequestPtr req = std::make_shared<Request>(vaddr, elements,
+                                  0, Request::funcRequestorId,0,0);
+        PacketPtr pkt = new Packet(req, MemCmd::ReadReq, elements);
+        nvdla_port_3.sendTimingReq(pkt);
+
+        finishedAccelerator3 = false;
+    }
+    if (num_accels>2) {
+        RequestPtr req = std::make_shared<Request>(vaddr, elements,
+                                  0, Request::funcRequestorId,0,0);
+        PacketPtr pkt = new Packet(req, MemCmd::ReadReq, elements);
+        nvdla_port_2.sendTimingReq(pkt);
+
+        finishedAccelerator2 = false;
+    }
+    if (num_accels>1) {
+        RequestPtr req = std::make_shared<Request>(vaddr, elements,
+                                  0, Request::funcRequestorId,0,0);
+        PacketPtr pkt = new Packet(req, MemCmd::ReadReq, elements);
+        nvdla_port_1.sendTimingReq(pkt);
+
+        finishedAccelerator1 = false;
+    }
+    if (num_accels>0) {
+        RequestPtr req = std::make_shared<Request>(vaddr, elements,
+                                  0, Request::funcRequestorId,0,0);
+        PacketPtr pkt = new Packet(req, MemCmd::ReadReq, elements);
+        nvdla_port_0.sendTimingReq(pkt);
+
+        finishedAccelerator0 = false;
+    }
+
+}
+
+void
+MinorCPU::startAccelID(Addr vaddr, int elements, Addr region_nvdla,
+    int accel_id)
+{
+    RequestPtr req = std::make_shared<Request>(vaddr, elements,
+                              0, Request::funcRequestorId,0,0);
+    PacketPtr pkt = new Packet(req, MemCmd::ReadReq, elements);
+    switch (accel_id) {
+        case 0:
+            nvdla_port_0.sendTimingReq(pkt);
+            finishedAccelerator0 = false;
+            break;
+        case 1:
+            nvdla_port_1.sendTimingReq(pkt);
+            finishedAccelerator1 = false;
+            break;
+        case 2:
+            nvdla_port_2.sendTimingReq(pkt);
+            finishedAccelerator2 = false;
+            break;
+        case 3:
+            nvdla_port_3.sendTimingReq(pkt);
+            finishedAccelerator3 = false;
+            break;
+        default:
+            break;
+    }
+}
+
+uint64_t
+MinorCPU::waitAccel(Addr vaddr, int elements)
+{
+
+    // DPRINTF(Accelerator, "Wait for Accelerator \n");
+    // std::cout << "Wait Accelerator " << std::endl;
+    if (num_accels == 1) {
+        return !finishedAccelerator0;
+    } else if (num_accels == 2) {
+        return !finishedAccelerator0 |
+               !finishedAccelerator1;
+    } else if (num_accels == 3) {
+        return !finishedAccelerator0 |
+               !finishedAccelerator1 |
+               !finishedAccelerator2;
+    } else {
+        return !finishedAccelerator0 |
+               !finishedAccelerator1 |
+               !finishedAccelerator2 |
+               !finishedAccelerator3;
+    }
+}
+
+
+uint64_t
+MinorCPU::waitAccelID(int accel_id)
+{
+    switch (accel_id) {
+        case 0:
+            return !finishedAccelerator0;
+        case 1:
+            return !finishedAccelerator1;
+        case 2:
+            return !finishedAccelerator2;
+        case 3:
+            return !finishedAccelerator3;
+        default:
+            fatal("waitAccelID: Unknown accel id.\n");
+    }
+}
+
 } // namespace gem5

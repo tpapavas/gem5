@@ -79,6 +79,7 @@ class BaseTags(ClockedObject):
     entry_size = Param.Int(
         Parent.cache_line_size, "Indexing entry size in bytes"
     )
+    # cache2DisableName = Param.String("", "Name identifier for cache disable functionality")
 
 
 class BaseSetAssoc(BaseTags):
