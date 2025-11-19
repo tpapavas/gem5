@@ -160,7 +160,7 @@ def createSystem(
     )
 
     # sys.mem_ctrls = [ SimpleMemory(range=r, port=sys.membus.mem_side_ports) for r in sys.mem_ranges ]
-    # sys.mem_ranges.append(AddrRange(start=0xC0000000, size='1GB'))
+    sys.mem_ranges.append(AddrRange(start=0xC0000000, size="1GB"))
     src_mem_ranges = sys.mem_ranges[:-4] if cvsram_enable else sys.mem_ranges
     sys.mem_ctrls = [
         MemCtrl(
@@ -168,17 +168,15 @@ def createSystem(
         )
         for r in src_mem_ranges
     ]
-    # for range in sys.mem_ranges:
-    #     print(range.start)
+    for range in sys.mem_ranges:
+        print(range.start)
 
-    # sys.fake_nvdla = IsaFake(
-    #     pio_addr=0x10200000,
-    #     pio_size=0x20000,
-    #     fake_mem=True
-    # )
-    # sys.fake_nvdla.pio = sys.iobus.mem_side_ports
+    sys.fake_nvdla = IsaFake(
+        pio_addr=0x10200000, pio_size=0x20000, fake_mem=True
+    )
+    sys.fake_nvdla.pio = sys.iobus.mem_side_ports
 
-    # sys.connect()
+    sys.connect()
 
     # Attach disk images
     if disks:
