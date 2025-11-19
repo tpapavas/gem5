@@ -39,8 +39,8 @@
 
 from m5.defines import buildEnv
 from m5.objects import *
+
 from gem5.isas import ISA
-from gem5.runtime import get_runtime_isa
 
 # Base implementations of L1, L2, IO and TLB-walker caches. There are
 # used in the regressions and also as base components in the
@@ -50,12 +50,12 @@ from gem5.runtime import get_runtime_isa
 
 
 class L1Cache(Cache):
-    assoc = 2
-    tag_latency = 2
-    data_latency = 2
-    response_latency = 2
-    mshrs = 4
-    tgts_per_mshr = 20
+    assoc = Param.Int(2, "Associativity")
+    tag_latency = Param.Cycles(2, "Tag lookup latency")
+    data_latency = Param.Cycles(2, "Data access latency")
+    response_latency = Param.Cycles(2, "Response latency")
+    mshrs = Param.Int(4, "Number of MSHRs")
+    tgts_per_mshr = Param.Int(20, "Targets per MSHR")
 
 
 class L1_ICache(L1Cache):
@@ -65,7 +65,10 @@ class L1_ICache(L1Cache):
 
 
 class L1_DCache(L1Cache):
-    pass
+    assoc = Param.Int(4, "Associativity")
+    is_read_only = False
+    # Writeback dirty lines only
+    writeback_clean = True
 
 
 class L2Cache(Cache):
@@ -84,7 +87,7 @@ class IOCache(Cache):
     data_latency = 50
     response_latency = 50
     mshrs = 20
-    size = "1kB"
+    size = "1KiB"
     tgts_per_mshr = 12
 
 
@@ -94,13 +97,6 @@ class PageTableWalkerCache(Cache):
     data_latency = 2
     response_latency = 2
     mshrs = 10
-    size = "1kB"
+    size = "1KiB"
     tgts_per_mshr = 12
-
-    # the x86 table walker actually writes to the table-walker cache
-    if get_runtime_isa() in [ISA.X86, ISA.RISCV]:
-        is_read_only = False
-    else:
-        is_read_only = True
-        # Writeback clean lines as well
-        writeback_clean = True
+    is_read_only = False

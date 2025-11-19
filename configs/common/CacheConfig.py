@@ -150,6 +150,12 @@ def config_cache(options, system):
             icache = icache_class(**_get_cache_opts("l1i", options))
             dcache = dcache_class(**_get_cache_opts("l1d", options))
 
+            # [RZ CODE]
+            # if options.cache2disable_name:
+            #     if hasattr(dcache, "tags") and hasattr(dcache.tags, "cache2DisableName"):
+            #         dcache.tags.cache2DisableName = options.cache2disable_name
+            #     if hasattr(icache, "tags") and hasattr(icache.tags, "cache2DisableName"):
+            #         icache.tags.cache2DisableName = options.cache2disable_name
             # If we have a walker cache specified, instantiate two
             # instances here
             if walk_cache_class:

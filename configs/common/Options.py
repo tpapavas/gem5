@@ -368,6 +368,15 @@ def addCommonOptions(parser):
         default="",
     )
 
+    # [RZ CODE]
+    # FOR BLOCK DISABLING
+    # parser.add_argument(
+    #     "--cache2disable-name",
+    #     action="store",
+    #     type=str,
+    #     default="",
+    #     help="Name of cache to disable specific blocks in (e.g., system.cpu.dcache.tags)"
+    # )
     # dist-gem5 options
     parser.add_argument(
         "--dist",
