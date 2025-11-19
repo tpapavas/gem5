@@ -48,3 +48,7 @@ m5out/
 .vscode/
 trace.bin
 NVDLAUtil
+
+bsc-util/**/compile_log
+bsc-util/**/VP_mem*
+bsc-util/**/qemu_log
