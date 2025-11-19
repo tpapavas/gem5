@@ -145,7 +145,170 @@ class ArmCpuCluster(CpuCluster):
         self.l2 = self._l2_type()
         for cpu in self.cpus:
             cpu.connectCachedPorts(self.toL2Bus.cpu_side_ports)
+            for i in range(4):
+                # mem_side is for loading NVDLA traces, not for runtime memory accesses
+                exec("cpu.accel_%d.mem_side = self.toL2Bus.cpu_side_ports" % i)
+
         self.toL2Bus.mem_side_ports = self.l2.cpu_side
+
+    def addPrivateAccelerator(self, system, clk_domain, membus, options):
+        for cpu in self.cpus:
+            # l2  = None if self._l2_type is None else self._l2_type()
+            # CpuConfig.print_cpu_list()
+
+            cpu.num_accels = options.numNVDLA
+
+            if options.buffer_mode == "all":
+                pft_ctrl_str = "buffer_mode=0"
+            elif options.buffer_mode == "pft":
+                pft_ctrl_str = "buffer_mode=1"
+            elif options.buffer_mode == "pft-cut":
+                pft_ctrl_str = "buffer_mode=2"
+            else:
+                assert False
+
+            if options.pft_enable:
+                pft_ctrl_str += (
+                    ", prefetch_enable=1, pft_threshold=options.pft_threshold"
+                )
+            else:
+                pft_ctrl_str += ", prefetch_enable=0"
+
+            # in the current phase, we only use one NVDLA accelerator, and spm cannot be used with caches
+            if options.dma_enable:
+                assert (
+                    not options.add_accel_private_cache
+                    and not options.add_accel_shared_cache
+                )
+                dma_ctrl_str = (
+                    "dma_enable=1, spm_latency=options.embed_spm_lat, spm_line_size=1024, "
+                    "spm_size=options.embed_spm_size, use_shared_spm=options.shared_spm, "
+                    "assoc=options.embed_spm_assoc.lower()"
+                )
+            else:
+                dma_ctrl_str = "dma_enable=0"
+
+            fakemem_ctrl_str = (
+                "use_fake_mem=options.use_fake_mem, freq_ratio=options.freq_ratio, "
+                "print_path=os.path.join(os.path.abspath('.'), 'axilog')"
+            )
+            assert os.path.exists(
+                os.path.join(os.path.abspath("."), "run.sh")
+            )  # make sure this is a simulation dir
+            os.system(
+                "rm -f "
+                + os.path.join(os.path.abspath("."), "axilog")
+                + " && touch "
+                + os.path.join(os.path.abspath("."), "axilog")
+            )
+
+            for i in range(4):
+                exec(
+                    "cpu.accel_%d = rtlNVDLA(%s, %s, %s)"
+                    % (i, dma_ctrl_str, pft_ctrl_str, fakemem_ctrl_str)
+                )
+
+            for i in range(4):
+                exec("cpu.accel_port_%d = cpu.accel_%d.cpu_side" % (i, i))
+                # e.g. cpu.accel_port_0 = cpu.accel_0.cpu_side
+
+            outside_ports = ["cpu.accel_%d.dram_port" % i for i in range(4)]
+
+            if options.cvsram_enable:
+                for i in range(4):
+                    exec(
+                        "self.accel_%d_cvsram = SimpleMemory(latency='2ns', latency_var='0ns', bandwidth='"
+                        % i
+                        + options.cvsram_bandwidth
+                        + "', port=cpu.accel_%d.sram_port, range=system.mem_ranges[i-4])"
+                        % i
+                    )
+            if options.add_accel_private_cache:
+                for i in range(options.numNVDLA):
+                    exec(
+                        "self.accel_%d_pr_cache = Cache(tag_latency=options.accel_pr_cache_tag_lat,\
+                                                         data_latency=options.accel_pr_cache_dat_lat,\
+                                                         response_latency=options.accel_pr_cache_resp_lat,\
+                                                         mshrs=options.accel_pr_cache_mshr,\
+                                                         tgts_per_mshr=options.accel_pr_cache_tgts_per_mshr,\
+                                                         size=options.accel_pr_cache_size,\
+                                                         assoc=options.accel_pr_cache_assoc,\
+                                                         write_buffers=options.accel_pr_cache_wr_buf,\
+                                                         clusivity=options.accel_pr_cache_clus)"
+                        % i
+                    )
+
+                for i in range(options.numNVDLA):
+                    exec(
+                        "%s = self.accel_%d_pr_cache.cpu_side"
+                        % (outside_ports[i], i)
+                    )
+                    outside_ports[i] = "self.accel_%d_pr_cache.mem_side" % i
+
+            if options.add_accel_shared_cache:
+                self.accel_to_shared_bus = L2XBar(
+                    width=64, clk_domain=clk_domain
+                )
+                self.accel_sh_cache = Cache(
+                    tag_latency=options.accel_sh_cache_tag_lat,
+                    data_latency=options.accel_sh_cache_dat_lat,
+                    response_latency=options.accel_sh_cache_resp_lat,
+                    mshrs=options.accel_sh_cache_mshr,
+                    tgts_per_mshr=options.accel_sh_cache_tgts_per_mshr,
+                    size=options.accel_sh_cache_size,
+                    assoc=options.accel_sh_cache_assoc,
+                    write_buffers=options.accel_sh_cache_wr_buf,
+                    clusivity=options.accel_sh_cache_clus,
+                )
+                self.accel_to_shared_bus.mem_side_ports = (
+                    self.accel_sh_cache.cpu_side
+                )
+                for port in outside_ports:
+                    exec("%s = self.accel_to_shared_bus.cpu_side_ports" % port)
+
+                outside_ports = ["self.accel_sh_cache.mem_side"]
+
+            for port in outside_ports:
+                exec("%s = membus" % port)
+
+            for i in range(4):
+                # still keep dma_port for cached config to avoid disconnection errors
+                exec("cpu.accel_%d.dma_port = membus" % i)
+
+                # max num inflight requests
+                exec("cpu.accel_%d.maxReq = options.maxReqNVDLA" % i)
+
+                # enable Tracing
+                exec(
+                    "cpu.accel_%d.enableWaveform = options.enableWaveform" % i
+                )
+
+                # enable Timing
+                exec(
+                    "cpu.accel_%d.enableTimingAXI = options.enableTimingAXI"
+                    % i
+                )
+
+                # ids
+                exec("cpu.accel_%d.id_nvdla = %d" % (i, i))
+
+            # DRAM base addr, let all NVDLAs share common DRAM addr space,
+            # while keep SRAM addr spaces private
+            cpu.accel_0.base_addr_dram = 0xA0000000
+            cpu.accel_1.base_addr_dram = 0xA0000000
+            cpu.accel_2.base_addr_dram = 0xA0000000
+            cpu.accel_3.base_addr_dram = 0xA0000000
+            # SRAM base addr
+            if options.cvsram_enable:
+                cpu.accel_0.base_addr_sram = system.mem_ranges[-4].start
+                cpu.accel_1.base_addr_sram = system.mem_ranges[-3].start
+                cpu.accel_2.base_addr_sram = system.mem_ranges[-2].start
+                cpu.accel_3.base_addr_sram = system.mem_ranges[-1].start
+            else:  # give a random address base
+                cpu.accel_0.base_addr_sram = 0xA5000000
+                cpu.accel_1.base_addr_sram = 0xB5000000
+                cpu.accel_2.base_addr_sram = 0xC5000000
+                cpu.accel_3.base_addr_sram = 0xD5000000
 
     def addPMUs(
         self,
@@ -428,14 +591,30 @@ class SimpleSystem(BaseSimpleSystem):
     Meant to be used with the classic memory model
     """
 
-    def __init__(self, caches, mem_size, platform=None, **kwargs):
+    def __init__(
+        self,
+        caches,
+        mem_size,
+        accelerators,
+        cvsram_enable,
+        cvsram_size,
+        platform=None,
+        **kwargs
+    ):
         super(SimpleSystem, self).__init__(mem_size, platform, **kwargs)
 
         self.membus = MemBus()
         # CPUs->PIO
         self.iobridge = Bridge(delay="50ns")
 
+        self._accelerators = accelerators
+
         self._caches = caches
+        if cvsram_enable:
+            for _ in range(4):
+                self.mem_ranges.append(
+                    AddrRange(start=self.mem_ranges[-1].end, size=cvsram_size)
+                )
         if self._caches:
             self.iocache = IOCache(addr_ranges=self.mem_ranges)
         else:
@@ -457,6 +636,15 @@ class SimpleSystem(BaseSimpleSystem):
         self.realview.attachOnChipIO(self.membus, self.iobridge)
         self.realview.attachIO(self.iobus)
         self.system_port = self.membus.cpu_side_ports
+
+    # Add Accelerators
+    def addAccelerators(self, options):
+        # For now only add one
+        for cluster in self._clusters:
+            # for cpu in cluster.cpu:
+            cluster.addPrivateAccelerator(
+                self, cluster.clk_domain, self.membus.cpu_side_ports, options
+            )
 
     def attach_pci(self, dev):
         self.realview.attachPciDevice(dev, self.iobus)
