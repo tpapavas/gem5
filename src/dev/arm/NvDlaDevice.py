@@ -40,17 +40,23 @@ from m5.params import *
 from m5.proxy import *
 from m5.util.fdthelper import *
 
-# from m5.objects.Device import BasicPioDevice
-from m5.objects.rtlObject import rtlObject
+from m5.objects.Device import BasicPioDevice
 
 
-class NvDlaDevice(rtlObject):
+class NvDlaDevice(BasicPioDevice):
     type = "NvDlaDevice"
     cxx_header = "dev/arm/nvdla_device.hh"
     cxx_class = "gem5::NvDlaDevice"
 
     pio_size = Param.Addr(0x8, "Size of address range")
     interrupt = Param.ArmInterruptPin("Interrupt to use for this device")
+
+    # rtlObject stuff
+    enableRTLObject = Param.Bool(True, "Enable RTL Object")
+
+    enableWaveform = Param.Bool(False, "Enable Trace Waveform")
+
+    system = Param.System(Parent.any, "System this accelerator belongs to")
 
     # rtlNVDLA stuff
     cpu_side = ResponsePort("CPU side port, receives requests")
