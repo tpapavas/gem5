@@ -40,12 +40,15 @@
 #include "cpu/translation.hh"
 #include "debug/rtlNVDLA.hh"
 #include "debug/rtlNVDLADebug.hh"
+#include "dev/arm/base_gic.hh"
 #include "dev/dma_device.hh"
 #include "dev/dma_nvdla.hh"
+#include "dev/io_device.hh"
 #include "params/NvDlaDevice.hh"
 #include "params/rtlNVDLA.hh"
 #include "rtl/rtlObject.hh"
 #include "rtl/traceLoaderGem5.hh"
+#include "sim/clocked_object.hh"
 #include "sim/system.hh"
 #include "wrapper_nvdla.hh"
 
@@ -53,14 +56,156 @@ namespace gem5
 {
 
 class TraceLoaderGem5;
+class ArmInterruptPin;
 
 /**
  * NvDlaDevice class
  */
-class NvDlaDevice : public rtlObject
+class NvDlaDevice : public BasicPioDevice
 {
   private:
     time_t sim_time;
+
+    /**
+     * Port on the CPU-side that receives requests.
+     * Mostly just forwards requests to the owner.
+     * Part of a vector of ports. One for each CPU port (e.g., data, inst)
+     */
+    class CPUSidePort : public ResponsePort
+    {
+      private:
+        /// The object that owns this object (NvDlaDevice)
+        NvDlaDevice *owner;
+
+        /// True if the port needs to send a retry req.
+        bool needRetry;
+
+        /// If we tried to send a packet and it was blocked, store it here
+        PacketPtr blockedPacket;
+
+      public:
+        /**
+         * Constructor. Just calls the superclass constructor.
+         */
+        CPUSidePort(const std::string& name, NvDlaDevice *owner) :
+            ResponsePort(name, owner), owner(owner), needRetry(false),
+            blockedPacket(nullptr)
+        { }
+
+        /**
+         * Send a packet across this port. This is called by the owner and
+         * all of the flow control is hanled in this function.
+         *
+         * @param packet to send.
+         */
+        void sendPacket(PacketPtr pkt);
+
+        /**
+         * Get a list of the non-overlapping address ranges the owner is
+         * responsible for. All response ports must override this function
+         * and return a populated list with at least one item.
+         *
+         * @return a list of ranges responded to
+         */
+        AddrRangeList getAddrRanges() const override;
+
+        /**
+         * Send a retry to the peer port only if it is needed. This is called
+         * from the NvDlaDevice whenever it is unblocked.
+         */
+        void trySendRetry();
+
+      protected:
+        /**
+         * Receive an atomic request packet from the request port.
+         * No need to implement in this simple memobj.
+         */
+        Tick recvAtomic(PacketPtr pkt) override
+        { panic("recvAtomic unimpl."); }
+
+        /**
+         * Receive a functional request packet from the request port.
+         * Performs a "debug" access updating/reading the data in place.
+         *
+         * @param packet the requestor sent.
+         */
+        void recvFunctional(PacketPtr pkt) override;
+
+        /**
+         * Receive a timing request from the request port.
+         *
+         * @param the packet that the requestor sent
+         * @return whether this object can consume the packet. If false, we
+         *         will call sendRetry() when we can try to receive this
+         *         request again.
+         */
+        bool recvTimingReq(PacketPtr pkt) override;
+
+        /**
+         * Called by the request port if sendTimingResp was called on this
+         * response port (causing recvTimingResp to be called on the request
+         * port) and was unsuccesful.
+         */
+        void recvRespRetry() override;
+    };
+
+    /**
+     * Port on the memory-side that receives responses.
+     * Mostly just forwards requests to the owner
+     */
+    class MemSidePort : public RequestPort
+    {
+      private:
+        // The object that owns this object (NvDlaDevice)
+        NvDlaDevice *owner;
+
+      public:
+
+        // If we tried to send a packet and it was blocked, store it here
+        PacketPtr blockedPacket;
+
+        /**
+         * Constructor. Just calls the superclass constructor.
+         */
+        MemSidePort(const std::string& name, NvDlaDevice *owner) :
+            RequestPort(name, owner), owner(owner), blockedPacket(nullptr)
+        { }
+
+        /**
+         * Send a packet across this port. This is called by the owner and
+         * all of the flow control is hanled in this function.
+         *
+         * @param packet to send.
+         */
+        void sendPacket(PacketPtr pkt);
+
+        bool isBlocked() {
+            return blockedPacket != nullptr;
+        }
+
+      protected:
+        /**
+         * Receive a timing response from the response port.
+         */
+        bool recvTimingResp(PacketPtr pkt) override;
+
+        /**
+         * Called by the response port if sendTimingReq was called on this
+         * request port (causing recvTimingReq to be called on the responder
+         * port) and was unsuccesful.
+         */
+        void recvReqRetry() override;
+
+        /**
+         * Called to receive an address range change from the peer responder
+         * port. The default implementation ignores the change and does
+         * nothing. Override this function in a derived class if the owner
+         * needs to be aware of the address ranges, e.g. in an
+         * interconnect component like a bus.
+         */
+        void recvRangeChange() override;
+    };
+
 
     /**
      * Port on the memory-side that receives responses.
@@ -142,7 +287,7 @@ class NvDlaDevice : public rtlObject
      * @return true if we can handle the request this cycle, false if the
      *         requestor needs to retry later
      */
-    bool handleRequest(PacketPtr pkt) override;
+    bool handleRequest(PacketPtr pkt);
 
 
     /*
@@ -150,7 +295,7 @@ class NvDlaDevice : public rtlObject
      * @return true if we can handle the response this cycle, false if the
      *         responder needs to retry later
      */
-    bool handleResponse(PacketPtr pkt) override;
+    bool handleResponse(PacketPtr pkt);
 
     /**
      * Handle the response from the memory side for NVDLA
@@ -167,7 +312,7 @@ class NvDlaDevice : public rtlObject
      *
      * @param packet to functionally handle
      */
-    void handleFunctional(PacketPtr pkt) override;
+    void handleFunctional(PacketPtr pkt);
 
     /**
      * Return the address ranges this memobj is responsible for. Just use the
@@ -175,15 +320,15 @@ class NvDlaDevice : public rtlObject
      *
      * @return the address ranges this memobj is responsible for
      */
-    AddrRangeList getAddrRanges() const override;
+    AddrRangeList getAddrRanges() const;
 
     // function that is called at every cycle
-    void tick() override;
+    void tick();
 
     /**
      * Tell the CPU side to ask for our memory ranges.
      */
-    void sendRangeChange() override;
+    void sendRangeChange();
 
     /// Instantiation of the CPU-side ports
     CPUSidePort cpuPort;
@@ -196,6 +341,23 @@ class NvDlaDevice : public rtlObject
     MemNVDLAPort dramPort;
 
     DmaPort dmaPort;
+
+    // System pointer
+    System * system;
+
+    // Enable RTL Object
+    bool enableObject;
+
+    // Enable RTL Object Trace
+    bool enableWaveform;
+
+    Addr to_retry_vaddr;
+
+    /** The tick event used for scheduling CPU ticks. */
+    EventFunctionWrapper tickEvent;
+    EventFunctionWrapper retryTranslateEvent;
+
+    uint64_t cyclesStat;
 
     int bytesToRead;    // it works as a counter
     unsigned int bytesReaded;
@@ -234,6 +396,19 @@ class NvDlaDevice : public rtlObject
     void processOutput(outputNVDLA& out);
 
 public:
+    /**
+     * This read always returns -1.
+     * @param pkt The memory request.
+     * @param data Where to put the data.
+     */
+    virtual Tick read(PacketPtr pkt);
+
+    /**
+     * All writes are simply ignored.
+     * @param pkt The memory request.
+     * @param data the data to not write.
+     */
+    virtual Tick write(PacketPtr pkt);
 
     // NVDLA pointers
     Wrapper_nvdla *wr;
@@ -245,8 +420,8 @@ public:
     ~NvDlaDevice();
     void runIterationNVDLA();
     void initNVDLA(bool use_shared_spm);
-    void initRTLModel() override;
-    void endRTLModel() override;
+    void initRTLModel();
+    void endRTLModel();
     void loadTraceNVDLA(char *ptr);
 
     // variables for the NVDLA
@@ -257,14 +432,16 @@ public:
     int flushing_spm;
     uint32_t cyclesNVDLA;
 
-    /** constructor
-     */
+    /**
+      * The constructor for NVDLA device just registers itself with the MMU.
+      * @param p params structure
+      */
     NvDlaDevice(const NvDlaDeviceParams &params);
 
     gem5::Port &getPort(const std::string &if_name,
                   PortID idx=InvalidPortID) override;
 
-    void finishTranslation(WholeTranslationState *state) override;
+    void finishTranslation(WholeTranslationState *state);
 
     const uint8_t * readAXIVariable(uint64_t addr, bool sram, bool timing,
       bool cacheable, unsigned int size);
@@ -277,7 +454,7 @@ public:
     /**
      * Register the stats
      */
-    void regStats() override;
+    void regStats();
 
     int prefetch_enable;
     uint32_t pft_threshold;
@@ -299,6 +476,17 @@ public:
     std::string print_path;
 
     void try_get_dma_read_data(uint32_t size);
+
+    /*
+    * Functions for TLB connection
+    * finishTranslation needs to be override on derived class
+    */
+    bool isSquashed() const { return false; }
+    void startTranslate(Addr vaddr, ContextID contextId);
+    void retryTranslate();
+
+  protected:
+    ArmInterruptPin *const interrupt;
 };
 
 } //End namespace gem5

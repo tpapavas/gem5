@@ -30,12 +30,23 @@
 
 #include "dev/arm/nvdla_device.hh"
 
+#include "debug/NvDlaDevice.hh"
+
 namespace gem5
 {
 
 
 NvDlaDevice::NvDlaDevice(const NvDlaDeviceParams &params) :
-    rtlObject(params),
+    BasicPioDevice(params, params.pio_size),
+    interrupt(params.interrupt->get()),
+    system(params.system),
+    enableObject(params.enableRTLObject),
+    enableWaveform(params.enableWaveform),
+    to_retry_vaddr(0),
+    tickEvent([this]{ tick(); }, params.name + " tick"),
+    retryTranslateEvent([this]{ retryTranslate(); },
+        params.name + " retryTranslate"),
+    cyclesStat(0),
     cpuPort(params.name + ".cpu_side", this),
     memPort(params.name + ".mem_side", this),
     sramPort(params.name + ".sram_port", this, true),
@@ -60,6 +71,7 @@ NvDlaDevice::NvDlaDevice(const NvDlaDeviceParams &params) :
     use_fake_mem(params.use_fake_mem),
     print_path(params.print_path)
     {
+    fatal_if(!interrupt, "No NvDlaDevice interrupt specified\n");
 
     switch (params.buffer_mode) {
         case 0:
@@ -759,6 +771,190 @@ NvDlaDevice::regStats() {
     // stats.num_dma_wr
     //     .name(name() + ".num_dma_wr")
     //     .desc("Number of DMA write issued by this NVDLA");
+}
+
+//// rtlObject code ////
+void
+NvDlaDevice::CPUSidePort::sendPacket(PacketPtr pkt)
+{
+    // Note: This flow control is very simple since the memobj is blocking.
+    panic_if(blockedPacket != nullptr, "Should never try to send if blocked!");
+
+    // If we can't send the packet across the port, store it for later.
+    if (!sendTimingResp(pkt)) {
+        blockedPacket = pkt;
+    }
+}
+
+AddrRangeList
+NvDlaDevice::CPUSidePort::getAddrRanges() const
+{
+    return owner->getAddrRanges();
+}
+
+void
+NvDlaDevice::CPUSidePort::trySendRetry()
+{
+    if (needRetry && blockedPacket == nullptr) {
+        // Only send a retry if the port is now completely free
+        needRetry = false;
+        DPRINTF(NvDlaDevice, "Sending retry req for %d\n", id);
+        sendRetryReq();
+    }
+}
+
+void
+NvDlaDevice::CPUSidePort::recvFunctional(PacketPtr pkt)
+{
+    // Just forward to the memobj.
+    return owner->handleFunctional(pkt);
+}
+
+bool
+NvDlaDevice::CPUSidePort::recvTimingReq(PacketPtr pkt)
+{
+    // Just forward to the memobj.
+    if (pkt->req->hasPaddr()) {
+        DPRINTF(NvDlaDevice, "Got request for size: %d,  addr: %#x %#x\n",
+            pkt->getSize(),
+            pkt->req->getVaddr(),
+            pkt->req->getPaddr());
+
+    } else {
+        owner->handleRequest(pkt);
+    }
+    // Try to handle the request by calling to
+    // handleRequest() function to be implemented in
+    // the rtlObject derived class
+    if (!owner->handleRequest(pkt)) {
+        needRetry = true;
+        return false;
+    } else {
+        return true;
+    }
+    return true;
+}
+
+void
+NvDlaDevice::CPUSidePort::recvRespRetry()
+{
+    // We should have a blocked packet if this function is called.
+    assert(blockedPacket != nullptr);
+
+    // Grab the blocked packet.
+    PacketPtr pkt = blockedPacket;
+    blockedPacket = nullptr;
+
+    // Try to resend it. It's possible that it fails again.
+    sendPacket(pkt);
+}
+
+void
+NvDlaDevice::MemSidePort::sendPacket(PacketPtr pkt)
+{
+    // Note: This flow control is very simple since the memobj is blocking.
+
+    panic_if(blockedPacket != nullptr, "Should never try to send if blocked!");
+
+    DPRINTF(NvDlaDevice, "Send Mem Req to L2 %#x %d \n",
+            pkt->getAddr(), pkt->getSize());
+
+    // If we can't send the packet across the port, store it for later.
+    if (!sendTimingReq(pkt)) {
+        blockedPacket = pkt;
+    }
+}
+
+bool
+NvDlaDevice::MemSidePort::recvTimingResp(PacketPtr pkt)
+{
+    // Just forward to the memobj.
+    return owner->handleResponse(pkt);
+}
+
+void
+NvDlaDevice::MemSidePort::recvReqRetry()
+{
+    // We should have a blocked packet if this function is called.
+    assert(blockedPacket != nullptr);
+
+    // Grab the blocked packet.
+    PacketPtr pkt = blockedPacket;
+    blockedPacket = nullptr;
+
+    // Try to resend it. It's possible that it fails again.
+    sendPacket(pkt);
+}
+
+void
+NvDlaDevice::MemSidePort::recvRangeChange()
+{
+    owner->sendRangeChange();
+}
+
+void
+NvDlaDevice::startTranslate(Addr vaddr, ContextID contextId) {
+
+    DPRINTF(NvDlaDevice, "Started translation\n");
+
+    BaseMMU * mmu =
+        system->threads[contextId]->getMMUPtr();
+    assert(mmu);
+
+    Fault fault;
+    BaseMMU::Mode mode = BaseMMU::Write;
+    RequestPtr req = std::make_shared<Request>(
+                        vaddr, 64, 0x40, 0, 0, contextId);
+
+    WholeTranslationState *state =
+        new WholeTranslationState(req, new uint8_t[64], NULL, mode);
+    DataTranslation<NvDlaDevice *> *translation
+        = new DataTranslation<NvDlaDevice *>(this, state);
+
+    mmu->translateTiming(req, system->threads[contextId],
+                             translation, mode);
+
+}
+
+void
+NvDlaDevice::retryTranslate() {
+    printf("retryTranslate at tick = %lu\n", curTick());
+    startTranslate(to_retry_vaddr, 0);
+}
+
+
+Tick
+NvDlaDevice::read(PacketPtr pkt)
+{
+    pkt->makeAtomicResponse();
+
+    interrupt->raise();
+
+    // DPRINTF(NvDlaDevice, "read req: addr: 0x%08x\n",
+    //   pkt->getAddr());
+
+    // uint32_t read_addr =
+    //   (uint32_t) 0xFFFF0000 + (0x0000FFFF & ((pkt->getAddr() - 0) >> 2));
+
+    // wr->csb->read(read_addr, 0xffffffff, 0);
+
+    // while (!wr->csb->done()) {
+    //   wr->csb->eval(waiting);
+    //   outputNVDLA& output = wr->tick();
+    // }
+
+    return 0;
+}
+
+Tick
+NvDlaDevice::write(PacketPtr pkt)
+{
+    pkt->makeAtomicResponse();
+
+    DPRINTF(NvDlaDevice, "write req: addr: 0x%08x, data: 0x%08x\n",
+      pkt->getAddr(), pkt->getLE<uint32_t>());
+
+    return 0;
 }
 
 } //End namespace gem5
