@@ -42,12 +42,12 @@ def parse_args():
     )
     parser.add_argument(
         "--out-dir",
-        default="/home/ngiannopoulos/Phd/NVDLA/nvdla/traces/lenet",
+        default="/home/georgrizos/nvdla/traces/tp-lenet-caffe/",
         help="directory to put the generated sc.log, register txn and mem traces",
     )
     parser.add_argument(
         "--image",
-        default="/home/ngiannopoulos/Phd/NVDLA/gem5-original/bsc-util/nvdla_utilities/example_usage/caffe_models/lenet/eight_invert.pgm",
+        default="/home/georgrizos/gem5-original/bsc-util/nvdla_utilities/example_usage/caffe_models/lenet/eight_invert.pgm",
         help="Path to the image for nvdla_runtime to perform inference.",
     )
     parser.add_argument(
@@ -154,7 +154,7 @@ def run_qemu(options):
         os.system(
             "cp "
             + os.path.abspath(options.image)
-            + " /home/ngiannopoulos/Phd/NVDLA/vp-bin/usr/local/nvdla/"
+            + " /home/georgrizos/vp_big_g/vp-bin/usr/local/nvdla/"
         )
 
     # if not os.path.exists("/usr/bin/expect"):
@@ -186,7 +186,7 @@ send "mount -t 9p -o trans=virtio r /mnt && cd /mnt\\r"
 expect "# "
 send "insmod images/linux-4.13.3/drm.ko && insmod images/linux-4.13.3/opendla_1.ko\\r"
 expect "# "
-send "./nvdla_runtime --loadable usr/local/nvdla/%(loadable)s %(image)s\\r"
+send "./nvdla_runtime --loadable usr/local/nvdla/%(loadable)s %(image)s --normalize 255\\r"
 
 # poweroff the Guest VM
 expect "# "
@@ -200,14 +200,14 @@ send "shutdown -h now\\r"
     }
     qemu_run_template.format(options.qemu_bin, options.qemu_lua)
     with open(
-        "/home/ngiannopoulos/Phd/NVDLA/vp-bin/images/linux-4.13.3/qemu_run.exp",
+        "/home/georgrizos/vp_big_g/vp-bin/images/linux-4.13.3/qemu_run.exp",
         "w",
     ) as f:
         f.write(qemu_run_template)
-    cmd = "cd /home/ngiannopoulos/Phd/NVDLA/vp-bin/ && ./images/linux-4.13.3/qemu_run.exp"
-    if os.path.exists("/home/ngiannopoulos/Phd/NVDLA/vp-bin/qemu_log"):
+    cmd = "cd /home/georgrizos/vp_big_g/vp-bin/ && ./images/linux-4.13.3/qemu_run.exp"
+    if os.path.exists("/home/georgrizos/vp_big_g/vp-bin/qemu_log"):
         os.system(
-            "mv /home/ngiannopoulos/Phd/NVDLA/vp-bin/qemu_log /home/ngiannopoulos/Phd/NVDLA/vp-bin/qemu_log_bkp"
+            "mv /home/georgrizos/vp_big_g/vp-bin/qemu_log /home/georgrizos/vp_big_g/vp-bin/qemu_log_bkp"
         )
     qemu_proc = subprocess.Popen(cmd, shell=True)
     qemu_proc.wait()
@@ -264,11 +264,11 @@ def parse_mixed_type_trace(rd_wr_trace_file):
 def process_log(options):
     if not options.convert_only:
         os.system(
-            "cd /home/ngiannopoulos/Phd/NVDLA/vp-bin/ && mv sc.log "
+            "cd /home/georgrizos/vp_big_g/vp-bin && mv sc.log "
             + options.out_dir
         )
         os.system(
-            "cd /home/ngiannopoulos/Phd/NVDLA/vp-bin/ && mv qemu_log "
+            "cd /home/georgrizos/vp_big_g/vp-bin && mv qemu_log "
             + options.out_dir
         )
 

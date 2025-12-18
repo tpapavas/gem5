@@ -19,6 +19,9 @@ double wall_time() {
 
 int main(int argc, char *argv[]) {
     // load trace.bin
+
+    printf("Starting NVDLA single thread validation app..\n");
+
     FILE* fp = fopen(argv[1], "rb");
     if (!fp) {
         printf("Trace file open failed.\n");

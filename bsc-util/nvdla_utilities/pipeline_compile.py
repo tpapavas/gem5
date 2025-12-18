@@ -29,18 +29,18 @@ def parse_args():
     """
     parser.add_argument(
         "--nvdla-compiler",
-        default="~/tools/GEM5-NVDLA/vp-bin/usr/local/nvdla/compiler/nvdla_compiler",
+        default="/home/ngiannopoulos/Phd/NVDLA/vp-bin/usr/local/nvdla/compiler/nvdla_compiler",
         help="Path to NVDLA compiler",
     )
     parser.add_argument(
         "--qemu-bin",
-        default="~/tools/GEM5-NVDLA/vp-bin/usr/local/nvdla/vp/aarch64_toplevel",
+        default="/home/ngiannopoulos/Phd/NVDLA/vp-bin/usr/local/nvdla/vp/aarch64_toplevel",
         help="Path to qemu binary. By default it is pointing to the self-built qemu binary. Set to "
         "/usr/local/nvdla/aarch64_toplevel if one wants to use the one provided in docker image",
     )
     parser.add_argument(
         "--qemu-lua",
-        default="~/tools/GEM5-NVDLA/vp-bin/usr/local/nvdla/aarch64_nvdla.lua",
+        default="/home/ngiannopoulos/Phd/NVDLA/vp-bin/usr/local/nvdla/aarch64_nvdla.lua",
         help="Path to configuration file of running qemu. Using the one in docker image is ok.",
     )
     parser.add_argument(

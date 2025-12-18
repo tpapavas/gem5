@@ -9,7 +9,7 @@ import matplotlib.ticker as ticker
 sys.path.append(os.path.dirname(__file__))
 from match_reg_trace_addr.parse_qemu_log import *
 
-NVDLA_VP_BIN_PATH = "/home/georgrizos/vp_big_g/vp-bin"
+NVDLA_VP_BIN_PATH = "/home/ngiannopoulos/Phd/NVDLA/vp-bin"
 
 
 def parse_args():
@@ -26,28 +26,28 @@ def parse_args():
     )
     parser.add_argument(
         "--nvdla-compiler",
-        default="/home/georgrizos/vp_big_g/vp-bin/nvdla_compiler",
+        default="/home/ngiannopoulos/Phd/NVDLA/vp-bin/nvdla_compiler",
         help="Path to NVDLA compiler",
     )
     parser.add_argument(
         "--qemu-bin",
-        default="/home/georgrizos/vp_big_g/vp-bin/aarch64_toplevel",
+        default="/home/ngiannopoulos/Phd/NVDLA/vp-bin/aarch64_toplevel",
         help="Path to qemu binary. By default it is pointing to the self-built qemu binary. Set to "
         "/usr/local/nvdla/aarch64_toplevel if one wants to use the one provided in docker image",
     )
     parser.add_argument(
         "--qemu-lua",
-        default="/home/georgrizos/vp_big_g/vp-bin/conf/aarch64_nvdla.lua",
+        default="/home/ngiannopoulos/Phd/NVDLA/vp-bin/conf/aarch64_nvdla.lua",
         help="Path to configuration file of running qemu. Using the one in docker image is ok.",
     )
     parser.add_argument(
         "--out-dir",
-        default="/home/georgrizos/nvdla/traces/tp-lenet-caffe/",
+        default="/home/ngiannopoulos/Phd/NVDLA/nvdla/traces/tp-lenet-caffe/",
         help="directory to put the generated sc.log, register txn and mem traces",
     )
     parser.add_argument(
         "--image",
-        default="/home/georgrizos/gem5-original/bsc-util/nvdla_utilities/example_usage/caffe_models/lenet/eight_invert.pgm",
+        default="/home/ngiannopoulos/Phd/NVDLA/gem5-original/bsc-util/nvdla_utilities/example_usage/caffe_models/lenet/eight_invert.pgm",
         help="Path to the image for nvdla_runtime to perform inference.",
     )
     parser.add_argument(

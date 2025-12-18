@@ -57,132 +57,9 @@
 
 namespace gem5
 {
-// [RZ CODE]
-// static std::set<Addr> disabledBlockKeys;
-// static std::set<std::pair<int, int>> disabledSetandWay;
-// static const std::vector<std::pair<unsigned, unsigned>> disabledBlocks = {
-//         {0, 0},
-//         {0, 1},
-//         {0, 2},
-//         {2, 0},
-//         {2, 1},
-//         {4, 3},
-//         {6, 0},
-//         {3, 1},
-//         {4, 1},
-//         {4, 2},
-//         {6, 1},
-//         {1, 0},
-//         {3, 2},
-//         {3, 3},
-//         {5, 0},
-//         {5, 1},
-//         {5, 2},
-//         {7, 3},
-//         {1, 5},
-//         {1, 6},
-//         {1, 7},
-//         {3, 4},
-//         {3, 5},
-//         {3, 6},
-//         {3, 7},
-//         {5, 4},
-//         {5, 5},
-//         {1, 2},
-//         {1, 3},
-//         {3, 0},
-//         {5, 0},
-//         {5, 1},
-//         {7, 2},
-//         {7, 3},
-//         {8, 0},
-//         {8, 1},
-//         {8, 2},
-//         {8, 3},
-//         {9, 0},
-//         {9, 1},
-//         {9, 2},
-//         {10, 3},
-//         {10, 0},
-//         {10, 1},
-//         {10, 2},
-//         {10, 3},
-//         {11, 0},
-//         {11, 1},
-//         {12, 2},
-//         {12, 3},
-//         {13, 0},
-//         {13, 1},
-//         {14, 2},
-//         {14, 3},
-//         {15, 0},
-//         {15, 1},
-//         {15, 2},
-//         {15, 3},
-//         {16, 1},
-//         {16, 0},
-//         {16, 3},
-//         {17, 0},
-//         {17, 1},
-//         {17, 2},
-//         {17, 3},
-//         {15, 0},
-//         {18, 1},
-//         {11, 2},
-//         {13, 3},
-//         {19, 0},
-//         {19, 1},
-//         {21, 2},
-//         {21, 3},
-//         {23, 0},
-//         {23, 1},
-//         {23, 2},
-//         {23, 3},
-//         {29, 0},
-//         {29, 1},
-//         {30, 0},
-//         {30, 3},
-//         {31, 0},
-//     };
-// static const std::vector<std::pair<unsigned, unsigned>> disabledBlocks_10 =
-//   [] {
-//     std::vector<std::pair<unsigned, unsigned>> v;
-//     // 103 sets × 16 ways = 1648 blocks
-//     for (unsigned set = 0; set < 103; ++set) {
-//         for (unsigned way = 0; way < 14; ++way) {
-//             v.emplace_back(set, way);
-//         }
-//     }
-//     return v;
-// }();
-// static const std::vector<std::pair<unsigned, unsigned>> disabledBlocks_40 =
-//   [] {
-//     std::vector<std::pair<unsigned, unsigned>> v;
-//     // 500 sets × 16 ways = 8000 blocks
-//     for (unsigned set = 0; set < 500; ++set) {
-//         for (unsigned way = 0; way < 14; ++way) {
-//             v.emplace_back(set, way);
-//         }
-//     }
-//     return v;
-// }();
-
-// static const std::vector<std::pair<unsigned, unsigned>> disabledBlocks_80 =
-//   [] {
-//     std::vector<std::pair<unsigned, unsigned>> v;
-//     // 800 sets × 16 ways = 12800 blocks
-//     for (unsigned set = 0; set < 800; ++set) {
-//         for (unsigned way = 0; way < 14; ++way) {
-//             v.emplace_back(set, way);
-//         }
-//     }
-//     return v;
-// }();
-
 
 BaseTags::BaseTags(const Params &p)
     : ClockedObject(p), blkSize(p.block_size), blkMask(blkSize - 1),
-    // cache2DisableName(p.cache2DisableName),
       size(p.size), lookupLatency(p.tag_latency),
       system(p.system), indexingPolicy(p.indexing_policy),
       warmupBound((p.warmup_percentage/100.0) * (p.size / p.block_size)),
@@ -196,132 +73,8 @@ BaseTags::BaseTags(const Params &p)
 ReplaceableEntry*
 BaseTags::findBlockBySetAndWay(int set, int way) const
 {
-    return indexingPolicy->getEntry(set, way);
+      return indexingPolicy->getEntry(set, way);
 }
-
-// [RZ CODE]
-// uint64_t
-// BaseTags::calculateIndexFromKey(Addr addr) const
-// {
-//     int assoc = indexingPolicy->getAssociativity();
-//     uint32_t block_offset_bits = log2(blkSize);
-//     uint32_t numSets = size / (blkSize * assoc);
-//     // Number of bits to represent the block offset
-//
-//     // Shift the key by the block offset bits to get the portion
-//     // of the address that corresponds to the index
-//     uint64_t index = (addr >> block_offset_bits) & (numSets - 1);
-//     // The mask is used to ensure that the index fits
-//     // within the number of sets
-//     return index;
-// }
-// void recordDisabledBlock(Addr key) {
-//     disabledBlockKeys.insert(key);
-// }
-// void recordDisabledSetAndWay(int set, int way) {
-//     // Insert the set and way as a pair into the set
-//     disabledSetandWay.insert(std::make_pair(set, way));
-// }
-// bool isKeyDisabled(int set, int way) {
-//     if (disabledSetandWay.find(std::make_pair(set, way))
-//            != disabledSetandWay.end()) {
-//         std::cout << "We found a disabled set and way: " << set  << "\n";
-//         return true;
-//     }
-//     return false;
-// }
-// bool BaseTags::isDisabled(int set, int way) const
-// {
-//     // Check if the block at the given set and way should be disabled
-//     for (const auto& pair : disabledBlocks_10) {
-//         if (pair.first == set && pair.second == way) {
-//             return true;
-//         }
-//     }
-//     return false;
-// }
-//
-// std::vector<ReplaceableEntry*>
-// BaseTags::Entries(Addr addr) const
-// {
-//     // Get the possible entries that may contain the given address
-//     return indexingPolicy->getPossibleEntries(addr);
-// }
-
-// CacheBlk*
-// BaseTags::findBlock(Addr addr, bool is_secure) const
-// {
-//     // Extract block tag
-//     Addr tag = extractTag(addr);
-//     std::string name = this->name();
-//     // Find possible entries that may contain the given address
-//     const std::vector<ReplaceableEntry*> entries = Entries(addr);
-//     bool disabled_smthg = false;
-//     for (int way = 0; way < entries.size(); ++way) {
-//         CacheBlk* blk = static_cast<CacheBlk*>(entries[way]);
-//         CacheBlk* blk1 =
-//             static_cast<CacheBlk*>(entries[entries.size() - way - 1]);
-//         uint64_t set = calculateIndexFromKey(addr);
-//         if (!blk) {
-//             continue;
-//         }
-//         if (curTick() < 1191257905980 && curTick() > 1191257904860){
-
-//             std::cout << "[BaseTags::findBlock] tick = "
-//                       << curTick() << "\n";
-//         }
-//         // if (this->name() == "board.cache_hierarchy.l1dcaches.tags") {
-//         //     //std::cout << "[BaseTags::findBlock] cache2DisableName =  "
-//         //     //          << cache2DisableName << "\n";
-//         //     //assert(false);
-//         //     //Use isDisabled to check if the block should be disabled
-
-//         //     if (isDisabled(set, way)) {
-//         //         // Check if the block is dcache
-//         //         //DPRINTF(CacheTags, "Cache2DisableName is = %d \n",
-//         //         //   cache2DisableName);
-//         //         std::cout << " way size is "
-//         //                   << entries.size() << std::endl;
-//         //         // recordDisabledBlock(addr);
-//         //         recordDisabledSetAndWay(set, way);
-//         //         // Print disabled block keys for debugging
-//         //         std::cout << "Disabled Sets and Ways: " << std::endl;
-//         //         for (const auto& disabledKey : disabledSetandWay) {
-//         //             std::cout << "this is disabled set and way  ("
-//         //                       << disabledKey.first << ", "
-//         //                       << disabledKey.second << ")" << std::endl;
-//         //         }
-//         //         std::cout << "\n" << std::endl;
-//                 // // Skip this block (not working because of snoop filter)
-//                 // return nullptr;
-//                 // if (blk->isValid()) {
-//                 //     // If the block is valid, invalidate it
-//                 //     std::cout << "Invalidating block at set: "
-//                 //               << set << ", way: " << way << std::endl;
-//                 //     blk->invalidate();
-//                 //      disabled_smthg = true;
-//                 // // }
-//                 // // continue; // Skip this block because its invalide
-//                 // size_t block_size = blkSize;
-//                 // memset(blk->data, 0, block_size);
-//         //     }
-//         // }
-//         // if (disabled_smthg) {
-//         //     doesnt work it doesnt like return block without check
-//         //     return blk;
-//         // }
-//         if (blk->matchTag(tag, is_secure)) {
-//             if ((set == 0 || set == 2 || set == 4 || set == 6)
-//                   && disabled_smthg) {
-//                 std::cout << "Return block at set: " << set
-//                           << ", way: " << way << std::endl;
-//             }
-//             return blk;
-//         }
-//     }
-//     // Did not find block
-//     return nullptr;
-// }
 
 CacheBlk*
 BaseTags::findBlock(Addr addr, bool is_secure) const
@@ -336,40 +89,7 @@ BaseTags::findBlock(Addr addr, bool is_secure) const
     // Search for block
     for (const auto& location : entries) {
         CacheBlk* blk = static_cast<CacheBlk*>(location);
-        // [RZ CODE]
-        // uint32_t set = blk->getSet();
-        // uint32_t way = blk->getWay();
         if (blk->matchTag(tag, is_secure)) {
-            // [RZ CODE]
-            // if (this->name()
-            //        == "system.littleCluster.accel_0_pr_cache.tags") {
-            //     if (isDisabled(set, way)) {
-            //         // If the block is disabled, skip it
-            //         blk->setFaultyBit(true); // Set up faulty bit
-            //         std::cout << "Making faulty block at findblock at "
-            //                   << "set RIZOS41: " << set
-            //                   << ", way: " << way << "\n" << std::endl;
-            //     }else {
-            //         blk->setFaultyBit(false); // Set down faulty bit
-            //     }
-            // }
-            // if (blk->isFaulty()) {
-            //     if (rand() % 2 == 0){
-            //         for (int i = 0; i < 2; ++i) {
-            //          // unsigned assoc = indexingPolicy->getAssociativity();
-            //     //         size_t block_idx = set * assoc + way;
-            //             // Invalidate first byte of the block's storage and
-            //             // point blk->data to it
-            //             std::cout << "Before zero: "
-            //                       << unsigned(blk->data[i]) << "\n";
-            //             blk->data[i] = rand();
-            //             blk->data[i+2] = rand();
-            //             // blk->data[1] = 0;
-            //             std::cout << "After zero: "
-            //                       << unsigned(blk->data[i]) << "\n";
-            //         }
-            //     }
-            // }
             return blk;
         }
     }
@@ -381,44 +101,6 @@ BaseTags::findBlock(Addr addr, bool is_secure) const
 void
 BaseTags::insertBlock(const PacketPtr pkt, CacheBlk *blk)
 {
-    // [RZ CODE]
-    // uint32_t set = blk->getSet();
-    // uint32_t way = blk->getWay();
-    //
-    // if (this->name() == "system.littleCluster.accel_0_pr_cache.tags") {
-    //     [RZ CODE]
-    //     for (uint32_t i = 0; i < entries.size(); ++i) {
-    //         if (entries[i] == blk) {
-    //             way = i;
-    //             break;
-    //         }
-    //     }
-    //     Assert that we found the block.
-    //     This indicates a problem if it fails.
-    //     assert(way != -1);
-    //     Check if the block should be disabled
-    //     if (isDisabled(set, way)) {
-    //         // If the block is disabled, we should not insert it
-    //         std::cout << "Making faulty block an insert at set RIZOS: "
-    //                   << set
-    //                   << ", way: " << way << "\n" << std::endl;
-    //         blk->setFaultyBit(true); // Set up faulty bit
-    //         // std::cout << "Skipping insertion of disabled block at set: "
-    //         //           << set
-    //         //           << ", way: " << way << std::endl;
-    //     }
-    //     else {
-    //         blk->setFaultyBit(false); // Set down faulty bit
-    //     }
-    //     if (blk->isFaulty()) {
-    //         // If the block is faulty, we should not insert it
-    //         std::cout << "Skipping insertion of faulty block at set RIZOS: "
-    //                   << set
-    //                   << ", way: " << way << std::endl;
-    //         return ;
-    //     }
-    // }
-
     assert(!blk->isValid());
 
     // Previous block, if existed, has been removed, and now we have
@@ -428,12 +110,6 @@ BaseTags::insertBlock(const PacketPtr pkt, CacheBlk *blk)
     RequestorID requestor_id = pkt->req->requestorId();
     assert(requestor_id < system->maxRequestors());
     stats.occupancies[requestor_id]++;
-
-    // [RZ CODE]
-    // // Lets try to find the way and set of given block to skip it
-    // Addr addr = pkt->getAddr();
-    // const std::vector<ReplaceableEntry*> entries = Entries(addr);
-    // assert(!entries.empty());
 
     // Insert block with tag, src requestor id and task id
     blk->insert(extractTag(pkt->getAddr()), pkt->isSecure(), requestor_id,

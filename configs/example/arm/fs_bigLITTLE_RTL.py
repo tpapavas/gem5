@@ -54,9 +54,9 @@ from common.cores.arm import ex5_LITTLE
 import devices
 from devices import AtomicCluster, KvmCluster, FastmodelCluster
 
-default_kernel = (
-    "/home/tpapavasileiou/tools/GEM5-NVDLA/nvdla/gem5/binaries/vmlinux_4_13_3"
-)
+default_kernel = "/home/ngiannopoulos/Phd/NVDLA/gem5_linux_images/aarch-system-20220707/binaries/vmlinux.arm64"
+
+default_disk = "/home/ngiannopoulos/Phd/NVDLA/gem5_linux_images/ubuntu-18.04-arm64-docker_MY.img"
 
 # default_disk = (
 #    "/home/georgrizos/gem5_linux_images/ubuntu-18.04-arm64-docker.img"

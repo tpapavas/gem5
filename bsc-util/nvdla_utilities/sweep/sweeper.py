@@ -94,7 +94,7 @@ class Sweeper:
     def __init__(self, args):
         self.home_path = os.popen("cd ~/ && pwd").readlines()[0].strip("\n")
         self.new_home = args.home.rstrip("/")
-        self.gem5_nvdla_dir = "~/GEM5/gem5-dev"
+        self.gem5_nvdla_dir = "/home/ngiannopoulos/Phd/NVDLA/gem5-original"
         self.gen_points = args.gen_points
         self.cpt_dir = None
         self.vp_out_dir = args.vp_out_dir

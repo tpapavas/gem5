@@ -24,18 +24,18 @@ def parse_args():
     )
     parser.add_argument(
         "--nvdla-compiler",
-        default="/home/georgrizos/vp_big_g/vp-bin/usr/local/nvdla/compiler/libnvdla_compiler.so",
+        default="/home/ngiannopoulos/Phd/NVDLA/vp-bin/usr/local/nvdla/compiler/libnvdla_compiler.so",
         help="Path to NVDLA compiler",
     )
     parser.add_argument(
         "--qemu-bin",
-        default="/home/georgrizos/vp_big_g/vp-bin/aarch64_toplevel",
+        default="/home/ngiannopoulos/Phd/NVDLA/vp-bin/aarch64_toplevel",
         help="Path to qemu binary. By default it is pointing to the self-built qemu binary. Set to "
         "/usr/local/nvdla/aarch64_toplevel if one wants to use the one provided in docker image",
     )
     parser.add_argument(
         "--qemu-lua",
-        default="/home/georgrizos/vp_big_g/vp-bin/conf/aarch64_nvdla.lua",
+        default="/home/ngiannopoulos/Phd/NVDLA/vp-bin/conf/aarch64_nvdla.lua",
         help="Path to configuration file of running qemu. Using the one in docker image is ok.",
     )
     parser.add_argument(
@@ -45,7 +45,7 @@ def parse_args():
     )
     parser.add_argument(
         "--image",
-        default="/home/georgrizos/vp_big_g/vp-bin/random_2x2_bin.pgm",
+        default="/home/ngiannopoulos/Phd/NVDLA/vp-bin/random_2x2_bin.pgm",
         help="Path to the image for nvdla_runtime to perform inference.",
     )
     parser.add_argument(
