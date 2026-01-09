@@ -47,6 +47,7 @@ public:
     void ext_event(int ext);
 
     int eval(int noop);
+    int eval(int noop, uint32_t *data);
 
     bool done();
 

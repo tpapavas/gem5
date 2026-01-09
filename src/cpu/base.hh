@@ -219,6 +219,34 @@ class BaseCPU : public ClockedObject
         ITickEvent tickEvent;
 
     };
+
+    class NvDlaPort : public TimingCPUPort
+    {
+      public:
+
+        NvDlaPort(BaseCPU *_cpu)
+            : TimingCPUPort(_cpu->name() + ".nvdla_port_plus", _cpu),
+              tickEvent(_cpu)
+        { }
+
+      protected:
+
+        virtual bool recvTimingResp(PacketPtr pkt);
+
+        virtual void recvReqRetry();
+
+        struct ITickEvent : public TickEvent
+        {
+            ITickEvent(BaseCPU *_cpu)
+                : TickEvent(_cpu) {}
+            void process();
+            const char *description() const { return "Timing CPU accel tick"; }
+        };
+
+        ITickEvent tickEvent;
+
+    };
+
     AccelPort nvdla_port_0;
     AccelPort nvdla_port_1;
     AccelPort nvdla_port_2;
@@ -228,6 +256,8 @@ class BaseCPU : public ClockedObject
     rtlNVDLA* nvdla_1;
     rtlNVDLA* nvdla_2;
     rtlNVDLA* nvdla_3;
+
+    NvDlaPort nvdla_port_plus;
 
     int num_accels;
 
@@ -252,6 +282,18 @@ class BaseCPU : public ClockedObject
         return !finishedAccelerator0;
     };
 
+    virtual uint32_t NvDlaReadReg(Addr addr) {
+        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
+        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
+        return UINT32_MAX;
+    }
+
+    virtual void NvDlaWriteReg(uint32_t data, Addr addr) {
+        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
+        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
+        return;
+    }
+
     bool finishedAccelerator0;
     bool finishedAccelerator1;
     bool finishedAccelerator2;
@@ -264,6 +306,14 @@ class BaseCPU : public ClockedObject
      * @return a reference to the data port
      */
     Port &getAccelPort(int n);
+
+    /**
+     * method that returns a reference to the accelerator
+     * port.
+     *
+     * @return a reference to the data port
+     */
+    Port &getNvDlaPort();
 
     /**
      * Purely virtual method that returns a reference to the data

@@ -666,5 +666,21 @@ waitaccelid(ThreadContext *tc, int accel_id)
     return tc->getCpuPtr()->waitAccelID(accel_id);
 }
 
+uint32_t readregaccel(ThreadContext *tc, Addr addr)
+{
+    DPRINTF(PseudoInst,
+            "PseudoInst::readregaccel(0x%08x)\n", addr);
+
+    return tc->getCpuPtr()->NvDlaReadReg(addr);
+}
+
+void writeregaccel(ThreadContext *tc, uint32_t data, Addr addr)
+{
+    DPRINTF(PseudoInst,
+            "PseudoInst::writeregaccel(0x%08x, 0x%08x)\n", data, addr);
+
+    tc->getCpuPtr()->NvDlaWriteReg(data, addr);
+}
+
 } // namespace pseudo_inst
 } // namespace gem5

@@ -174,6 +174,8 @@ class BaseCPU(ClockedObject):
     accel_port_2 = RequestPort("Accelerator Port")
     accel_port_3 = RequestPort("Accelerator Port")
 
+    nvdla_port_plus = RequestPort("Accelerator Port")
+
     _cached_ports = ["icache_port", "dcache_port"]
 
     _uncached_interrupt_response_ports = []

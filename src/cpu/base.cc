@@ -136,6 +136,7 @@ BaseCPU::BaseCPU(const Params &p, bool is_checker)
       nvdla_port_1(this,"1"),
       nvdla_port_2(this,"2"),
       nvdla_port_3(this,"3"),
+      nvdla_port_plus(this),
       num_accels(p.num_accels),
       modelResetPort(p.name + ".model_reset"),
       interrupts(p.interrupts), numThreads(p.numThreads), system(p.system),
@@ -490,6 +491,8 @@ BaseCPU::getPort(const std::string &if_name, PortID idx)
         return getAccelPort(2);
     else if (if_name == "accel_port_3")
         return getAccelPort(3);
+    else if (if_name == "nvdla_port_plus")
+        return getNvDlaPort();
     else
         return ClockedObject::getPort(if_name, idx);
 }
@@ -512,6 +515,12 @@ BaseCPU::getAccelPort(int n)
         return nvdla_port_3;
     }
 
+}
+
+Port &
+BaseCPU::getNvDlaPort()
+{
+    return nvdla_port_plus;
 }
 
 void
@@ -1163,4 +1172,34 @@ BaseCPU::AccelPort::recvReqRetry()
     //    cpu->ifetch_pkt = NULL;
     //}
 }
+
+void
+BaseCPU::NvDlaPort::ITickEvent::process()
+{
+    //cpu->completeIfetch(pkt);
+}
+
+bool
+BaseCPU::NvDlaPort::recvTimingResp(PacketPtr pkt)
+{
+    //DPRINTF(SimpleCPU, "Received fetch response %#x\n", pkt->getAddr());
+    std::cout << "Received finished addr: " << pkt->getAddr() << std::endl;
+
+    return true;
+}
+
+void
+BaseCPU::NvDlaPort::recvReqRetry()
+{
+    // we shouldn't get a retry unless we have a packet that we're
+    // waiting to transmit
+    //assert(cpu->ifetch_pkt != NULL);
+    //assert(cpu->_status == IcacheRetry);
+    //PacketPtr tmp = cpu->ifetch_pkt;
+    //if (sendTimingReq(tmp)) {
+    //    cpu->_status = IcacheWaitResponse;
+    //    cpu->ifetch_pkt = NULL;
+    //}
+}
+
 } // namespace gem5

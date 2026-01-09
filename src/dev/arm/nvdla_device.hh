@@ -150,6 +150,89 @@ class NvDlaDevice : public BasicPioDevice
     };
 
     /**
+     * Port on the CPU-side that receives requests.
+     * Mostly just forwards requests to the owner.
+     * Part of a vector of ports. One for each CPU port (e.g., data, inst)
+     */
+    class CmdCPUSidePort : public ResponsePort
+    {
+      private:
+        /// The object that owns this object (NvDlaDevice)
+        NvDlaDevice *owner;
+
+        /// True if the port needs to send a retry req.
+        bool needRetry;
+
+        /// If we tried to send a packet and it was blocked, store it here
+        PacketPtr blockedPacket;
+
+      public:
+        /**
+         * Constructor. Just calls the superclass constructor.
+         */
+        CmdCPUSidePort(const std::string& name, NvDlaDevice *owner) :
+            ResponsePort(name, owner), owner(owner), needRetry(false),
+            blockedPacket(nullptr)
+        { }
+
+        /**
+         * Send a packet across this port. This is called by the owner and
+         * all of the flow control is hanled in this function.
+         *
+         * @param packet to send.
+         */
+        void sendPacket(PacketPtr pkt);
+
+        /**
+         * Get a list of the non-overlapping address ranges the owner is
+         * responsible for. All response ports must override this function
+         * and return a populated list with at least one item.
+         *
+         * @return a list of ranges responded to
+         */
+        AddrRangeList getAddrRanges() const override;
+
+        /**
+         * Send a retry to the peer port only if it is needed. This is called
+         * from the NvDlaDevice whenever it is unblocked.
+         */
+        void trySendRetry();
+
+      protected:
+        /**
+         * Receive an atomic request packet from the request port.
+         * No need to implement in this simple memobj.
+         */
+        Tick recvAtomic(PacketPtr pkt) override
+        { panic("recvAtomic unimpl."); }
+
+        /**
+         * Receive a functional request packet from the request port.
+         * Performs a "debug" access updating/reading the data in place.
+         *
+         * @param packet the requestor sent.
+         */
+        void recvFunctional(PacketPtr pkt) override;
+
+        /**
+         * Receive a timing request from the request port.
+         *
+         * @param the packet that the requestor sent
+         * @return whether this object can consume the packet. If false, we
+         *         will call sendRetry() when we can try to receive this
+         *         request again.
+         */
+        bool recvTimingReq(PacketPtr pkt) override;
+
+        /**
+         * Called by the request port if sendTimingResp was called on this
+         * response port (causing recvTimingResp to be called on the request
+         * port) and was unsuccesful.
+         */
+        void recvRespRetry() override;
+    };
+
+    /**
      * Port on the memory-side that receives responses.
      * Mostly just forwards requests to the owner
      */
@@ -320,7 +403,7 @@ class NvDlaDevice : public BasicPioDevice
      *
      * @return the address ranges this memobj is responsible for
      */
-    AddrRangeList getAddrRanges() const;
+    AddrRangeList getAddrRanges() const override;
 
     // function that is called at every cycle
     void tick();
@@ -332,6 +415,8 @@ class NvDlaDevice : public BasicPioDevice
 
     /// Instantiation of the CPU-side ports
     CPUSidePort cpuPort;
+
+    CmdCPUSidePort cmdCpuPort;
 
     /// Instantiation of the memory-side port
     MemSidePort memPort;
@@ -420,8 +505,6 @@ public:
     ~NvDlaDevice();
     void runIterationNVDLA();
     void initNVDLA(bool use_shared_spm);
-    void initRTLModel();
-    void endRTLModel();
     void loadTraceNVDLA(char *ptr);
 
     // variables for the NVDLA
@@ -487,6 +570,12 @@ public:
 
   protected:
     ArmInterruptPin *const interrupt;
+    bool interruptRaised;
+    bool onRead;
+    uint32_t readData;
+
+    bool traceMode;
+    bool engineStarted;
 };
 
 } //End namespace gem5

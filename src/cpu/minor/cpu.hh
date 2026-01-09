@@ -154,6 +154,9 @@ class MinorCPU : public BaseCPU
     // wait Accel ID function
     uint64_t waitAccelID(int accel_id) override;
 
+    uint32_t NvDlaReadReg(Addr addr) override;
+    void NvDlaWriteReg(uint32_t data, Addr addr) override;
+
     /** Simple inst count interface from BaseCPU */
     Counter totalInsts() const override;
     Counter totalOps() const override;

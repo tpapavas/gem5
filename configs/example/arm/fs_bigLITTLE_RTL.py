@@ -54,11 +54,14 @@ from common.cores.arm import ex5_LITTLE
 import devices
 from devices import AtomicCluster, KvmCluster, FastmodelCluster
 
-default_kernel = "/home/georgrizos/gem5_linux_images/aarch-system-20220707/binaries/vmlinux.arm64"
-
-default_disk = (
-    "/home/georgrizos/gem5_linux_images/ubuntu-18.04-arm64-docker.img"
+default_kernel = (
+    "/home/tpapavasileiou/tools/GEM5-NVDLA/nvdla/gem5/binaries/vmlinux_4_13_3"
 )
+
+# default_disk = (
+#    "/home/georgrizos/gem5_linux_images/ubuntu-18.04-arm64-docker.img"
+# )
+default_disk = "/home/tpapavasileiou/tools/GEM5-NVDLA/gem5_linux_images/ubuntu-18.04-arm64-docker.img"
 
 default_mem_size = "1GB"
 
@@ -144,6 +147,7 @@ def createSystem(
     cvsram_size="1MB",
     mem_size=default_mem_size,
     bootloader=None,
+    options=None,
 ):
     platform = ObjectList.platform_list.get(machine_type)
     m5.util.inform("Simulated platform: %s", platform.__name__)
@@ -171,10 +175,41 @@ def createSystem(
     for range in sys.mem_ranges:
         print(range.start)
 
-    sys.fake_nvdla = IsaFake(
-        pio_addr=0x10200000, pio_size=0x20000, fake_mem=True
+    sys.fake_nvdla = NvDlaDevice(
+        pio_addr=0x10200000,
+        pio_size=0x20000,
+        interrupt=ArmSPI(num=208),
+        dma_enable=options.dma_enable,
+        spm_latency=options.embed_spm_lat,
+        spm_line_size=1024,
+        spm_size=options.embed_spm_size,
+        use_shared_spm=options.shared_spm,
+        assoc=options.embed_spm_assoc.lower(),
+        base_addr_dram=0xC0000000,
+        base_addr_sram=0x0,
     )
     sys.fake_nvdla.pio = sys.iobus.mem_side_ports
+
+    # for DMA
+    sys.fake_nvdla.dram_port = sys.membus.cpu_side_ports
+    sys.fake_nvdla.dma_port = sys.membus.cpu_side_ports
+
+    # for caches
+    # sys.fake_nvdla_pr_cache = Cache(
+    #     tag_latency=options.accel_pr_cache_tag_lat,
+    #     data_latency=options.accel_pr_cache_dat_lat,
+    #     response_latency=options.accel_pr_cache_resp_lat,
+    #     mshrs=options.accel_pr_cache_mshr,
+    #     tgts_per_mshr=options.accel_pr_cache_tgts_per_mshr,
+    #     size=options.accel_pr_cache_size,
+    #     assoc=options.accel_pr_cache_assoc,
+    #     write_buffers=options.accel_pr_cache_wr_buf,
+    #     clusivity=options.accel_pr_cache_clus
+    # )
+    # sys.fake_nvdla.dram_port = sys.fake_nvdla_pr_cache.cpu_side
+    # sys.fake_nvdla_pr_cache.mem_side = sys.membus.cpu_side_ports
+
+    # sys.multi_thread = True
 
     sys.connect()
 
@@ -672,6 +707,7 @@ def build(options):
         cvsram_size=options.cvsram_size,
         mem_size=options.mem_size,
         bootloader=options.bootloader,
+        options=options,
     )
 
     root.system = system
@@ -749,6 +785,10 @@ def build(options):
 
     if options.vio_9p:
         FSConfig.attach_9p(system.realview, system.iobus)
+
+    system.fake_nvdla.cmd_cpu_side = system.littleCluster.cpus[
+        0
+    ].nvdla_port_plus
 
     return root
 

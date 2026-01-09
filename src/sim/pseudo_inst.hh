@@ -97,6 +97,8 @@ void startaccelid(ThreadContext *tc, Addr addr,
                 uint64_t elements, Addr region_mem, int accel_id);
 uint64_t waitaccel(ThreadContext *tc, Addr addr, uint64_t elements);
 uint64_t waitaccelid(ThreadContext *tc, int accel_id);
+uint32_t readregaccel(ThreadContext *tc, Addr addr);
+void writeregaccel(ThreadContext *tc, uint32_t data, Addr addr);
 void m5Syscall(ThreadContext *tc);
 void togglesync(ThreadContext *tc);
 void triggerWorkloadEvent(ThreadContext *tc);
@@ -236,9 +238,16 @@ pseudoInstWork(ThreadContext *tc, uint8_t func, uint64_t &result)
       case M5OP_WAIT_ACCEL_ID:
         result = invokeSimcall<ABI, store_ret>(tc, waitaccelid);
         return true;
-      case M5OP_RESERVED5:
-        warn("Unimplemented m5 op (%#x)\n", func);
-        return false;
+
+      case M5OP_NVDLA_READ_REG:
+        result = invokeSimcall<ABI, store_ret>(tc, readregaccel);
+        // warn("Unimplemented m5 op (%#x)\n", func);
+        return true;
+
+      case M5OP_NVDLA_WRITE_REG:
+        invokeSimcall<ABI>(tc, writeregaccel);
+        // warn("Unimplemented m5 op (%#x)\n", func);
+        return true;
 
       /* dist-gem5 functions */
       case M5OP_DIST_TOGGLE_SYNC:
