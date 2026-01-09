@@ -39,10 +39,14 @@
 
 #include "cpu/minor/dyn_inst.hh"
 #include "cpu/minor/fetch1.hh"
+#include "cpu/minor/lsq.hh"
 #include "cpu/minor/pipeline.hh"
 #include "debug/Drain.hh"
 #include "debug/MinorCPU.hh"
+#include "debug/NvDlaDevice.hh"
 #include "debug/Quiesce.hh"
+#include "mem/packet.hh"
+#include "mem/packet_access.hh"
 
 namespace gem5
 {
@@ -437,6 +441,44 @@ MinorCPU::waitAccelID(int accel_id)
         default:
             fatal("waitAccelID: Unknown accel id.\n");
     }
+}
+
+uint32_t
+MinorCPU::NvDlaReadReg(Addr addr)
+{
+    DPRINTF(NvDlaDevice, "[GEM5 LOG] Trying to read_reg(0x%016x)\n", addr);
+    // we send a null packet telling we have finished
+    RequestPtr req = std::make_shared<Request>(addr, 4,
+                                            Request::UNCACHEABLE, 0);
+    PacketPtr pkt = nullptr;
+    // we create the real packet, write request
+    pkt = Packet::createRead(req);
+
+    nvdla_port_plus.sendTimingReq(pkt);
+
+    DPRINTF(NvDlaDevice, "[GEM5 LOG] Trying to get response...\n");
+    DPRINTF(NvDlaDevice, "[GEM5 LOG] Got response: %u\n",
+        pkt->getLE<uint32_t>());
+
+    return pkt->getLE<uint32_t>();
+}
+
+void
+MinorCPU::NvDlaWriteReg(uint32_t data, Addr addr)
+{
+    DPRINTF(NvDlaDevice, "[GEM5 LOG] Trying to write_reg(0x%016x), "
+        "data: 0x%08x\n",
+        addr, data);
+    // we send a null packet telling we have finished
+    RequestPtr req = std::make_shared<Request>(addr, 4,
+                                            Request::UNCACHEABLE, 0);
+    PacketPtr pkt = nullptr;
+    // we create the real packet, write request
+    pkt = Packet::createWrite(req);
+    pkt->allocate();
+    pkt->setLE<uint32_t>(data);
+
+    nvdla_port_plus.sendTimingReq(pkt);
 }
 
 } // namespace gem5
