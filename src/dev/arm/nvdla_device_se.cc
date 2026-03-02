@@ -45,6 +45,7 @@ NvDlaDeviceSE::NvDlaDeviceSE(const NvDlaDeviceSEParams &params) :
     traceMode(params.trace_mode),
     engineStarted(false),
     onRead(false),
+    netFinished(false),
     system(params.system),
     enableObject(params.enableRTLObject),
     enableWaveform(params.enableWaveform),
@@ -388,6 +389,17 @@ NvDlaDeviceSE::runIterationNVDLA() {
                     flushing_spm = 0;
                     // printf("nvdla#%d spm flush complete!\n", id_nvdla);
                 }
+            }
+        } else if (netFinished) {
+            // write back dirty data in spm to main memory
+            if (!flushing_spm) {
+                wr->spm->clear_and_write_back_dirty();
+                flushing_spm = 1;
+            }
+            // all items have been flushed to dma write engine
+            if (flushing_spm && output.dma_write_buffer.empty()) {
+                flushing_spm = 0;
+                // printf("nvdla#%d spm flush complete!\n", id_nvdla);
             }
         }
     }
@@ -1003,6 +1015,15 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
                     pkt->getSize(), pkt->getLE<uint32_t>());
 
                 owner->onRead = false;
+                return 0;
+            } else if (pkt->getAddr() == 0x20004) {
+                pkt->allocate();
+
+                DPRINTF(NvDlaDeviceSE,
+                    "read req: packet size: %d, data: 0x%08x\n",
+                    pkt->getSize(), pkt->getLE<uint32_t>());
+
+                owner->netFinished = true;
                 return 0;
             }
 

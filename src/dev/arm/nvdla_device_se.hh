@@ -572,6 +572,7 @@ public:
   protected:
     // ArmInterruptPin *const interrupt;
     bool interruptRaised;
+    bool netFinished;
     bool onRead;
     uint32_t readData;
 
