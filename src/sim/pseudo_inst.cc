@@ -666,20 +666,20 @@ waitaccelid(ThreadContext *tc, int accel_id)
     return tc->getCpuPtr()->waitAccelID(accel_id);
 }
 
-uint32_t readregaccel(ThreadContext *tc, Addr addr)
+uint32_t readregaccel(ThreadContext *tc, int accel_id, Addr addr)
 {
     DPRINTF(PseudoInst,
             "PseudoInst::readregaccel(0x%08x)\n", addr);
 
-    return tc->getCpuPtr()->NvDlaReadReg(addr);
+    return tc->getCpuPtr()->NvDlaReadReg(accel_id, addr);
 }
 
-void writeregaccel(ThreadContext *tc, uint32_t data, Addr addr)
+void writeregaccel(ThreadContext *tc, int accel_id, uint32_t data, Addr addr)
 {
     DPRINTF(PseudoInst,
             "PseudoInst::writeregaccel(0x%08x, 0x%08x)\n", data, addr);
 
-    tc->getCpuPtr()->NvDlaWriteReg(data, addr);
+    tc->getCpuPtr()->NvDlaWriteReg(accel_id, data, addr);
 }
 
 } // namespace pseudo_inst

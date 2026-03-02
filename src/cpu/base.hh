@@ -224,8 +224,9 @@ class BaseCPU : public ClockedObject
     {
       public:
 
-        NvDlaPort(BaseCPU *_cpu)
-            : TimingCPUPort(_cpu->name() + ".nvdla_port_plus", _cpu),
+        NvDlaPort(BaseCPU *_cpu, std::string accel_id)
+            : TimingCPUPort(
+                _cpu->name() + ".nvdla_port_plus_" + accel_id, _cpu),
               tickEvent(_cpu)
         { }
 
@@ -257,7 +258,8 @@ class BaseCPU : public ClockedObject
     rtlNVDLA* nvdla_2;
     rtlNVDLA* nvdla_3;
 
-    NvDlaPort nvdla_port_plus;
+    NvDlaPort nvdla_port_plus_0;
+    NvDlaPort nvdla_port_plus_1;
 
     int num_accels;
 
@@ -282,13 +284,13 @@ class BaseCPU : public ClockedObject
         return !finishedAccelerator0;
     };
 
-    virtual uint32_t NvDlaReadReg(Addr addr) {
+    virtual uint32_t NvDlaReadReg(int accel_id, Addr addr) {
         std::cout << "THIS SHOULD NOT BE PRINTED, " <<
         " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
         return UINT32_MAX;
     }
 
-    virtual void NvDlaWriteReg(uint32_t data, Addr addr) {
+    virtual void NvDlaWriteReg(int accel_id, uint32_t data, Addr addr) {
         std::cout << "THIS SHOULD NOT BE PRINTED, " <<
         " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
         return;
@@ -313,7 +315,7 @@ class BaseCPU : public ClockedObject
      *
      * @return a reference to the data port
      */
-    Port &getNvDlaPort();
+    Port &getNvDlaPort(int n);
 
     /**
      * Purely virtual method that returns a reference to the data

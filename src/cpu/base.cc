@@ -136,7 +136,8 @@ BaseCPU::BaseCPU(const Params &p, bool is_checker)
       nvdla_port_1(this,"1"),
       nvdla_port_2(this,"2"),
       nvdla_port_3(this,"3"),
-      nvdla_port_plus(this),
+      nvdla_port_plus_0(this, "0"),
+      nvdla_port_plus_1(this, "1"),
       num_accels(p.num_accels),
       modelResetPort(p.name + ".model_reset"),
       interrupts(p.interrupts), numThreads(p.numThreads), system(p.system),
@@ -491,8 +492,10 @@ BaseCPU::getPort(const std::string &if_name, PortID idx)
         return getAccelPort(2);
     else if (if_name == "accel_port_3")
         return getAccelPort(3);
-    else if (if_name == "nvdla_port_plus")
-        return getNvDlaPort();
+    else if (if_name == "nvdla_port_plus_0")
+        return getNvDlaPort(0);
+    else if (if_name == "nvdla_port_plus_1")
+        return getNvDlaPort(1);
     else
         return ClockedObject::getPort(if_name, idx);
 }
@@ -518,9 +521,13 @@ BaseCPU::getAccelPort(int n)
 }
 
 Port &
-BaseCPU::getNvDlaPort()
+BaseCPU::getNvDlaPort(int n)
 {
-    return nvdla_port_plus;
+    if (n == 0) {
+        return nvdla_port_plus_0;
+    } else {
+        return nvdla_port_plus_1;
+    }
 }
 
 void
