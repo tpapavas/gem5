@@ -29,23 +29,23 @@ def parse_args():
     """
     parser.add_argument(
         "--nvdla-compiler",
-        default="/home/georgrizos/vp_big_g/vp-bin/usr/local/nvdla/compiler/nvdla_compiler",
+        default="~/tools/GEM5-NVDLA/vp-bin/usr/local/nvdla/compiler/nvdla_compiler",
         help="Path to NVDLA compiler",
     )
     parser.add_argument(
         "--qemu-bin",
-        default="/home/georgrizos/vp_big_g/vp-bin/usr/local/nvdla/vp/aarch64_toplevel",
+        default="~/tools/GEM5-NVDLA/vp-bin/usr/local/nvdla/vp/aarch64_toplevel",
         help="Path to qemu binary. By default it is pointing to the self-built qemu binary. Set to "
         "/usr/local/nvdla/aarch64_toplevel if one wants to use the one provided in docker image",
     )
     parser.add_argument(
         "--qemu-lua",
-        default="/home/georgrizos/vp_big_g/vp-bin/usr/local/nvdla/aarch64_nvdla.lua",
+        default="~/tools/GEM5-NVDLA/vp-bin/usr/local/nvdla/aarch64_nvdla.lua",
         help="Path to configuration file of running qemu. Using the one in docker image is ok.",
     )
     parser.add_argument(
         "--out-dir",
-        default="/home/georgrizos/nvdla/traces/lenet_pipeline/",
+        default="~/tools/GEM5-NVDLA/nvdla/traces/lenet_pipeline/",
         help="directory to put the generated sc.log, register txn and mem traces",
     )
     parser.add_argument(
@@ -77,7 +77,7 @@ def main():
         run_cmd = (
             "cd "
             + os.path.dirname(os.path.abspath(__file__))
-            + " && python3.6 caffe2trace.py --model-name "
+            + " && python3 caffe2trace_native.py --model-name "
             + options.model_name
             + "_stage_"
             + str(i + 1)

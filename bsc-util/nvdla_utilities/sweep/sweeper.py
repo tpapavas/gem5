@@ -94,7 +94,7 @@ class Sweeper:
     def __init__(self, args):
         self.home_path = os.popen("cd ~/ && pwd").readlines()[0].strip("\n")
         self.new_home = args.home.rstrip("/")
-        self.gem5_nvdla_dir = "/home/georgrizos/gem5-original/"
+        self.gem5_nvdla_dir = "~/GEM5/gem5-dev"
         self.gen_points = args.gen_points
         self.cpt_dir = None
         self.vp_out_dir = args.vp_out_dir
@@ -453,7 +453,7 @@ class Sweeper:
                 "config-dir": os.path.abspath(
                     os.path.join(
                         os.path.dirname(__file__),
-                        "../../../configs/example/arm/fs_bigLITTLE_RTL.py",
+                        "../../../configs/example/arm/fs_bigLITTLE_RTL_original.py",
                     )
                 ).replace(self.home_path, self.new_home)
             },
@@ -619,7 +619,7 @@ class Sweeper:
                     + self.gem5_nvdla_dir
                     + " && "
                     + bin_path
-                    + " configs/example/arm/fs_bigLITTLE_RTL.py"
+                    + " configs/example/arm/fs_bigLITTLE_RTL_original.py"
                     " --big-cpus 0 --little-cpus 1 --cpu-type atomic"
                     " --bootscript=configs/boot/hack_back_ckpt.rcS"
                 ).readlines()

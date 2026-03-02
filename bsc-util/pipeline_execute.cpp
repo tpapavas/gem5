@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     int map_time_size = batch_num + worker_num;
     int map_space_size = worker_num + 1;
 
-    //= {2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0, 2};
+    //= {2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0};
     uint8_t task_map[map_time_size * map_space_size];
     for (int i = 0; i < map_time_size * map_space_size; i++)
         task_map[i] = FINISHED;
