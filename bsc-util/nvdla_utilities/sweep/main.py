@@ -41,7 +41,7 @@ def main():
     )
     parser.add_argument(
         "--disk-image",
-        default="/home/georgrizos/gem5_linux_images/ubuntu-18.04-arm64-docker.img",
+        default="~/tools/GEM5-NVDLA/gem5_linux_images/ubuntu-18.04-arm64-docker.img",
         help="path to the disk image for full system simulation",
     )
     parser.add_argument("--gem5-binary", help="Path to the gem5 binary.")
