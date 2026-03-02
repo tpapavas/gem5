@@ -181,6 +181,9 @@ def addOptions(parser):
         "--kernel-init", type=str, default="/sbin/init", help="Override init"
     )
     parser.add_argument(
+        "--dlas", type=int, default=1, help="Number of available DLAs"
+    )
+    parser.add_argument(
         "--big-cpus",
         type=int,
         default=1,
@@ -573,7 +576,7 @@ def main():
 
     # Program to execute
     # binary = 'tests/test-progs/nvdla-se/nvdla-se'
-    binary = "/home/tpapavasileiou/tools/GEM5-NVDLA/sw-gem5/kumd/umd/out/apps/runtime/nvdla_runtime/nvdla_runtime"
+    binary = "~/tools/GEM5-NVDLA/sw-gem5/kumd/umd/out/apps/runtime/nvdla_runtime/nvdla_runtime"
 
     # Simulation system
     system = System()
@@ -646,25 +649,36 @@ def main():
     system.iobridge.cpu_side_port = system.membus.mem_side_ports
 
     # Create NVDLA Device
-    system.nvdla = NvDlaDeviceSE(
-        pio_addr=0x40000000,
-        pio_size=0x20040,
-        dma_enable=True,
-        spm_latency=options.embed_spm_lat,
-        spm_line_size=1024,
-        spm_size=options.embed_spm_size,
-        use_shared_spm=options.shared_spm,
-        assoc=options.embed_spm_assoc.lower(),
-        base_addr_dram=0x40000000,
-        base_addr_sram=0x0,
-    )
-    system.nvdla.pio = system.iobus.mem_side_ports
+    system.nvdla = [
+        NvDlaDeviceSE(
+            id_nvdla=i,
+            pio_addr=0x40000000 + 0x20040 * i,
+            pio_size=0x20040,
+            dma_enable=True,
+            spm_latency=options.embed_spm_lat,
+            spm_line_size=1024,
+            spm_size=options.embed_spm_size,
+            use_shared_spm=options.shared_spm,
+            assoc=options.embed_spm_assoc.lower(),
+            base_addr_dram=0x40000000,
+            base_addr_sram=0x0,
+        )
+        for i in range(options.dlas)
+    ]
+    for i in range(options.dlas):
+        system.nvdla[i].pio = system.iobus.mem_side_ports
 
     # for DMA
-    system.nvdla.dram_port = system.membus.cpu_side_ports
-    system.nvdla.dma_port = system.membus.cpu_side_ports
+    for i in range(options.dlas):
+        system.nvdla[i].dram_port = system.membus.cpu_side_ports
+        system.nvdla[i].dma_port = system.membus.cpu_side_ports
 
-    system.nvdla.cmd_cpu_side = system.cpu.nvdla_port_plus
+    for i in range(options.dlas):
+        exec(
+            f"system.nvdla[{i}].cmd_cpu_side = system.cpu.nvdla_port_plus_{i}"
+        )
+        # system.nvdla[0].cmd_cpu_side = system.cpu.nvdla_port_plus_0
+        # system.nvdla[1].cmd_cpu_side = system.cpu.nvdla_port_plus_1
 
     # for caches
     # system.nvdla_pr_cache = Cache(
@@ -716,11 +730,13 @@ def main():
     process.cmd = [
         binary,
         "--loadable",
-        "/home/tpapavasileiou/tools/GEM5-NVDLA/vp-bin/usr/local/nvdla/lenet.nvdla",
+        "~/tools/GEM5-NVDLA/vp-bin/usr/local/nvdla/lenet_batch_2.nvdla",
         "--image",
-        "/home/tpapavasileiou/tools/GEM5-NVDLA/vp-bin/usr/local/nvdla/eight_invert.pgm",
+        "~/tools/GEM5-NVDLA/vp-bin/usr/local/nvdla/lenet_batch_2.pgm",
         "--normalize",
         "255",
+        "--dlas",
+        options.dlas,
     ]
 
     # Set the cpu to use the process as its workload and create thread contexts
