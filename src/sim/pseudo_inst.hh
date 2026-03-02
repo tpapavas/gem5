@@ -97,8 +97,8 @@ void startaccelid(ThreadContext *tc, Addr addr,
                 uint64_t elements, Addr region_mem, int accel_id);
 uint64_t waitaccel(ThreadContext *tc, Addr addr, uint64_t elements);
 uint64_t waitaccelid(ThreadContext *tc, int accel_id);
-uint32_t readregaccel(ThreadContext *tc, Addr addr);
-void writeregaccel(ThreadContext *tc, uint32_t data, Addr addr);
+uint32_t readregaccel(ThreadContext *tc, int accel_id, Addr addr);
+void writeregaccel(ThreadContext *tc, int accel_id, uint32_t data, Addr addr);
 void m5Syscall(ThreadContext *tc);
 void togglesync(ThreadContext *tc);
 void triggerWorkloadEvent(ThreadContext *tc);

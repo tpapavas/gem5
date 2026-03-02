@@ -444,9 +444,10 @@ MinorCPU::waitAccelID(int accel_id)
 }
 
 uint32_t
-MinorCPU::NvDlaReadReg(Addr addr)
+MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
 {
-    DPRINTF(NvDlaDevice, "[GEM5 LOG] Trying to read_reg(0x%016x)\n", addr);
+    DPRINTF(NvDlaDevice, "[GEM5 LOG] DLA #%d: Trying to read_reg(0x%016x)\n",
+        accel_id, addr);
     // we send a null packet telling we have finished
     RequestPtr req = std::make_shared<Request>(addr, 4,
                                             Request::UNCACHEABLE, 0);
@@ -454,21 +455,31 @@ MinorCPU::NvDlaReadReg(Addr addr)
     // we create the real packet, write request
     pkt = Packet::createRead(req);
 
-    nvdla_port_plus.sendTimingReq(pkt);
+    switch(accel_id) {
+        case 0:
+            nvdla_port_plus_0.sendTimingReq(pkt);
+            break;
+        case 1:
+            nvdla_port_plus_1.sendTimingReq(pkt);
+            break;
+        default:
+            assert(false);
+    }
 
-    DPRINTF(NvDlaDevice, "[GEM5 LOG] Trying to get response...\n");
-    DPRINTF(NvDlaDevice, "[GEM5 LOG] Got response: %u\n",
-        pkt->getLE<uint32_t>());
+    DPRINTF(NvDlaDevice, "[GEM5 LOG] DLA #%d: Trying to get response...\n",
+        accel_id);
+    DPRINTF(NvDlaDevice, "[GEM5 LOG] DLA #%d: Got response: %u\n",
+        accel_id, pkt->getLE<uint32_t>());
 
     return pkt->getLE<uint32_t>();
 }
 
 void
-MinorCPU::NvDlaWriteReg(uint32_t data, Addr addr)
+MinorCPU::NvDlaWriteReg(int accel_id, uint32_t data, Addr addr)
 {
-    DPRINTF(NvDlaDevice, "[GEM5 LOG] Trying to write_reg(0x%016x), "
+    DPRINTF(NvDlaDevice, "[GEM5 LOG] DLA #%d: Trying to write_reg(0x%016x), "
         "data: 0x%08x\n",
-        addr, data);
+        accel_id, addr, data);
     // we send a null packet telling we have finished
     RequestPtr req = std::make_shared<Request>(addr, 4,
                                             Request::UNCACHEABLE, 0);
@@ -478,7 +489,16 @@ MinorCPU::NvDlaWriteReg(uint32_t data, Addr addr)
     pkt->allocate();
     pkt->setLE<uint32_t>(data);
 
-    nvdla_port_plus.sendTimingReq(pkt);
+    switch(accel_id) {
+        case 0:
+            nvdla_port_plus_0.sendTimingReq(pkt);
+            break;
+        case 1:
+            nvdla_port_plus_1.sendTimingReq(pkt);
+            break;
+        default:
+            assert(false);
+    }
 }
 
 } // namespace gem5
