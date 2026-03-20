@@ -454,6 +454,7 @@ MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
     PacketPtr pkt = nullptr;
     // we create the real packet, write request
     pkt = Packet::createRead(req);
+    pkt->allocate();
 
     switch(accel_id) {
         case 0:
@@ -488,7 +489,6 @@ MinorCPU::NvDlaWriteReg(int accel_id, uint32_t data, Addr addr)
     pkt = Packet::createWrite(req);
     pkt->allocate();
     pkt->setLE<uint32_t>(data);
-
     switch(accel_id) {
         case 0:
             nvdla_port_plus_0.sendTimingReq(pkt);

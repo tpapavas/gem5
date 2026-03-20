@@ -44,6 +44,9 @@
 
 #include "systemc/ext/systemc"
 #include "systemc/ext/tlm"
+
+#include "NV_nvdla.h"
+
 #define N 1024
 
 using namespace std;
@@ -52,106 +55,106 @@ using namespace gem5;
 
 SC_MODULE(Initiator)
 {
-    public:
+public:
     tlm_utils::simple_initiator_socket<Initiator> iSocket;
 
-    protected:
+protected:
     int data[16];
 
-    public:
-    SC_CTOR(Initiator): iSocket("iSocket")
+public:
+    SC_CTOR(Initiator) : iSocket("iSocket")
     {
         SC_THREAD(process);
 
-        for (int i=0; i<16; i++) {
+        for (int i = 0; i < 16; i++)
+        {
             data[i] = 0;
         }
     }
 
-    protected:
+    void write_reg(uint32_t addr, uint32_t data)
+    {
+        tlm::tlm_generic_payload trans;
+
+        trans.set_command(tlm::TLM_WRITE_COMMAND);
+        trans.set_address(addr);
+        trans.set_data_length(4);
+        trans.set_streaming_width(4);
+        trans.set_data_ptr(reinterpret_cast<unsigned char *>(&data));
+
+        sc_time delay = sc_time(10, SC_NS);
+
+        iSocket->b_transport(trans, delay);
+    }
+
+protected:
     void process()
     {
-        sc_time delay;
+        wait(100, SC_NS);
 
-        for (int i = 0; i < N; i++)
-        {
-            tlm::tlm_generic_payload trans;
-            data[i % 16] = i;
-            trans.set_address(rand()%N);
-            trans.set_data_length(4);
-            trans.set_streaming_width(4);
-            trans.set_command(tlm::TLM_WRITE_COMMAND);
-            trans.set_data_ptr(reinterpret_cast<unsigned char*>(&data[i%16]));
-            trans.set_response_status( tlm::TLM_INCOMPLETE_RESPONSE );
+        std::cout << "Starting minimal convolution\n";
 
-            sc_time delay = sc_time(10, SC_NS);
+        /* interrupt setup */
+        //write_reg(0x9004, 0x1);
 
-            iSocket->b_transport(trans, delay);
+        //std::cout << "CDMA started\n";
 
-            if (trans.is_response_error())
-            {
-                SC_REPORT_FATAL(name(), "Response error");
-            }
-
-            wait(delay);
-
-            cout << "\033[1;31m("
-                 << name()
-                 << ")@"  << setfill(' ') << setw(12) << sc_time_stamp()
-                 << ": " << setw(12) << "Write to "
-                 << "Addr = " << setfill('0') << setw(8)
-                 << dec << trans.get_address()
-                 << " Data = " << "0x" << setfill('0') << setw(8)
-                 << hex << data[i%16] << "(b_transport) \033[0m" << endl;
-        }
     }
 };
 
 SC_MODULE(Target)
 {
-    public:
+public:
     tlm_utils::simple_target_socket<Target> tSocket;
 
-    private:
+private:
     unsigned char mem[512];
 
-    public:
+public:
     SC_HAS_PROCESS(Target);
-    Target(sc_module_name name, unsigned int bufferSize = 8) :
-         sc_module(name),
-         tSocket("tSocket")
+    Target(sc_module_name name, unsigned int bufferSize = 8) : sc_module(name),
+                                                            tSocket("tSocket")
     {
         tSocket.register_b_transport(this, &Target::b_transport);
     }
 
-    virtual void b_transport(tlm::tlm_generic_payload& trans,
-                             sc_time& delay)
+    virtual void b_transport(tlm::tlm_generic_payload & trans,
+                             sc_time & delay)
     {
+        tlm::tlm_command cmd = trans.get_command();
+        uint64_t addr = trans.get_address();
+
+        if (cmd == tlm::TLM_READ_COMMAND)
+            std::cout << "[DBB READ] addr=" << addr << std::endl;
+
+        if (cmd == tlm::TLM_WRITE_COMMAND)
+            std::cout << "[DBB WRITE] addr=" << addr << std::endl;
         executeTransaction(trans);
     }
 
-
     // Common to b_transport and nb_transport
-    void executeTransaction(tlm::tlm_generic_payload& trans)
+    void executeTransaction(tlm::tlm_generic_payload & trans)
     {
         tlm::tlm_command cmd = trans.get_command();
-        sc_dt::uint64    adr = trans.get_address();
-        unsigned char*   ptr = trans.get_data_ptr();
-        unsigned int     len = trans.get_data_length();
-        unsigned char*   byt = trans.get_byte_enable_ptr();
-        unsigned int     wid = trans.get_streaming_width();
+        sc_dt::uint64 adr = trans.get_address();
+        unsigned char *ptr = trans.get_data_ptr();
+        unsigned int len = trans.get_data_length();
+        unsigned char *byt = trans.get_byte_enable_ptr();
+        unsigned int wid = trans.get_streaming_width();
 
-
-        if (trans.get_address() >= 512) {
-            trans.set_response_status( tlm::TLM_ADDRESS_ERROR_RESPONSE );
+        if (trans.get_address() >= 512)
+        {
+            trans.set_response_status(tlm::TLM_ADDRESS_ERROR_RESPONSE);
             return;
         }
-        if (byt != 0) {
-            trans.set_response_status( tlm::TLM_BYTE_ENABLE_ERROR_RESPONSE );
+        if (byt != 0)
+        {
+            trans.set_response_status(tlm::TLM_BYTE_ENABLE_ERROR_RESPONSE);
             return;
         }
-        if (len > 4 || wid < len) {
-            trans.set_response_status( tlm::TLM_BURST_ERROR_RESPONSE );
+        if (len > 4 || wid < len)
+        {
+            trans.set_response_status(tlm::TLM_BURST_ERROR_RESPONSE);
             return;
         }
 
@@ -170,66 +173,110 @@ SC_MODULE(Target)
 
         cout << "\033[1;32m("
              << name()
-             << ")@"  << setfill(' ') << setw(12) << sc_time_stamp()
+             << ")@" << setfill(' ') << setw(12) << sc_time_stamp()
              << ": " << setw(12) << (cmd ? "Exec. Write " : "Exec. Read ")
              << "Addr = " << setfill('0') << setw(8) << dec << adr
              << " Data = " << "0x" << setfill('0') << setw(8) << hex
-             << *reinterpret_cast<int*>(ptr)
+             << *reinterpret_cast<int *>(ptr)
              << "\033[0m" << endl;
 
-        trans.set_response_status( tlm::TLM_OK_RESPONSE );
+        trans.set_response_status(tlm::TLM_OK_RESPONSE);
     }
-
 };
 
-template<unsigned int I, unsigned int T>
+template <unsigned int I, unsigned int T>
 SC_MODULE(Interconnect)
 {
-    public:
+public:
     tlm_utils::simple_target_socket_tagged<Interconnect> tSocket[T];
     tlm_utils::simple_initiator_socket_tagged<Interconnect> iSocket[I];
 
     SC_CTOR(Interconnect)
     {
-        for (unsigned int i = 0; i < T; i++) {
+        for (unsigned int i = 0; i < T; i++)
+        {
             tSocket[i].register_b_transport(this,
                                             &Interconnect::b_transport,
                                             i);
         }
     }
 
-    private:
-
+private:
     int routeFW(int inPort, tlm::tlm_generic_payload &trans)
     {
         int outPort = 0;
 
         // Memory map implementation:
-        if (trans.get_address() < 512) {
+        if (trans.get_address() < 512)
+        {
             outPort = 0;
-        } else if (trans.get_address() >= 512 && trans.get_address() < 1024) {
+        }
+        else if (trans.get_address() >= 512 && trans.get_address() < 1024)
+        {
             // Correct Address:
             trans.set_address(trans.get_address() - 512);
             outPort = 1;
-        } else {
-            trans.set_response_status( tlm::TLM_ADDRESS_ERROR_RESPONSE );
+        }
+        else
+        {
+            trans.set_response_status(tlm::TLM_ADDRESS_ERROR_RESPONSE);
         }
 
         return outPort;
     }
 
-    virtual void b_transport( int id,
-                              tlm::tlm_generic_payload& trans,
-                              sc_time& delay )
+    virtual void b_transport(int id,
+                             tlm::tlm_generic_payload &trans,
+                             sc_time &delay)
     {
         sc_assert(id < T);
         int outPort = routeFW(id, trans);
         iSocket[outPort]->b_transport(trans, delay);
     }
-
 };
 
+SC_MODULE(nvdlaTOP)
+{
+public:
+    Initiator cpu;
+    Target mem_dbb;
+    Target mem_sram;
 
+    sc_core::sc_signal<bool> irq_signal;
+    SC_CTOR(nvdlaTOP)
+        : cpu("CPU"),
+          mem_dbb("DBB_MEM"),
+          mem_sram("SRAM_MEM")
+    {
+
+        auto nvdla = new scsim::cmod::NV_nvdla("nvdla_test");
+
+        // CSB
+        cpu.iSocket.bind(nvdla->nvdla_host_master_if);
+
+        // DBB memory
+        nvdla->nvdla_core2dbb_axi4.bind(mem_dbb.tSocket);
+
+        // SRAM memory
+        nvdla->nvdla_core2cvsram_axi4.bind(mem_sram.tSocket);
+
+        // IRQ binding (IMPORTANT)
+        nvdla->nvdla_intr(irq_signal);
+        std::cout << "[TOP] NVDLA connected\n";
+    }
+};
+
+int sc_main(int __attribute__((unused)) sc_argc,
+            char __attribute__((unused)) * sc_argv[])
+{
+    nvdlaTOP top("top");
+
+    sc_start();
+    top.cpu.write_reg(0x955555,0x111);
+    top.irq_signal.write(true);
+    return 0;
+}
+/*
 int
 sc_main (int __attribute__((unused)) sc_argc,
              char __attribute__((unused)) *sc_argv[])
@@ -252,3 +299,4 @@ sc_main (int __attribute__((unused)) sc_argc,
 
     return 0;
 }
+*/
