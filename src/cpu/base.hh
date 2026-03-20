@@ -68,6 +68,7 @@ class CheckerCPU;
 class ThreadContext;
 
 class rtlNVDLA;
+class ScNvDlaSE;
 struct AddressMonitor
 {
     AddressMonitor();

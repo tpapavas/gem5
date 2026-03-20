@@ -158,7 +158,9 @@ def instantiate(ckpt_dir=None):
             obj.loadState(ckpt)
     else:
         for obj in root.descendants():
-            obj.initState()
+            if not hasattr(obj, "_mapped"):
+                obj.initState()
+                obj._mapped = True
 
     # Check to see if any of the stat events are in the past after resuming from
     # a checkpoint, If so, this call will shift them to be at a valid time.

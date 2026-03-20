@@ -58,83 +58,6 @@ from devices import AtomicCluster, KvmCluster, FastmodelCluster
 default_mem_size = "1GB"
 
 
-def createSystem(
-    caches,
-    kernel,
-    accelerators,
-    ddr_type,
-    bootscript,
-    machine_type="VExpress_GEM5",
-    disks=[],
-    cvsram_enable=False,
-    cvsram_size="1MB",
-    mem_size=default_mem_size,
-    bootloader=None,
-    options=None,
-):
-    platform = ObjectList.platform_list.get(machine_type)
-    m5.util.inform("Simulated platform: %s", platform.__name__)
-
-    sys = devices.SimpleSystem(
-        caches,
-        mem_size,
-        accelerators,
-        cvsram_enable,
-        cvsram_size,
-        platform(),
-        workload=ArmFsLinux(object_file=SysPaths.binary(kernel)),
-        readfile=bootscript,
-    )
-
-    # sys.mem_ctrls = [ SimpleMemory(range=r, port=sys.membus.mem_side_ports) for r in sys.mem_ranges ]
-    sys.mem_ranges.append(AddrRange(start=0xC0000000, size="1GB"))
-    src_mem_ranges = sys.mem_ranges[:-4] if cvsram_enable else sys.mem_ranges
-    sys.mem_ctrls = [
-        MemCtrl(
-            dram=eval(ddr_type + "(range=r)"), port=sys.membus.mem_side_ports
-        )
-        for r in src_mem_ranges
-    ]
-    for range in sys.mem_ranges:
-        print(range.start)
-
-    sys.fake_nvdla = NvDlaDevice(
-        pio_addr=0x10200000,
-        pio_size=0x20000,
-        interrupt=ArmSPI(num=208),
-        dma_enable=options.dma_enable,
-        spm_latency=options.embed_spm_lat,
-        spm_line_size=1024,
-        spm_size=options.embed_spm_size,
-        use_shared_spm=options.shared_spm,
-        assoc=options.embed_spm_assoc.lower(),
-        base_addr_dram=0xC0000000,
-        base_addr_sram=0x0,
-    )
-    sys.fake_nvdla.pio = sys.iobus.mem_side_ports
-
-    # for DMA
-    sys.fake_nvdla.dram_port = sys.membus.cpu_side_ports
-    sys.fake_nvdla.dma_port = sys.membus.cpu_side_ports
-
-    # for caches
-    # sys.fake_nvdla_pr_cache = Cache(
-    #     tag_latency=options.accel_pr_cache_tag_lat,
-    #     data_latency=options.accel_pr_cache_dat_lat,
-    #     response_latency=options.accel_pr_cache_resp_lat,
-    #     mshrs=options.accel_pr_cache_mshr,
-    #     tgts_per_mshr=options.accel_pr_cache_tgts_per_mshr,
-    #     size=options.accel_pr_cache_size,
-    #     assoc=options.accel_pr_cache_assoc,
-    #     write_buffers=options.accel_pr_cache_wr_buf,
-    #     clusivity=options.accel_pr_cache_clus
-    # )
-    # sys.fake_nvdla.dram_port = sys.fake_nvdla_pr_cache.cpu_side
-    # sys.fake_nvdla_pr_cache.mem_side = sys.membus.cpu_side_ports
-
-    # sys.multi_thread = True
-
-
 def addOptions(parser):
     parser.add_argument(
         "--restore-from",
@@ -581,7 +504,7 @@ def main():
     )
 
     # Simulation system
-    system = System()
+    system = System(multi_thread=True)
 
     # Clock configuration
     system.clk_domain = SrcClockDomain()
@@ -595,7 +518,7 @@ def main():
 
     # Create CPU
     # system.cpu = X86MinorCPU()
-    system.cpu = ArmMinorCPU()
+    system.cpu = ArmMinorCPU(numThreads=2)
 
     # Create Gemmini device
     # system.gemmini_dev = GemminiDevA(
@@ -613,10 +536,6 @@ def main():
     # Connect L1I cache to the CPU
     system.cpu.icache.cpu_side = system.cpu.icache_port
     system.cpu.dcache.cpu_side = system.cpu.dcache_port
-
-    # # Connect Gemmini device to the CPU and L1D to Gemmini device
-    # # system.gemmini_dev.cpu_side = system.cpu.dcache_port
-    # # system.cpu.dcache.cpu_side = system.gemmini_dev.mem_side
 
     # Create L1 to L2 interconnect
     system.l2bus = L2XBar()
@@ -643,44 +562,100 @@ def main():
 
     # Connect Gemmini device to L2
     # system.gemmini_dev.dma_port = system.l2bus.cpu_side_ports
-    system.iobus = IOXBar()
-    system.iobridge = Bridge(delay="50ns")
-    system.iobridge.ranges = [AddrRange(start=0x40000000, size="1GB")]
-
-    system.iobridge.mem_side_port = system.iobus.cpu_side_ports
-    system.iobridge.cpu_side_port = system.membus.mem_side_ports
+    # system.iobus = IOXBar()
+    # system.iobridge = Bridge(delay="50ns")
+    # system.iobridge.ranges = [AddrRange(0x40000000, size=0x20040)]
+    #
+    # system.iobridge.cpu_side_port = system.membus.mem_side_ports
+    # system.iobridge.mem_side_port = system.iobus.cpu_side_ports
 
     # Create NVDLA Device
-    system.nvdla = [
-        NvDlaDeviceSE(
-            id_nvdla=i,
-            pio_addr=0x40000000 + 0x20040 * i,
-            pio_size=0x20040,
-            dma_enable=True,
-            spm_latency=options.embed_spm_lat,
-            spm_line_size=1024,
-            spm_size=options.embed_spm_size,
-            use_shared_spm=options.shared_spm,
-            assoc=options.embed_spm_assoc.lower(),
-            base_addr_dram=0x40000000,
-            base_addr_sram=0x0,
-        )
-        for i in range(options.dlas)
-    ]
-    for i in range(options.dlas):
-        system.nvdla[i].pio = system.iobus.mem_side_ports
+    # system.nvdla = [
+    #    NvDlaDeviceSE(
+    #        id_nvdla=i,
+    #        pio_addr=0x40000000 + 0x20040 * i,
+    #        pio_size=0x20040,
+    #        dma_enable=True,
+    #        spm_latency=options.embed_spm_lat,
+    #        spm_line_size=1024,
+    #        spm_size=options.embed_spm_size,
+    #        use_shared_spm=options.shared_spm,
+    #        assoc=options.embed_spm_assoc.lower(),
+    #        base_addr_dram=0x40000000,
+    #        base_addr_sram=0x0,
+    #    )
+    #    for i in range(options.dlas)
+    # ]
+    # for i in range(options.dlas):
+    #    system.nvdla[i].pio = system.iobus.mem_side_ports
+
+    csb_bridge = Gem5ToTlmBridge32()
+    # csb_bridge.addr_ranges = [AddrRange(start=0x40000000, size=0x20040)]
+    dbb_bridge = TlmToGem5Bridge32()
+    sram_bridge = TlmToGem5Bridge32()
+
+    # sc_nvdla = ScNVDLAModule()
+    target = TLM_Target()
+    initiator = TLM_Initiator()
+    transactor = Gem5ToTlmBridge32()
+    # system.target = TLM_Target()
+    system.transactor = Gem5ToTlmBridge32()
+
+    # system.nvdla = ScNVDLA(module=sc_nvdla)
+    # system.nvdla = ScNvDlaSE(csb=csb_bridge,sram=sram_bridge, dbb=dbb_bridge, module=sc_nvdla)
+
+    # CSB
+    # system.nvdla.csb.gem5 = system.cpu.nvdla_port_plus_0
+    # system.nvdla.csb.tlm = system.nvdla.module.tlm
+
+    # system.nvdla = ScNvDlaSE(transactor=transactor, tlm_target=target, tlm_initiator=initiator)
+    # system.cpu.nvdla_port_plus_0 = system.nvdla.accel_port
+    # system.cpu.nvdla_port_plus_0 = system.nvdla.transactor.gem5
+    # system.nvdla.transactor.tlm = system.nvdla.tlm_target.tlm
+
+    system.nvdla = TLM_ScNvDlaSE()
+    system.cpu.nvdla_port_plus_0 = system.transactor.gem5
+    system.transactor.tlm = system.nvdla.tlm
+
+    # system.cpu.nvdla_port_plus_0 = system.transactor.gem5
+    # system.transactor.tlm =  system.target.tlm
+
+    # system.nvdla.csb.tlm = system.nvdla.module.csb_socket
+    # system.nvdla.csb.tlm = system.nvdla.module.csb_socket
+    # system.iobus.mem_side_ports = system.nvdla.csb.gem5
+
+    # ---------------- DBB ----------------
+    # system.nvdla.module.dbb_socket = system.nvdla.dbb.tlm
+    # system.nvdla.dbb.gem5 = system.membus.cpu_side_ports
+
+    # ---------------- SRAM ----------------
+    # system.nvdla.sram.tlm = system.nvdla.module.sram_socket
+    # system.nvdla.sram.gem5 = system.membus.cpu_side_ports
+
+    # system.cpu.nvdla_port_plus_0 = system.nvdla.accel_port
+
+    # Connect CSB (configuration) to I/O bus
+    # system.nvdla.csb.gem5 = system.iobus.mem_side_ports
+    # system.cpu.nvdla_port_plus_0 = system.nvdla.csb.gem5
+    # system.cpu.nvdla_port_plus_0 = system.iobus.cpu_side_ports
+    # system.cpu.nvdla_port_plus_0 = system.membus.cpu_side_ports
+    # system.nvdla.csb.gem5 = system.iobus.mem_side_ports
+
+    # Connect DMA ports (DBB + SRAM) to memory bus
+    # system.nvdla.dbb.gem5  = system.membus.cpu_side_ports
+    # system.nvdla.sram.gem5 = system.membus.cpu_side_ports
 
     # for DMA
-    for i in range(options.dlas):
-        system.nvdla[i].dram_port = system.membus.cpu_side_ports
-        system.nvdla[i].dma_port = system.membus.cpu_side_ports
+    # for i in range(options.dlas):
+    #    system.nvdla[i].dram_port = system.membus.cpu_side_ports
+    #    system.nvdla[i].dma_port = system.membus.cpu_side_ports
 
-    for i in range(options.dlas):
-        exec(
-            f"system.nvdla[{i}].cmd_cpu_side = system.cpu.nvdla_port_plus_{i}"
-        )
-        # system.nvdla[0].cmd_cpu_side = system.cpu.nvdla_port_plus_0
-        # system.nvdla[1].cmd_cpu_side = system.cpu.nvdla_port_plus_1
+    # for i in range(options.dlas):
+    #    exec(
+    #        f"system.nvdla[{i}].cmd_cpu_side = system.cpu.nvdla_port_plus_{i}"
+    #    )
+    #    # system.nvdla[0].cmd_cpu_side = system.cpu.nvdla_port_plus_0
+    #    # system.nvdla[1].cmd_cpu_side = system.cpu.nvdla_port_plus_1
 
     # for caches
     # system.nvdla_pr_cache = Cache(
@@ -742,14 +717,18 @@ def main():
     ]
 
     # Set the cpu to use the process as its workload and create thread contexts
-    system.cpu.workload = process
+    system.cpu.workload = [process, process]
     system.cpu.createThreads()
 
+    # systemc_kernel = SystemC_Kernel(sc_nvdla=sc_nvdla)
     # Set up the root SimObject and start the simulation
-    root = Root(full_system=False, system=system)
+    kernel = SystemC_Kernel(system=system)
+    root = Root(
+        full_system=False, systemc_kernel=kernel
+    )  # , systemc_kernel=systemc_kernel)
 
     # Instantiate all of the objects we've created above
-    m5.instantiate()
+    m5.instantiate(None)
 
     # Dedicate upper 1GB to Gemmini device
     system.cpu.workload[0].map(

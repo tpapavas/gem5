@@ -83,6 +83,8 @@ Module::finish(Object *this_obj)
         // This is called from the constructor of this_obj, so it can't use
         // dynamic cast.
         sc_mod(static_cast<::sc_core::sc_module *>(this_obj->sc_obj()));
+        std::string msg = gem5::csprintf("module '%s'", name());
+        SC_REPORT_INFO("", msg.c_str());
         allModules.emplace_back(this);
     } catch (...) {
         popParentModule();
