@@ -1,8 +1,6 @@
 #ifndef __ACCELERATORS_SC_NVDLA_SE_HH__
 #define __ACCELERATORS_SC_NVDLA_SE_HH__
 
-#include <tlm_utils/multi_passthrough_initiator_socket.h>
-#include <tlm_utils/multi_passthrough_target_socket.h>
 #include <tlm_utils/simple_initiator_socket.h>
 #include <tlm_utils/simple_target_socket.h>
 
