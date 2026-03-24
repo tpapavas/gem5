@@ -443,6 +443,23 @@ MinorCPU::waitAccelID(int accel_id)
     }
 }
 
+bool
+MinorCPU::NvDlaRespReg(){
+    std::cout << "[MinorCPU::NvDlaRespReg()] nvdlaWaitingResp = "
+              << nvdlaWaitingResp
+              << " tick=" << std::dec << curTick() / 1000 << " ns"
+              << "\n";
+    return nvdlaWaitingResp;
+}
+
+uint32_t
+MinorCPU::NvDlaGetData(){
+    std::cout << "[MinorCPU::NvDlaGetData()] Data are  0x: "
+              << std::hex << nvdlaReqData
+              << " tick=" << std::dec << curTick() / 1000 << " ns"
+              << "\n";
+    return nvdlaReqData;
+}
 uint32_t
 MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
 {
@@ -455,7 +472,52 @@ MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
     // we create the real packet, write request
     pkt = Packet::createRead(req);
     pkt->allocate();
+    nvdlaReqQ = pkt;
+    bool sent;
 
+    switch(accel_id) {
+        case 0:
+            std::cout << "[NvDlaReadReg CPU SEND READ] addr=0x"
+                << std::hex << addr
+                << " tick=" << std::dec <<  curTick() / 1000 << " ns"
+                << std::endl;
+            sent = nvdla_port_plus_0.sendTimingReq(pkt);
+            std::cout << "[NvDlaReadReg] sendTimingReq sent=" << sent
+                      << " addr=0x" << std::hex << addr << "\n";
+            break;
+        case 1:
+            nvdla_port_plus_1.sendTimingReq(pkt);
+            break;
+        default:
+            assert(false);
+    }
+    //std::cout << "[NvDlaReadReg Not return in DLA! CPU SEND RESULT] sent="
+    //          << sent
+    //            << " tick=" << curTick()
+    //            << std::endl;
+    nvdlaWaitingResp = true;
+
+    if (!sent){
+        std::cout << "[NvDlaReadReg] Blocked - waiting for retry\n";
+        blockedPkt = nvdlaReqQ;
+    }
+
+    return 0;
+}
+
+/*
+uint32_t
+MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
+{
+    DPRINTF(NvDlaDevice, "[GEM5 LOG] DLA #%d: Trying to read_reg(0x%016x)\n",
+        accel_id, addr);
+    // we send a null packet telling we have finished
+    RequestPtr req = std::make_shared<Request>(addr, 4,
+                                            Request::UNCACHEABLE, 0);
+    PacketPtr pkt = nullptr;
+    // we create the real packet, write request
+    pkt = Packet::createRead(req);
+    pkt->allocate();
     switch(accel_id) {
         case 0:
             nvdla_port_plus_0.sendTimingReq(pkt);
@@ -474,6 +536,7 @@ MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
 
     return pkt->getLE<uint32_t>();
 }
+*/
 
 void
 MinorCPU::NvDlaWriteReg(int accel_id, uint32_t data, Addr addr)

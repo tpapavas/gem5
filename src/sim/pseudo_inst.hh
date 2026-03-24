@@ -99,6 +99,8 @@ uint64_t waitaccel(ThreadContext *tc, Addr addr, uint64_t elements);
 uint64_t waitaccelid(ThreadContext *tc, int accel_id);
 uint32_t readregaccel(ThreadContext *tc, int accel_id, Addr addr);
 void writeregaccel(ThreadContext *tc, int accel_id, uint32_t data, Addr addr);
+bool respaccel(ThreadContext *tc);
+uint32_t getdataaccel(ThreadContext *tc);
 void m5Syscall(ThreadContext *tc);
 void togglesync(ThreadContext *tc);
 void triggerWorkloadEvent(ThreadContext *tc);
@@ -241,6 +243,15 @@ pseudoInstWork(ThreadContext *tc, uint8_t func, uint64_t &result)
 
       case M5OP_NVDLA_READ_REG:
         result = invokeSimcall<ABI, store_ret>(tc, readregaccel);
+        // warn("Unimplemented m5 op (%#x)\n", func);
+        return true;
+      case M5OP_NVDLA_GOT_RESPONSE:
+        result = invokeSimcall<ABI, store_ret>(tc, respaccel);
+        // warn("Unimplemented m5 op (%#x)\n", func);
+        return true;
+
+      case M5OP_NVDLA_GET_DATA:
+        result = invokeSimcall<ABI, store_ret>(tc, getdataaccel);
         // warn("Unimplemented m5 op (%#x)\n", func);
         return true;
 

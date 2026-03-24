@@ -1,3 +1,5 @@
 [submodule "src/systemC_NVDLA/model_nvdla/hw"]
 	path = src/systemC_NVDLA/model_nvdla/hw
 	url = git@github.com:tpapavas/hw.git
+[submodule "hw"]
+	branch = gem5-integration
