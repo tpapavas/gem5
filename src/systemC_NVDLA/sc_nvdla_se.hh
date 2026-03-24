@@ -27,85 +27,134 @@
 #include "systemc/tlm_bridge/tlm_to_gem5.hh"
 #include "systemc/tlm_port_wrapper.hh"
 
-// #include "params/TLM_ScNvDlaSE.hh"
-#include "systemc/ext/systemc"
+//#include "systemc/ext/systemc"
+#include "systemc.h"
+
 #include "systemc/ext/tlm"
 #include "systemC_NVDLA/sc_tlm_initiator.hh"
 #include "systemC_NVDLA/sc_tlm_target.hh"
-
-// #include "systemC_NVDLA/sc_nvdla.hh"
 
 using namespace std;
 using namespace sc_core;
 using namespace gem5;
 
-// namespace gem5
-// {
+
 
 // SC_MODULE(ScNvDlaSE)
 class ScNvDlaSE : public sc_core::sc_module
 {
 public:
     Initiator initiator;
-    Target target1;
-    Target target2;
+    //Target dbb_target;
+    //Target sram_target;
 
     scsim::cmod::NV_nvdla *nvdla;
 
     // Interrupt signal from NVDLA
-    sc_core::sc_signal<bool> irq;
+    sc_core::sc_signal<bool,SC_MANY_WRITERS> irq;
+    bool interruptRaised = false;
+    //sc_signal_resolved
+
+    bool dbb_busy = false;
+    sc_core::sc_event dbb_done;
+    sc_core::sc_event dbb_event;
+
+    std::queue<tlm::tlm_generic_payload*> dbb_queue;
 
 
-    tlm_utils::simple_target_socket<ScNvDlaSE> tSocket;
-    sc_gem5::TlmTargetWrapper<32> wrapper;
+    tlm_utils::simple_target_socket<ScNvDlaSE> csb_target;
+    sc_gem5::TlmTargetWrapper<32> csb_wrapper;
+
+    tlm_utils::simple_initiator_socket<ScNvDlaSE> dbb_init;
+    tlm_utils::simple_initiator_socket<ScNvDlaSE> sram_init;
+
+    tlm_utils::simple_target_socket<ScNvDlaSE> dbb_target;
+    tlm_utils::simple_target_socket<ScNvDlaSE> sram_target;
+
+
+    sc_gem5::TlmInitiatorWrapper<32> dbb_init_wrapper;
+    sc_gem5::TlmInitiatorWrapper<32> sram_init_wrapper;
+
+    sc_gem5::TlmTargetWrapper<32> dbb_target_wrapper;
+    sc_gem5::TlmTargetWrapper<32> sram_target_wrapper;
+
 
 public:
     SC_HAS_PROCESS(ScNvDlaSE);
     ScNvDlaSE(sc_module_name name) :
         sc_module(name),
         initiator("dla_tlm_initiator"),
-        tSocket("tSocket"),
-        wrapper(tSocket, std::string(name) + ".tlm", InvalidPortID),
-        target1("dla_tlm_target_1"),
-        target2("dla_tlm_target_2")
+        csb_target("csb_target"),
+        csb_wrapper(csb_target,
+            std::string(name) + ".csb_target", InvalidPortID),
+        //dbb_target("dbb_target"),
+        //sram_target("sram_target"),
+        dbb_init("dbb_init"),
+        dbb_init_wrapper(dbb_init,
+            std::string(name) + ".dbb_init", InvalidPortID),
+        sram_init("sram_init"),
+        sram_init_wrapper(sram_init,
+            std::string(name) + ".sram_init", InvalidPortID),
+        dbb_target("dbb_target"),
+        dbb_target_wrapper(dbb_target,
+            std::string(name) + ".dbb_target", InvalidPortID),
+        sram_target("sram_target"),
+        sram_target_wrapper(sram_target,
+            std::string(name) + ".sram_target", InvalidPortID)
     {
-
-        // tickPeriod = 500;
-        // panic_if(tickPeriod == 0, "Clock period cannot be zero!");
-
-        std::cout << "ScNvDlaSE SystemC tick @: " << sc_core::sc_time_stamp()
-                << " Gem5 tick @: " << curTick() << "\n";
-
-
-
         //////////////////////////////////
+        sc_core::sc_report_handler::set_verbosity_level(sc_core::SC_DEBUG);
 
-        tSocket.register_b_transport(this, &ScNvDlaSE::b_transport);
+        csb_target.register_b_transport(this, &ScNvDlaSE::b_transport_csb);
+        dbb_target.register_b_transport(this, &ScNvDlaSE::b_transport_dbb);
+
+        //dbb_target.register_nb_transport_fw(this,
+        //  &ScNvDlaSE::nb_transport_fw);
+        //dbb_init.register_nb_transport_bw(this, &ScNvDlaSE::nb_transport_bw);
+
+        sram_target.register_b_transport(this, &ScNvDlaSE::b_transport_sram);
 
         nvdla = new scsim::cmod::NV_nvdla("nvdla_core");
-        // initiator.tSocket.bind(
-        //  static_cast<tlm::tlm_target_socket<
-        //   32,tlm::tlm_base_protocol_types, 0, sc_core::SC_ONE_OR_MORE_BOUND>
-        //  >>(nvdla->nvdla_host_master_if));
         initiator.tSocket.bind(nvdla->nvdla_host_master_if);
-        nvdla->nvdla_core2dbb_axi4.bind(target1.tSocket);
-        nvdla->nvdla_core2cvsram_axi4.bind(target2.tSocket);
-
+        nvdla->nvdla_core2dbb_axi4.bind(dbb_target);
+        nvdla->nvdla_core2cvsram_axi4.bind(sram_target);
         nvdla->nvdla_intr(irq);
 
+        SC_METHOD(handle_irq);
+        sensitive << irq;
+
+        // SC_THREAD(dbb_worker);
+        dont_initialize();
         ////////////////////////////////////////////
 
 
         printf("[ScNvDlaSE] All bindings done\n");
     }
 
+    void handle_irq();
 
     gem5::Port &gem5_getPort(const std::string &if_name, int idx=-1) override;
 
-    virtual void b_transport(tlm::tlm_generic_payload& trans,
+    virtual void b_transport_csb(tlm::tlm_generic_payload& trans,
+                             sc_time& delay);
+    virtual void b_transport_dbb(tlm::tlm_generic_payload& trans,
+                             sc_time& delay);
+    virtual void b_transport_sram(tlm::tlm_generic_payload& trans,
                              sc_time& delay);
 
-    // void executeTransaction(tlm::tlm_generic_payload& trans);
+    void dbb_worker();
+
+   tlm::tlm_sync_enum nb_transport_fw(
+       tlm::tlm_generic_payload& trans,
+       tlm::tlm_phase& phase,
+       sc_time& delay
+   );
+
+   tlm::tlm_sync_enum nb_transport_bw(
+       tlm::tlm_generic_payload& trans,
+       tlm::tlm_phase& phase,
+       sc_time& delay
+   );
 };
 
 // } // namespace gem5

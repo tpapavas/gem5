@@ -43,18 +43,15 @@
 #include "params/TLM_Initiator.hh"
 #include "sc_tlm_initiator.hh"
 
-#include "systemc/ext/systemc"
+//#include "systemc/ext/systemc"
+#include "systemc.h"
+
 #include "systemc/ext/tlm"
 
 using namespace std;
 using namespace sc_core;
 using namespace gem5;
 
-// This "create" method bridges the python configuration and the systemc
-// objects. It instantiates the Printer object and sets it up using the
-// parameter values from the config, just like it would for a SimObject. The
-// systemc object could accept those parameters however it likes, for instance
-// through its constructor or by assigning them to a member variable.
 Initiator *
 gem5::TLM_InitiatorParams::create() const
 {

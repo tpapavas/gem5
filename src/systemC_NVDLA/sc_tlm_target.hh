@@ -34,6 +34,9 @@
 #ifndef __SYSTEC_TLM_GEM5_EXAMPLE__
 #define __SYSTEC_TLM_GEM5_EXAMPLE__
 
+#include <tlm_utils/simple_initiator_socket.h>
+#include <tlm_utils/simple_target_socket.h>
+
 #include <iomanip>
 #include <iostream>
 #include <map>
@@ -43,12 +46,12 @@
 #include "NV_nvdla.h"
 #include "base/trace.hh"
 #include "systemc/ext/core/sc_module_name.hh"
-
-#include "systemc/ext/systemc"
-#include "systemc/ext/tlm"
-#include <tlm_utils/simple_target_socket.h>
-
 #include "systemc/tlm_port_wrapper.hh"
+
+//#include "systemc/ext/systemc"
+#include "systemc.h"
+
+#include "systemc/ext/tlm"
 
 using namespace std;
 using namespace sc_core;
@@ -60,14 +63,20 @@ SC_MODULE(Target)
     tlm_utils::simple_target_socket<Target> tSocket;
     sc_gem5::TlmTargetWrapper<32> wrapper;
 
+    tlm_utils::simple_initiator_socket<Target> iSocket;
+    sc_gem5::TlmInitiatorWrapper<32> i_wrapper;
   public:
     SC_HAS_PROCESS(Target);
     Target(sc_module_name name) :
          sc_module(name),
          tSocket("tSocket"),
-         wrapper(tSocket, std::string(name) + ".tlm", InvalidPortID)
+         wrapper(tSocket, std::string(name) + ".tlm", InvalidPortID),
+         iSocket("iSocket"),
+         i_wrapper(iSocket, std::string(name) + ".tlm_i", InvalidPortID)
     {
         tSocket.register_b_transport(this, &Target::b_transport);
+        //tSocket.register_nb_transport_fw();
+        //iSocket.register_nb_transport_bw(this, &Target::b_nb_transport_bw)
 
         std::cout << "TLM Target Online" << std::endl;
     }
@@ -76,8 +85,6 @@ SC_MODULE(Target)
 
     virtual void b_transport(tlm::tlm_generic_payload& trans,
                              sc_time& delay);
-
-    void executeTransaction(tlm::tlm_generic_payload& trans);
 };
 
 #endif // __SYSTEC_TLM_GEM5_EXAMPLE__

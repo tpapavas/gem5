@@ -182,10 +182,9 @@ env.Prepend(CPPDEFINES=[
     ('SC_INCLUDE_DYNAMIC_PROCESSES', '1'),
 ])
 
-#env.Append(CPPDEFINES=[
-#    'CSL_DEBUG',
-#    ('CSB_DEBUG_LEVEL', '100')
-#])
+env.Append(CCFLAGS=['-O3'])
+env.Append(CCFLAGS=['-fpermissive'])
+
 
 for src in sources:
     Source(src)
