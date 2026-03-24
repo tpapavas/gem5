@@ -674,6 +674,22 @@ uint32_t readregaccel(ThreadContext *tc, int accel_id, Addr addr)
     return tc->getCpuPtr()->NvDlaReadReg(accel_id, addr);
 }
 
+bool respaccel(ThreadContext *tc)
+{
+    DPRINTF(PseudoInst,
+            "PseudoInst::respaccel\n");
+
+    return tc->getCpuPtr()->NvDlaRespReg();
+}
+
+uint32_t getdataaccel(ThreadContext *tc)
+{
+    DPRINTF(PseudoInst,
+            "PseudoInst::getdataaccel\n");
+
+    return tc->getCpuPtr()->NvDlaGetData();
+}
+
 void writeregaccel(ThreadContext *tc, int accel_id, uint32_t data, Addr addr)
 {
     DPRINTF(PseudoInst,
