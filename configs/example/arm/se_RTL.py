@@ -576,12 +576,10 @@ def main():
 
     # Program to execute
     # binary = 'tests/test-progs/nvdla-se/nvdla-se'
-    binary = (
-        "/data/tpapavasileiou/tools/GEM5-NVDLA/nvdla/gem5-plus/nvdla_runtime"
-    )
+    binary = "<custom-path-to-runtime>/nvdla_runtime"
 
     # Simulation system
-    system = System()
+    system = System(multi_thread=True)
 
     # Clock configuration
     system.clk_domain = SrcClockDomain()
@@ -595,7 +593,7 @@ def main():
 
     # Create CPU
     # system.cpu = X86MinorCPU()
-    system.cpu = ArmMinorCPU()
+    system.cpu = ArmMinorCPU(numThreads=2)
 
     # Create Gemmini device
     # system.gemmini_dev = GemminiDevA(
@@ -742,7 +740,7 @@ def main():
     ]
 
     # Set the cpu to use the process as its workload and create thread contexts
-    system.cpu.workload = process
+    system.cpu.workload = [process, process]
     system.cpu.createThreads()
 
     # Set up the root SimObject and start the simulation
