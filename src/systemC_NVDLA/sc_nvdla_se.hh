@@ -101,14 +101,14 @@ public:
             std::string(name) + ".sram_target", InvalidPortID)
     {
         //////////////////////////////////
-        sc_core::sc_report_handler::set_verbosity_level(sc_core::SC_DEBUG);
+        // sc_core::sc_report_handler::set_verbosity_level(sc_core::SC_DEBUG);
 
         csb_target.register_b_transport(this, &ScNvDlaSE::b_transport_csb);
-        dbb_target.register_b_transport(this, &ScNvDlaSE::b_transport_dbb);
+        // dbb_target.register_b_transport(this, &ScNvDlaSE::b_transport_dbb);
 
-        //dbb_target.register_nb_transport_fw(this,
-        //  &ScNvDlaSE::nb_transport_fw);
-        //dbb_init.register_nb_transport_bw(this, &ScNvDlaSE::nb_transport_bw);
+        dbb_target.register_nb_transport_fw(this,
+            &ScNvDlaSE::nb_transport_fw);
+        dbb_init.register_nb_transport_bw(this, &ScNvDlaSE::nb_transport_bw);
 
         sram_target.register_b_transport(this, &ScNvDlaSE::b_transport_sram);
 
