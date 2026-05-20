@@ -230,6 +230,11 @@ tlm::tlm_sync_enum ScNvDlaSE::nb_transport_fw(
     sc_time &delay)
 {
     printf("tlm::tlm_sync_enum ScNvDlaSE::nb_transport_fw\n");
+
+    trans.set_byte_enable_ptr(nullptr);
+    trans.set_byte_enable_length(0);
+
+    return dbb_init->nb_transport_fw(trans, phase, delay);
 }
 
 tlm::tlm_sync_enum ScNvDlaSE::nb_transport_bw(
@@ -238,6 +243,7 @@ tlm::tlm_sync_enum ScNvDlaSE::nb_transport_bw(
     sc_time &delay)
 {
     printf("tlm::tlm_sync_enum ScNvDlaSE::nb_transport_bw\n");
+    return dbb_target->nb_transport_bw(trans, phase, delay);
 }
 
 void ScNvDlaSE::b_transport_dbb(tlm::tlm_generic_payload &trans,
@@ -305,7 +311,6 @@ void ScNvDlaSE::b_transport_dbb(tlm::tlm_generic_payload &trans,
         std::cout << std::dec << std::endl
                   << std::endl;
     }
-
     else if (trans.is_write()
       && trans.get_response_status() == tlm::TLM_OK_RESPONSE)
     {
