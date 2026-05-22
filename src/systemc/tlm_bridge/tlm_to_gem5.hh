@@ -59,6 +59,8 @@
 #define __SYSTEMC_TLM_BRIDGE_TLM_TO_GEM5_HH__
 
 #include <functional>
+#include <list>
+#include <queue>
 #include <unordered_set>
 #include <utility>
 
@@ -129,6 +131,11 @@ class TlmToGem5Bridge : public TlmToGem5BridgeBase
     tlm_utils::simple_target_socket<
         TlmToGem5Bridge<BITWIDTH>, BITWIDTH> socket;
     sc_gem5::TlmTargetWrapper<BITWIDTH> wrapper;
+
+    typedef std::list<gem5::PacketPtr> PktList;
+    PktList pktRespList;
+    typedef std::queue<gem5::PacketPtr> PktQueue;
+    PktList pktReqQueue;
 
     gem5::System *system;
 

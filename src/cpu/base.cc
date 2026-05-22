@@ -1139,13 +1139,15 @@ void
 BaseCPU::AccelPort::ITickEvent::process()
 {
     //cpu->completeIfetch(pkt);
+    std::cout << "[BaseCPU::AccelPort::ITickEvent::process()] here\n";
 }
 
 bool
 BaseCPU::AccelPort::recvTimingResp(PacketPtr pkt)
 {
     //DPRINTF(SimpleCPU, "Received fetch response %#x\n", pkt->getAddr());
-    std::cout << "Received finished addr: " << pkt->getAddr() << std::endl;
+    std::cout << "[BaseCPU::AccelPort::recvTimingResp] Received finished addr: " << pkt->getAddr() << std::endl;
+
 
     if (pkt->getAddr() == 0) {
         cpu->finishedAccelerator0=true;
@@ -1169,6 +1171,7 @@ BaseCPU::AccelPort::recvTimingResp(PacketPtr pkt)
 void
 BaseCPU::AccelPort::recvReqRetry()
 {
+    std::cout << "[BaseCPU::AccelPort::recvReqRetry()] here \n";
     // we shouldn't get a retry unless we have a packet that we're
     // waiting to transmit
     //assert(cpu->ifetch_pkt != NULL);
@@ -1183,14 +1186,27 @@ BaseCPU::AccelPort::recvReqRetry()
 void
 BaseCPU::NvDlaPort::ITickEvent::process()
 {
+    std::cout << "[BaseCPU::NvDlaPort::ITickEvent::process()] here \n";
     //cpu->completeIfetch(pkt);
 }
 
 bool
 BaseCPU::NvDlaPort::recvTimingResp(PacketPtr pkt)
 {
-    //DPRINTF(SimpleCPU, "Received fetch response %#x\n", pkt->getAddr());
-    std::cout << "Received finished addr: " << pkt->getAddr() << std::endl;
+    std::cout << "[BaseCPU::NvDlaPort::recvTimingResp] addr=0x"
+          << std::hex << pkt->getAddr()
+          << " data=0x"
+          << pkt->getLE<uint32_t>()
+          << " tick=" << std::dec << curTick() / 1000 << " ns"
+          << std::endl;
+
+    uint32_t data = pkt->getLE<uint32_t>();
+
+    cpu->nvdlaReqData = data;
+    cpu->nvdlaWaitingResp = false;
+    std::cout << "[BaseCPU::NvDlaPort::recvTimingResp] nvdlaWaitingResp = " << cpu->nvdlaWaitingResp << "\n";
+
+
 
     return true;
 }
@@ -1198,7 +1214,7 @@ BaseCPU::NvDlaPort::recvTimingResp(PacketPtr pkt)
 void
 BaseCPU::NvDlaPort::recvReqRetry()
 {
-    // we shouldn't get a retry unless we have a packet that we're
+    // we shouldn't  get a retry unless we have a packet that we're
     // waiting to transmit
     //assert(cpu->ifetch_pkt != NULL);
     //assert(cpu->_status == IcacheRetry);
@@ -1207,6 +1223,40 @@ BaseCPU::NvDlaPort::recvReqRetry()
     //    cpu->_status = IcacheWaitResponse;
     //    cpu->ifetch_pkt = NULL;
     //}
+
+    std::cout << "[BaseCPU::NvDlaPort::recvReqRetry()] blockedPkt addr=0x"
+          << std::hex << cpu->blockedPkt->getAddr()
+          << " data=0x"
+          << cpu->blockedPkt->getLE<uint32_t>()
+          << " tick=" << std::dec << curTick() / 1000 << " ns"
+          << std::endl;
+    std::cout << "[BaseCPU::NvDlaPort::recvReqRetry()]nvdlaReqQ addr=0x"
+          << std::hex << cpu->nvdlaReqQ->getAddr()
+          << " data=0x"
+          << cpu->nvdlaReqQ->getLE<uint32_t>()
+          << " tick=" << std::dec << curTick() / 1000 << " ns"
+          << std::endl;
+
+    if (!cpu->blockedPkt){
+        std::cout << "[NvDlaPort::recvReqRetry] No blocked packet!\n";
+        return;
+    }
+    std::cout << "[NvDlaPort::recvReqRetry] Retrying blocked pkt addr=0x" << std::hex << cpu->blockedPkt->getAddr() << "\n";
+
+    bool sent = sendTimingReq(cpu->blockedPkt);
+    if (sent) {
+        cpu->blockedPkt = nullptr;
+        std::cout << "[NvDlaPort::recvReqRetry] Retry success\n";
+    } else {
+        std::cout << "[NvDlaPort::recvReqRetry] Retry still blocked\n";
+    }
+
+}
+
+void
+BaseCPU::NvDlaPort::recvTimingReq()
+{
+    std::cout << "[BaseCPU::NvDlaPort::recvTimingReq] here \n";
 }
 
 } // namespace gem5

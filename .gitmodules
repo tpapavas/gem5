@@ -1,0 +1,3 @@
+[submodule "src/systemC_NVDLA/model_nvdla/hw"]
+	path = src/systemC_NVDLA/model_nvdla/hw
+	url = https://github.com/tpapavas/hw.git

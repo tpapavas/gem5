@@ -576,10 +576,10 @@ def main():
 
     # Program to execute
     # binary = 'tests/test-progs/nvdla-se/nvdla-se'
-    binary = "/data/tpapavasileiou/tools/GEM5-NVDLA/nvdla/gem5-plus/nvdla_runtime"
+    binary = "/data/ngiannopoulos/Phd/NVDLA/gem5/binary/runtime_systemC/nvdla_runtime"
 
     # Simulation system
-    system = System()
+    system = System(multi_thread=True)
 
     # Clock configuration
     system.clk_domain = SrcClockDomain()
@@ -593,7 +593,7 @@ def main():
 
     # Create CPU
     # system.cpu = X86MinorCPU()
-    system.cpu = ArmMinorCPU()
+    system.cpu = ArmMinorCPU(numThreads=2)
 
     # Create Gemmini device
     # system.gemmini_dev = GemminiDevA(
@@ -641,59 +641,93 @@ def main():
 
     # Connect Gemmini device to L2
     # system.gemmini_dev.dma_port = system.l2bus.cpu_side_ports
-    system.iobus = IOXBar()
-    system.iobridge = Bridge(delay="50ns")
-    system.iobridge.ranges = [AddrRange(start=0x40000000, size="1GB")]
-
-    system.iobridge.mem_side_port = system.iobus.cpu_side_ports
-    system.iobridge.cpu_side_port = system.membus.mem_side_ports
+   #system.iobus = IOXBar()
+   #system.iobridge = Bridge(delay="50ns")
+   #system.iobridge.ranges = [AddrRange(0x40000000, size=0x20040)]
+   #
+   #system.iobridge.cpu_side_port = system.membus.mem_side_ports
+   #system.iobridge.mem_side_port = system.iobus.cpu_side_ports
 
     # Create NVDLA Device
-    system.nvdla = [
-        NvDlaDeviceSE(
-            id_nvdla=i,
-            pio_addr=0x40000000 + 0x20040 * i,
-            pio_size=0x20040,
-            dma_enable=True,
-            spm_latency=options.embed_spm_lat,
-            spm_line_size=1024,
-            spm_size=options.embed_spm_size,
-            use_shared_spm=options.shared_spm,
-            assoc=options.embed_spm_assoc.lower(),
-            base_addr_dram=0x40000000,
-            base_addr_sram=0x0,
+   #system.nvdla = [
+   #    NvDlaDeviceSE(
+   #        id_nvdla=i,
+   #        pio_addr=0x40000000 + 0x20040 * i,
+   #        pio_size=0x20040,
+   #        dma_enable=True,
+   #        spm_latency=options.embed_spm_lat,
+   #        spm_line_size=1024,
+   #        spm_size=options.embed_spm_size,
+   #        use_shared_spm=options.shared_spm,
+   #        assoc=options.embed_spm_assoc.lower(),
+   #        base_addr_dram=0x40000000,
+   #        base_addr_sram=0x0,
+   #    )
+   #    for i in range(options.dlas)
+   #]
+   #for i in range(options.dlas):
+   #    system.nvdla[i].pio = system.iobus.mem_side_ports
+
+    system.bridge_csb = Gem5ToTlmBridge32()
+
+    system.nvdla = TLM_ScNvDlaSE()
+
+    system.cpu.nvdla_port_plus_0 = system.bridge_csb.gem5
+    system.bridge_csb.tlm = system.nvdla.csb_target
+    
+    system.bridge_dbb = TlmToGem5Bridge32()
+    system.bridge_sram = TlmToGem5Bridge32()
+
+    system.nvdla.dbb_init = system.bridge_dbb.tlm
+    system.nvdla.sram_init = system.bridge_sram.tlm
+    
+   #system.nvdla_pr_cache = Cache(
+   #    size="64B",              
+   #    assoc=1,                  
+   #    tag_latency=1,
+   #    data_latency=1,
+   #    response_latency=1,
+   #    mshrs=1,                  
+   #    tgts_per_mshr=1,          
+   #    write_buffers=1,
+   #    clusivity="mostly_incl"
+   #)
+    #system.nvdla_pr_cache = Cache(
+    #    size="64B",
+    #    assoc=1,
+    #    tag_latency=1,
+    #    data_latency=1,
+    #    response_latency=1,
+    #    mshrs=1,
+    #    tgts_per_mshr=1,
+    #    write_buffers=1,
+    #    clusivity="mostly_incl",
+#
+    #    writeback_clean=False, 
+    #    writeback_dirty=False, 
+    #)
+    #system.bridge_dbb.gem5 = system.nvdla_pr_cache.cpu_side
+    #system.nvdla_pr_cache.mem_side = system.membus.cpu_side_ports
+    
+    if options.add_accel_private_cache:
+        system.nvdla_pr_cache = Cache(
+            tag_latency=options.accel_pr_cache_tag_lat,
+            data_latency=options.accel_pr_cache_dat_lat,
+            response_latency=options.accel_pr_cache_resp_lat,
+            mshrs=options.accel_pr_cache_mshr,
+            tgts_per_mshr=options.accel_pr_cache_tgts_per_mshr,
+            size=options.accel_pr_cache_size,
+            assoc=options.accel_pr_cache_assoc,
+            write_buffers=options.accel_pr_cache_wr_buf,
+            clusivity=options.accel_pr_cache_clus
         )
-        for i in range(options.dlas)
-    ]
-    for i in range(options.dlas):
-        system.nvdla[i].pio = system.iobus.mem_side_ports
+        system.bridge_dbb.gem5 = system.nvdla_pr_cache.cpu_side
+        system.nvdla_pr_cache.mem_side = system.membus.cpu_side_ports
+        system.bridge_sram.gem5 = system.membus.cpu_side_ports
+    else:
+        system.bridge_dbb.gem5 = system.membus.cpu_side_ports
+        system.bridge_sram.gem5 = system.membus.cpu_side_ports
 
-    # for DMA
-    for i in range(options.dlas):
-        system.nvdla[i].dram_port = system.membus.cpu_side_ports
-        system.nvdla[i].dma_port = system.membus.cpu_side_ports
-
-    for i in range(options.dlas):
-        exec(
-            f"system.nvdla[{i}].cmd_cpu_side = system.cpu.nvdla_port_plus_{i}"
-        )
-        # system.nvdla[0].cmd_cpu_side = system.cpu.nvdla_port_plus_0
-        # system.nvdla[1].cmd_cpu_side = system.cpu.nvdla_port_plus_1
-
-    # for caches
-    # system.nvdla_pr_cache = Cache(
-    #     tag_latency=options.accel_pr_cache_tag_lat,
-    #     data_latency=options.accel_pr_cache_dat_lat,
-    #     response_latency=options.accel_pr_cache_resp_lat,
-    #     mshrs=options.accel_pr_cache_mshr,
-    #     tgts_per_mshr=options.accel_pr_cache_tgts_per_mshr,
-    #     size=options.accel_pr_cache_size,
-    #     assoc=options.accel_pr_cache_assoc,
-    #     write_buffers=options.accel_pr_cache_wr_buf,
-    #     clusivity=options.accel_pr_cache_clus
-    # )
-    # system.nvdla.dram_port = system.nvdla_pr_cache.cpu_side
-    # system.nvdla_pr_cache.mem_side = system.membus.cpu_side_ports
 
     # Create interrupt controller
     system.cpu.createInterruptController()
@@ -727,32 +761,47 @@ def main():
     process = Process()
 
     # Command is a list which begins with the executable (like argv)
+    #process.cmd = [
+    #    binary,
+    #    "--loadable",
+    #    "/data/tpapavasileiou/tools/GEM5-NVDLA/nvdla/gem5-plus/nonet.nvdla",
+    #    "--image",
+    #    "/data/tpapavasileiou/tools/GEM5-NVDLA/nvdla/gem5-plus/random_2x2_bin.pgm",
+    #    "--normalize",
+    #    "255",
+    #    "--dlas",
+    #    options.dlas,
+    #]
+
     process.cmd = [
         binary,
         "--loadable",
-        "/data/tpapavasileiou/tools/GEM5-NVDLA/nvdla/gem5-plus/nonet.nvdla",
+        "/data/ngiannopoulos/Phd/NVDLA/gem5/binary/lenet.nvdla",
         "--image",
-        "/data/tpapavasileiou/tools/GEM5-NVDLA/nvdla/gem5-plus/random_2x2_bin.pgm",
+        "/data/ngiannopoulos/Phd/NVDLA/gem5/binary/eight_invert.pgm",
         "--normalize",
         "255",
         "--dlas",
         options.dlas,
     ]
-
+    
     # Set the cpu to use the process as its workload and create thread contexts
-    system.cpu.workload = process
+    system.cpu.workload = [process, process]
     system.cpu.createThreads()
 
-    # Set up the root SimObject and start the simulation
-    root = Root(full_system=False, system=system)
 
+    #systemc_kernel = SystemC_Kernel(sc_nvdla=sc_nvdla)
+    # Set up the root SimObject and start the simulation
+    kernel = SystemC_Kernel(system=system)
+    root = Root(full_system=False, systemc_kernel=kernel)
     # Instantiate all of the objects we've created above
-    m5.instantiate()
+    m5.instantiate(None)
 
     # Dedicate upper 1GB to Gemmini device
     system.cpu.workload[0].map(
         0x2000_0000, 0x2000_0000, 0x6000_0000, cacheable=False
     )
+    
 
     print("========== Beginning simulation ==========")
     exit_event = m5.simulate()

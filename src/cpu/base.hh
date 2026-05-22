@@ -68,6 +68,7 @@ class CheckerCPU;
 class ThreadContext;
 
 class rtlNVDLA;
+class ScNvDlaSE;
 struct AddressMonitor
 {
     AddressMonitor();
@@ -236,6 +237,8 @@ class BaseCPU : public ClockedObject
 
         virtual void recvReqRetry();
 
+        virtual void recvTimingReq();
+
         struct ITickEvent : public TickEvent
         {
             ITickEvent(BaseCPU *_cpu)
@@ -290,6 +293,18 @@ class BaseCPU : public ClockedObject
         return UINT32_MAX;
     }
 
+    virtual uint32_t NvDlaGetData() {
+        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
+        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
+        return UINT32_MAX;
+    }
+
+    virtual bool NvDlaRespReg() {
+        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
+        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
+        return UINT32_MAX;
+    }
+
     virtual void NvDlaWriteReg(int accel_id, uint32_t data, Addr addr) {
         std::cout << "THIS SHOULD NOT BE PRINTED, " <<
         " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
@@ -300,6 +315,12 @@ class BaseCPU : public ClockedObject
     bool finishedAccelerator1;
     bool finishedAccelerator2;
     bool finishedAccelerator3;
+
+    PacketPtr nvdlaReqQ;
+    //std::unordered_map<RequestPtr, PacketPtr> nvdlaReqQ;
+    uint32_t nvdlaReqData;
+    bool nvdlaWaitingResp = false;
+    PacketPtr blockedPkt;
 
     /**
      * method that returns a reference to the accelerator

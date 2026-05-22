@@ -103,7 +103,7 @@ class BaseCPU(ClockedObject):
     accel_1 = Param.rtlNVDLA(NULL, "RTL NVDLA Accelerator Object")
     accel_2 = Param.rtlNVDLA(NULL, "RTL NVDLA Accelerator Object")
     accel_3 = Param.rtlNVDLA(NULL, "RTL NVDLA Accelerator Object")
-
+    
     num_accels = Param.Int(0, "Number of rtl Objects")
 
     system = Param.System(Parent.any, "system object")
@@ -176,6 +176,11 @@ class BaseCPU(ClockedObject):
 
     nvdla_port_plus_0 = RequestPort("Accelerator Port")
     nvdla_port_plus_1 = RequestPort("Accelerator Port")
+
+    scNvDlaPortPlus0 = RequestPort("SystemC Accelerator Port")
+    scNvDlaPortPlus1 = RequestPort("SystemC Accelerator Port")
+
+    
 
     _cached_ports = ["icache_port", "dcache_port"]
 

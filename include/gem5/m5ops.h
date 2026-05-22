@@ -73,6 +73,8 @@ uint64_t m5_wait_accel(uint64_t addr, uint64_t elements);
 uint64_t m5_wait_accel_id(int accel_id);
 uint32_t m5_nvdla_read_reg(int accel_id, uint64_t addr);
 uint32_t m5_nvdla_write_reg(int accel_id, uint32_t data, uint64_t addr);
+bool m5_nvdla_got_response(void);
+uint32_t m5_nvdla_get_data(void);
 /*
  * Send a very generic poke to the workload so it can do something. It's up to
  * the workload to know what information to look for to interpret an event,

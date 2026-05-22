@@ -179,6 +179,7 @@ packet2payload(PacketPtr packet)
     trans->set_auto_extension(extension);
 
     if (packet->isAtomicOp()) {
+         std::cout << " packet2payload is atomic\n";
         auto *atomic_ex = new Gem5SystemC::AtomicExtension(
             std::shared_ptr<AtomicOpFunctor>(
                 packet->req->getAtomicOpFunctor()->clone()),
@@ -218,7 +219,6 @@ Gem5ToTlmBridge<BITWIDTH>::pec(
         tlm::tlm_generic_payload &trans, const tlm::tlm_phase &phase)
 {
     sc_core::sc_time delay;
-
     if (phase == tlm::END_REQ ||
             (&trans == blockingRequest && phase == tlm::BEGIN_RESP)) {
         sc_assert(&trans == blockingRequest);
