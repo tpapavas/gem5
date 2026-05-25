@@ -788,7 +788,7 @@ def build(options):
 
     system.fake_nvdla.cmd_cpu_side = system.littleCluster.cpus[
         0
-    ].nvdla_port_plus
+    ].nvdla_port_plus_0
 
     return root
 
