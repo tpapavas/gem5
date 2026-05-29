@@ -576,7 +576,7 @@ def main():
 
     # Program to execute
     # binary = 'tests/test-progs/nvdla-se/nvdla-se'
-    binary = "/data/ngiannopoulos/Phd/NVDLA/gem5/binary/runtime_systemC/nvdla_runtime"
+    binary = "<add-path-to-nvdla-se-binary>"
 
     # Simulation system
     system = System(multi_thread=True)
@@ -776,9 +776,9 @@ def main():
     process.cmd = [
         binary,
         "--loadable",
-        "/data/ngiannopoulos/Phd/NVDLA/gem5/binary/lenet.nvdla",
+        "<path-to-nvdla-se-loadable>",
         "--image",
-        "/data/ngiannopoulos/Phd/NVDLA/gem5/binary/eight_invert.pgm",
+        "<path-to-nvdla-se-image>",
         "--normalize",
         "255",
         "--dlas",

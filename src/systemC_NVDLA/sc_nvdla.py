@@ -1,6 +1,8 @@
 import m5
 from m5.objects import *
 from m5.params import *
+from m5.objects.SystemC import SystemC_ScModule
+from m5.objects.Tlm import TlmTargetSocket, TlmInitiatorSocket
 
 # class ScNVDLAModule(SystemC_ScModule):
 #     type = "ScNVDLAModule"

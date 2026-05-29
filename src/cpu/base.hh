@@ -67,7 +67,6 @@ struct BaseCPUParams;
 class CheckerCPU;
 class ThreadContext;
 
-class rtlNVDLA;
 class ScNvDlaSE;
 struct AddressMonitor
 {
@@ -255,11 +254,6 @@ class BaseCPU : public ClockedObject
     AccelPort nvdla_port_1;
     AccelPort nvdla_port_2;
     AccelPort nvdla_port_3;
-
-    rtlNVDLA* nvdla_0;
-    rtlNVDLA* nvdla_1;
-    rtlNVDLA* nvdla_2;
-    rtlNVDLA* nvdla_3;
 
     NvDlaPort nvdla_port_plus_0;
     NvDlaPort nvdla_port_plus_1;

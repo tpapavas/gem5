@@ -43,7 +43,6 @@
 #include "cpu/minor/pipeline.hh"
 #include "debug/Drain.hh"
 #include "debug/MinorCPU.hh"
-#include "debug/NvDlaDevice.hh"
 #include "debug/Quiesce.hh"
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
@@ -461,8 +460,7 @@ MinorCPU::NvDlaGetData(){
 uint32_t
 MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
 {
-    DPRINTF(NvDlaDevice, "[GEM5 LOG] DLA #%d: Trying to read_reg(0x%016x)\n",
-        accel_id, addr);
+    std::cout << "[GEM5 LOG] DLA #"<< accel_id << ": Trying to read_reg(0x" << std::hex << addr << ")\n";
     // we send a null packet telling we have finished
     RequestPtr req = std::make_shared<Request>(addr, 4,
                                             Request::UNCACHEABLE, 0);
@@ -505,8 +503,7 @@ MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
 uint32_t
 MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
 {
-    DPRINTF(NvDlaDevice, "[GEM5 LOG] DLA #%d: Trying to read_reg(0x%016x)\n",
-        accel_id, addr);
+    std::cout << "[GEM5 LOG] DLA #"<< accel_id << ": Trying to read_reg(0x" << std::hex << addr << ")\n";
     // we send a null packet telling we have finished
     RequestPtr req = std::make_shared<Request>(addr, 4,
                                             Request::UNCACHEABLE, 0);
@@ -525,10 +522,8 @@ MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
             assert(false);
     }
 
-    DPRINTF(NvDlaDevice, "[GEM5 LOG] DLA #%d: Trying to get response...\n",
-        accel_id);
-    DPRINTF(NvDlaDevice, "[GEM5 LOG] DLA #%d: Got response: %u\n",
-        accel_id, pkt->getLE<uint32_t>());
+    std::cout << "[GEM5 LOG] DLA #" << accel_id << ": Trying to get response...\n";
+    std::cout << "[GEM5 LOG] DLA #" << accel_id << ": Got response: " << pkt->getLE<uint32_t>() << "\n";
 
     return pkt->getLE<uint32_t>();
 }
@@ -537,9 +532,8 @@ MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
 void
 MinorCPU::NvDlaWriteReg(int accel_id, uint32_t data, Addr addr)
 {
-    DPRINTF(NvDlaDevice, "[GEM5 LOG] DLA #%d: Trying to write_reg(0x%016x), "
-        "data: 0x%08x\n",
-        accel_id, addr, data);
+    std::cout << "[GEM5 LOG] DLA #"<< accel_id << ": Trying to write_reg(0x" << std::hex << addr << "), "
+        "data: 0x" << std::hex << data << "\n";
     // we send a null packet telling we have finished
     RequestPtr req = std::make_shared<Request>(addr, 4,
                                             Request::UNCACHEABLE, 0);

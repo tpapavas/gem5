@@ -151,11 +151,6 @@ BaseCPU::BaseCPU(const Params &p, bool is_checker)
       powerGatingOnIdle(p.power_gating_on_idle),
       enterPwrGatingEvent([this]{ enterPwrGating(); }, name())
 {
-    nvdla_0 = p.accel_0;
-    nvdla_1 = p.accel_1;
-    nvdla_2 = p.accel_2;
-    nvdla_3 = p.accel_3;
-
     // if Python did not provide a valid ID, do it here
     if (_cpuId == -1 ) {
         _cpuId = cpuList.size();
@@ -241,10 +236,6 @@ BaseCPU::enableFunctionTrace()
 
 BaseCPU::~BaseCPU()
 {
-    delete nvdla_0;
-    delete nvdla_1;
-    delete nvdla_2;
-    delete nvdla_3;
 }
 
 void
