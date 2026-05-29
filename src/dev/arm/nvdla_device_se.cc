@@ -695,7 +695,11 @@ NvDlaDeviceSE::getAddrNVDLA(uint64_t addr, bool sram) {
     if (sram) {
         real_addr = (addr - baseAddrSRAM) + 0x50000000;
     } else {
-        real_addr = (addr - baseAddrDRAM) + 0xc0000000;
+        if (traceMode) {
+            real_addr = (addr - baseAddrDRAM) + 0xc0000000;
+        } else {
+            real_addr = addr;
+        }
     }
     return real_addr;
 }
