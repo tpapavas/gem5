@@ -576,14 +576,18 @@ def main():
 
     # Program to execute
     # binary = 'tests/test-progs/nvdla-se/nvdla-se'
-    binary = "~/tools/GEM5-NVDLA/sw-gem5/kumd/umd/out/apps/runtime/nvdla_runtime/nvdla_runtime"
+    binary = (
+        "/data/ngiannopoulos/Phd/NVDLA/gem5_se_rtl/gem5/binary/nvdla_runtime"
+    )
 
     # Simulation system
-    system = System()
+    system = System(multi_thread=True)
 
     # Clock configuration
     system.clk_domain = SrcClockDomain()
-    system.clk_domain.clock = "2GHz"
+    # system.clk_domain.clock = "3GHz"
+    print("Little CPU clock:", options.little_cpu_clock)
+    system.clk_domain.clock = options.little_cpu_clock
     system.clk_domain.voltage_domain = VoltageDomain()
 
     # Memory configuration
@@ -593,7 +597,7 @@ def main():
 
     # Create CPU
     # system.cpu = X86MinorCPU()
-    system.cpu = ArmMinorCPU()
+    system.cpu = ArmMinorCPU(numThreads=2)
 
     # Create Gemmini device
     # system.gemmini_dev = GemminiDevA(
@@ -648,6 +652,7 @@ def main():
     system.iobridge.mem_side_port = system.iobus.cpu_side_ports
     system.iobridge.cpu_side_port = system.membus.mem_side_ports
 
+    print("options.freq_ratio:", options.freq_ratio)
     # Create NVDLA Device
     system.nvdla = [
         NvDlaDeviceSE(
@@ -659,6 +664,7 @@ def main():
             spm_line_size=1024,
             spm_size=options.embed_spm_size,
             use_shared_spm=options.shared_spm,
+            freq_ratio=options.freq_ratio,
             assoc=options.embed_spm_assoc.lower(),
             base_addr_dram=0x40000000,
             base_addr_sram=0x0,
@@ -727,20 +733,67 @@ def main():
     process = Process()
 
     # Command is a list which begins with the executable (like argv)
+    # process.cmd = [
+    #    binary,
+    #    "--loadable",
+    #    "/data/tpapavasileiou/tools/GEM5-NVDLA/nvdla/gem5-plus/nonet.nvdla",
+    #    "--image",
+    #    "/data/tpapavasileiou/tools/GEM5-NVDLA/nvdla/gem5-plus/random_2x2_bin.pgm",
+    #    "--normalize",
+    #    "255",
+    #    "--dlas",
+    #    options.dlas,
+    # ]
+
+    # process.cmd = [
+    #    binary,
+    #    "--loadable",
+    #    "/data/ngiannopoulos/Phd/NVDLA/gem5/binary/lenet.nvdla",
+    #    "--image",
+    #    "/data/ngiannopoulos/Phd/NVDLA/gem5/binary/eight_invert.pgm",
+    #    "--normalize",
+    #    "255",
+    #    "--dlas",
+    #    options.dlas,
+    # ]
+
+    # process.cmd = [
+    #    binary,
+    #    "--loadable",
+    #    "/data/ngiannopoulos/Phd/NVDLA/gem5_se_rtl/gem5/binary/nonet_32_32_3/nonet_32x32x3.nvdla",
+    #    "--image",
+    #    "/data/ngiannopoulos/Phd/NVDLA/gem5_se_rtl/gem5/binary/nonet_32_32_3/images/0_0.jpg",
+    #    "--normalize",
+    #    "255",
+    #    "--dlas",
+    #    options.dlas,
+    # ]
+
     process.cmd = [
         binary,
         "--loadable",
-        "~/tools/GEM5-NVDLA/vp-bin/usr/local/nvdla/lenet_batch_2.nvdla",
+        "/data/ngiannopoulos/Phd/NVDLA/gem5_se_rtl/gem5/binary/nonet_32x32x1/nonet_32x32x1.nvdla",
         "--image",
-        "~/tools/GEM5-NVDLA/vp-bin/usr/local/nvdla/lenet_batch_2.pgm",
+        "/data/ngiannopoulos/Phd/NVDLA/gem5_se_rtl/gem5/binary/nonet_32x32x1/images/0_0_bin.pgm",
         "--normalize",
         "255",
         "--dlas",
         options.dlas,
     ]
 
+    # process.cmd = [
+    #    binary,
+    #    "--loadable",
+    #    "/data/ngiannopoulos/Phd/NVDLA/gem5_se_rtl/gem5/binary/nonet_8x8x1/nonet_8x8x1.nvdla",
+    #    "--image",
+    #    "/data/ngiannopoulos/Phd/NVDLA/gem5_se_rtl/gem5/binary/nonet_8x8x1/images/0_0_bin.pgm",
+    #    "--normalize",
+    #    "255",
+    #    "--dlas",
+    #    options.dlas,
+    # ]
     # Set the cpu to use the process as its workload and create thread contexts
-    system.cpu.workload = process
+    system.cpu.workload = [process, process]
     system.cpu.createThreads()
 
     # Set up the root SimObject and start the simulation

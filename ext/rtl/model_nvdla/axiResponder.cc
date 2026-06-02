@@ -32,6 +32,23 @@ AXIResponder::AXIResponder(struct connections _dla,
     *dla.r_rvalid = 0;
 
     // add some latency...
+    //for (int i = 0; i < AXI_R_LATENCY; i++) {
+    //    axi_r_txn txn;
+//
+    //    txn.rvalid = 0;
+    //    txn.rvalid = 0;
+    //    txn.rid = 0;
+    //    txn.rlast = 0;
+    //    for (int j = 0; j < AXI_WIDTH / 8; j++) {
+    //        txn.rdata[i] = 0xAA;
+    //    }
+//
+    //    r0_fifo.push(txn);
+    //}
+    addLatancy();    
+}
+
+void AXIResponder::addLatancy(){
     for (int i = 0; i < AXI_R_LATENCY; i++) {
         axi_r_txn txn;
 
@@ -40,7 +57,7 @@ AXIResponder::AXIResponder(struct connections _dla,
         txn.rid = 0;
         txn.rlast = 0;
         for (int j = 0; j < AXI_WIDTH / 8; j++) {
-            txn.rdata[i] = 0xAA;
+            txn.rdata[j] = 0xAA;
         }
 
         r0_fifo.push(txn);
@@ -52,6 +69,8 @@ AXIResponder::read_ram(uint64_t addr) {
     ram[addr / AXI_BLOCK_SIZE].resize(AXI_BLOCK_SIZE, 0);
     return ram[addr / AXI_BLOCK_SIZE][addr % AXI_BLOCK_SIZE];
 }
+
+
 
 void
 AXIResponder::write_ram(uint64_t addr, uint8_t data) {
@@ -191,21 +210,13 @@ AXIResponder::eval_ram() {
 
     /* read response */
     if (!r_fifo.empty()) {
+        
         axi_r_txn &txn = r_fifo.front();
 
         r0_fifo.push(txn);
         r_fifo.pop();
     } else {
-        axi_r_txn txn;
-
-        txn.rvalid = 0;
-        txn.rid = 0;
-        txn.rlast = 0;
-        for (int i = 0; i < AXI_WIDTH / 8; i++) {
-            txn.rdata[i] = 0xAA;
-        }
-
-        r0_fifo.push(txn);
+        addLatancy();
     }
 
     *dla.r_rvalid = 0;

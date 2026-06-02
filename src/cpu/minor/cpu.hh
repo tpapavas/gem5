@@ -53,6 +53,7 @@
 #include "enums/ThreadPolicy.hh"
 #include "params/BaseMinorCPU.hh"
 
+
 namespace gem5
 {
 
@@ -156,6 +157,43 @@ class MinorCPU : public BaseCPU
 
     uint32_t NvDlaReadReg(int accel_id, Addr addr) override;
     void NvDlaWriteReg(int accel_id, uint32_t data, Addr addr) override;
+
+    void accelStartCountBdma0(int accel_id) override;
+    void accelEndCountBdma0(int accel_id) override;
+    void accelStartCountBdma1(int accel_id) override;
+    void accelEndCountBdma1(int accel_id) override;
+    void accelStartCountCdp0(int accel_id) override;
+    void accelEndCountCdp0(int accel_id) override;
+    void accelStartCountCdp1(int accel_id) override;
+    void accelEndCountCdp1(int accel_id) override;
+    void accelStartCountConv0(int accel_id) override;
+    void accelEndCountConv0(int accel_id) override;
+    void accelStartCountConv1(int accel_id) override;
+    void accelEndCountConv1(int accel_id) override;
+    void accelStartCountPdp0(int accel_id) override;
+    void accelEndCountPdp0(int accel_id) override;
+    void accelStartCountPdp1(int accel_id) override;
+    void accelEndCountPdp1(int accel_id) override;
+    void accelStartCountRubik0(int accel_id) override;
+    void accelEndCountRubik0(int accel_id) override;
+    void accelStartCountRubik1(int accel_id) override;
+    void accelEndCountRubik1(int accel_id) override;
+    void accelStartCountSdp0(int accel_id) override;
+    void accelEndCountSdp0(int accel_id) override;
+    void accelStartCountSdp1(int accel_id) override;
+    void accelEndCountSdp1(int accel_id) override;
+    void accelStartCountCacc0(int accel_id) override;
+    void accelEndCountCacc0(int accel_id) override;
+    void accelStartCountCacc1(int accel_id) override;
+    void accelEndCountCacc1(int accel_id) override;
+    void accelStartCountCdmaDat0(int accel_id) override;
+    void accelEndCountCdmaDat0(int accel_id) override;
+    void accelStartCountCdmaDat1(int accel_id) override;
+    void accelEndCountCdmaDat1(int accel_id) override;
+    void accelStartCountCdmaWt0(int accel_id) override;
+    void accelEndCountCdmaWt0(int accel_id) override;
+    void accelStartCountCdmaWt1(int accel_id) override;
+    void accelEndCountCdmaWt1(int accel_id) override;
 
     /** Simple inst count interface from BaseCPU */
     Counter totalInsts() const override;

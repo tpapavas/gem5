@@ -47,9 +47,10 @@
 
 #include "wrapper_nvdla.hh"
 #include <iostream>
+uint64_t _tickcount = 0;
 
 double sc_time_stamp() {
-  return double_t(0);
+  return double_t(_tickcount);
 }
 
 embeddedBuffer* Wrapper_nvdla::shared_spm = nullptr;
@@ -86,7 +87,7 @@ Wrapper_nvdla::Wrapper_nvdla(int id_nvdla, const unsigned int maxReq,
     if (!print_buffer) {
         print_buffer = new uint64_t[PB_SIZE * 2];
     }
-
+    
 
     int argcc = 1;
     char* buf[] = {(char*)"aaa",(char*)"bbb"};
@@ -167,6 +168,8 @@ Wrapper_nvdla::Wrapper_nvdla(int id_nvdla, const unsigned int maxReq,
     };
     axi_cvsram = new AXIResponder(cvsramconn, this, "CVSRAM",
                                       true, maxReq, false);
+
+
 }
 
 
@@ -208,6 +211,7 @@ void Wrapper_nvdla::init() {
     dla->nvdla_pwrbus_ram_o_pd = 0;
     dla->nvdla_pwrbus_ram_a_pd = 0;
     
+
     printf("reset...\n");
     dla->dla_reset_rstn = 1;
     dla->direct_reset_ = 1;
@@ -317,7 +321,7 @@ outputNVDLA& Wrapper_nvdla::tick() {
     dla->eval();
 
     tickcount++;    // align this tick advancement with stats.txt
-
+    _tickcount++;
     return output;
 }
 

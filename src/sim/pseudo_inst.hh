@@ -103,6 +103,47 @@ void m5Syscall(ThreadContext *tc);
 void togglesync(ThreadContext *tc);
 void triggerWorkloadEvent(ThreadContext *tc);
 
+void accel_start_count_bdma_0(ThreadContext *tc, int accel_id);
+void accel_end_count_bdma_0(ThreadContext *tc, int accel_id);
+void accel_start_count_bdma_1(ThreadContext *tc, int accel_id);
+void accel_end_count_bdma_1(ThreadContext *tc, int accel_id);
+void accel_start_count_cdp_0(ThreadContext *tc, int accel_id);
+void accel_end_count_cdp_0(ThreadContext *tc, int accel_id);
+void accel_start_count_cdp_1(ThreadContext *tc, int accel_id);
+void accel_end_count_cdp_1(ThreadContext *tc, int accel_id);
+void accel_start_count_conv_0(ThreadContext *tc, int accel_id);
+void accel_end_count_conv_0(ThreadContext *tc, int accel_id);
+void accel_start_count_conv_1(ThreadContext *tc, int accel_id);
+void accel_end_count_conv_1(ThreadContext *tc, int accel_id);
+void accel_start_count_pdp_0(ThreadContext *tc, int accel_id);
+void accel_end_count_pdp_0(ThreadContext *tc, int accel_id);
+void accel_start_count_pdp_1(ThreadContext *tc, int accel_id);
+void accel_end_count_pdp_1(ThreadContext *tc, int accel_id);
+void accel_start_count_rubik_0(ThreadContext *tc, int accel_id);
+void accel_end_count_rubik_0(ThreadContext *tc, int accel_id);
+void accel_start_count_rubik_1(ThreadContext *tc, int accel_id);
+void accel_end_count_rubik_1(ThreadContext *tc, int accel_id);
+void accel_start_count_sdp_0(ThreadContext *tc, int accel_id);
+void accel_end_count_sdp_0(ThreadContext *tc, int accel_id);
+void accel_start_count_sdp_1(ThreadContext *tc, int accel_id);
+void accel_end_count_sdp_1(ThreadContext *tc, int accel_id);
+void accel_start_count_cacc_0(ThreadContext *tc, int accel_id);
+void accel_end_count_cacc_0(ThreadContext *tc, int accel_id);
+void accel_start_count_cacc_1(ThreadContext *tc, int accel_id);
+void accel_end_count_cacc_1(ThreadContext *tc, int accel_id);
+
+void accel_start_count_cdma_dat_0(ThreadContext *tc, int accel_id);
+void accel_end_count_cdma_dat_0(ThreadContext *tc, int accel_id);
+void accel_start_count_cdma_dat_1(ThreadContext *tc, int accel_id);
+void accel_end_count_cdma_dat_1(ThreadContext *tc, int accel_id);
+
+void accel_start_count_cdma_wt_0(ThreadContext *tc, int accel_id);
+void accel_end_count_cdma_wt_0(ThreadContext *tc, int accel_id);
+void accel_start_count_cdma_wt_1(ThreadContext *tc, int accel_id);
+void accel_end_count_cdma_wt_1(ThreadContext *tc, int accel_id);
+
+
+
 /**
  * Execute a decoded M5 pseudo instruction
  *
@@ -257,7 +298,114 @@ pseudoInstWork(ThreadContext *tc, uint8_t func, uint64_t &result)
       case M5OP_WORKLOAD:
         invokeSimcall<ABI>(tc, triggerWorkloadEvent);
         return true;
-
+      case M5OP_NVDLA_START_BDMA_0:
+        invokeSimcall<ABI>(tc, accel_start_count_bdma_0);
+        return true;
+      case M5OP_NVDLA_END_BDMA_0:
+        invokeSimcall<ABI>(tc, accel_end_count_bdma_0);
+        return true;
+      case M5OP_NVDLA_START_BDMA_1:
+        invokeSimcall<ABI>(tc, accel_start_count_bdma_1);
+        return true;
+      case M5OP_NVDLA_END_BDMA_1:
+        invokeSimcall<ABI>(tc, accel_end_count_bdma_1);
+        return true;
+      case M5OP_NVDLA_START_CDP_0:
+        invokeSimcall<ABI>(tc, accel_start_count_cdp_0);
+        return true;
+      case M5OP_NVDLA_END_CDP_0:
+        invokeSimcall<ABI>(tc, accel_end_count_cdp_0);
+        return true;
+      case M5OP_NVDLA_START_CDP_1:
+        invokeSimcall<ABI>(tc, accel_start_count_cdp_1);
+        return true;
+      case M5OP_NVDLA_END_CDP_1:
+        invokeSimcall<ABI>(tc, accel_end_count_cdp_1);
+        return true;
+      case M5OP_NVDLA_START_CONV_0:
+        invokeSimcall<ABI>(tc, accel_start_count_conv_0);
+        return true;
+      case M5OP_NVDLA_END_CONV_0:
+        invokeSimcall<ABI>(tc, accel_end_count_conv_0);
+        return true;
+      case M5OP_NVDLA_START_CONV_1:
+        invokeSimcall<ABI>(tc, accel_start_count_conv_1);
+        return true;
+      case M5OP_NVDLA_END_CONV_1:
+        invokeSimcall<ABI>(tc, accel_end_count_conv_1);
+        return true;
+      case M5OP_NVDLA_START_PDP_0:
+        invokeSimcall<ABI>(tc, accel_start_count_pdp_0);
+        return true;
+      case M5OP_NVDLA_END_PDP_0:
+        invokeSimcall<ABI>(tc, accel_end_count_pdp_0);
+        return true;
+      case M5OP_NVDLA_START_PDP_1:
+        invokeSimcall<ABI>(tc, accel_start_count_pdp_1);
+        return true;
+      case M5OP_NVDLA_END_PDP_1:
+        invokeSimcall<ABI>(tc, accel_end_count_pdp_1);
+        return true;
+      case M5OP_NVDLA_START_RUBIK_0:
+        invokeSimcall<ABI>(tc, accel_start_count_rubik_0);
+        return true;
+      case M5OP_NVDLA_END_RUBIK_0:
+        invokeSimcall<ABI>(tc, accel_end_count_rubik_0);
+        return true;
+      case M5OP_NVDLA_START_RUBIK_1:
+        invokeSimcall<ABI>(tc, accel_start_count_rubik_1);
+        return true;
+      case M5OP_NVDLA_END_RUBIK_1:
+        invokeSimcall<ABI>(tc, accel_end_count_rubik_1);
+        return true;
+      case M5OP_NVDLA_START_SDP_0:
+        invokeSimcall<ABI>(tc, accel_start_count_sdp_0);
+        return true;
+      case M5OP_NVDLA_END_SDP_0:
+        invokeSimcall<ABI>(tc, accel_end_count_sdp_0);
+        return true;
+      case M5OP_NVDLA_START_SDP_1:
+        invokeSimcall<ABI>(tc, accel_start_count_sdp_1);
+        return true;
+      case M5OP_NVDLA_END_SDP_1:
+        invokeSimcall<ABI>(tc, accel_end_count_sdp_1);
+        return true;
+      case M5OP_NVDLA_START_CACC_0:
+        invokeSimcall<ABI>(tc, accel_start_count_cacc_0);
+        return true;
+      case M5OP_NVDLA_END_CACC_0:
+        invokeSimcall<ABI>(tc, accel_end_count_cacc_0);
+        return true;
+      case M5OP_NVDLA_START_CACC_1:
+        invokeSimcall<ABI>(tc, accel_start_count_cacc_1);
+        return true;
+      case M5OP_NVDLA_END_CACC_1:
+        invokeSimcall<ABI>(tc, accel_end_count_cacc_1);
+        return true;
+      case M5OP_NVDLA_START_CDMA_DAT_0:
+        invokeSimcall<ABI>(tc, accel_start_count_cdma_dat_0);
+        return true;
+      case M5OP_NVDLA_END_CDMA_DAT_0:
+        invokeSimcall<ABI>(tc, accel_end_count_cdma_dat_0);
+        return true;
+      case M5OP_NVDLA_START_CDMA_DAT_1:
+        invokeSimcall<ABI>(tc, accel_start_count_cdma_dat_1);
+        return true;
+      case M5OP_NVDLA_END_CDMA_DAT_1:
+        invokeSimcall<ABI>(tc, accel_end_count_cdma_dat_1);
+        return true;
+      case M5OP_NVDLA_START_CDMA_WT_0:
+        invokeSimcall<ABI>(tc, accel_start_count_cdma_wt_0);
+        return true;
+      case M5OP_NVDLA_END_CDMA_WT_0:
+        invokeSimcall<ABI>(tc, accel_end_count_cdma_wt_0);
+        return true;
+      case M5OP_NVDLA_START_CDMA_WT_1:
+        invokeSimcall<ABI>(tc, accel_start_count_cdma_wt_1);
+        return true;
+      case M5OP_NVDLA_END_CDMA_WT_1:
+        invokeSimcall<ABI>(tc, accel_end_count_cdma_wt_1);
+        return true;
       default:
         warn("Unhandled m5 op: %#x\n", func);
         return false;

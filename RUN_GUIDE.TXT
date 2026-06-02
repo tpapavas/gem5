@@ -1,0 +1,30 @@
+Basic exports:
+    export VERILATOR_ROOT=<path-to-verilator>/verilator_4.040/verilator/;
+    export C_INCLUDE_PATH=<path-to-verilator>/verilator_4.040/verilatorinclude:$C_INCLUDE_PATH;
+    export CPLUS_INCLUDE_PATH=<path-to-verilator>/verilator_4.040/include:$CPLUS_INCLUDE_PATH;
+    export PATH=<path-to-verilator>/verilator_4.040/bin:$PATH;
+
+Build external files of nvdla verilator
+    cd <path-to-gem5>/ext/rtl/model_nvdla
+    make library_vcd OPT=1 MULTI_THREAD=0 -j12
+
+Build gem5
+    cd <path-to-gem5>
+    CC=clang CXX=clang++ /usr/bin/python3 /usr/bin/scons build/ARM/gem5.opt PYTHON_CONFIG=/usr/bin/python3-config PROTOC=/usr/bin/protoc -j21
+
+Run gem5-verilator nvdla SE:
+    ./build/ARM/gem5.opt  configs/example/arm/se_RTL.py --embed-spm-size=1MiB --embed-spm-lat=2 --little-cpu-clock 1GHz --freq-ratio=1
+
+
+
+If you edit the m5ops file:
+    cd <path-to-gem5>/util/m5/src/abi/arm64
+    aarch64-linux-gnu-g++-9 m5op.S -c -o m5ops_plus.o -I<path-to-gem5>/include -fPIC -O3 --static -std=c++11
+
+Now this file used insde on runtime(
+
+Αν αλλάξεις τα m5ops, πρέπει να περάσεις τα .h του <gem5>/include στο sw μαζί και με το m5ops_plus.o
+    <path-of-sw>/kumd/umd/core/src/runtime/include/gem5
+    <path-of-sw>/kumd/umd/core/src/runtime/include/gem5/asm/generic
+
+)

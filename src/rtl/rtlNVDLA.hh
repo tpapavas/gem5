@@ -217,6 +217,7 @@ class rtlNVDLA : public rtlObject
     struct nvdla_stats
     {
         statistics::Scalar nvdla_cycles;
+        statistics::Scalar nvdla_idle_cycles;
         statistics::Scalar nvdla_reads;
         statistics::Scalar nvdla_writes;
         statistics::Histogram nvdla_avgReqCVSRAM;
