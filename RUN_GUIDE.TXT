@@ -28,3 +28,15 @@ Now this file used insde on runtime(
     <path-of-sw>/kumd/umd/core/src/runtime/include/gem5/asm/generic
 
 )
+
+
+1. Για να κάνεις compile το nvdla_runtime:
+Shell
+# Connect to Docker container
+docker run -it --rm -v <home-path>:<home-path> edwinlai99/advp:v1
+# VP has arm64 architecture, so we need cross compilers
+apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu -y
+# in <path-to-nvdla-stuff>/sw/umd
+cd <path-to-sw>/kumd/umd/
+export TOP=`pwd`
+make TOOLCHAIN_PREFIX=aarch64-linux-gnu- runtime -j<num-threads>
