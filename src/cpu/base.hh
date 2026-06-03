@@ -58,7 +58,7 @@
 #include "sim/probe/probe.hh"
 #include "sim/signal.hh"
 #include "sim/system.hh"
-
+#include "../dev/arm/nvdla_device_se.hh"
 namespace gem5
 {
 
@@ -358,25 +358,25 @@ class BaseCPU : public ClockedObject
         return;
     }
 
-    virtual void accelStartCountConv0(int accel_id) {
+    virtual void accelStartCountCmac0(int accel_id) {
         std::cout << "THIS SHOULD NOT BE PRINTED, " <<
         " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
         return;
     }
 
-    virtual void accelEndCountConv0(int accel_id) {
+    virtual void accelEndCountCmac0(int accel_id) {
         std::cout << "THIS SHOULD NOT BE PRINTED, " <<
         " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
         return;
     }
 
-    virtual void accelStartCountConv1(int accel_id) {
+    virtual void accelStartCountCmac1(int accel_id) {
         std::cout << "THIS SHOULD NOT BE PRINTED, " <<
         " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
         return;
     }
 
-    virtual void accelEndCountConv1(int accel_id) {
+    virtual void accelEndCountCmac1(int accel_id) {
         std::cout << "THIS SHOULD NOT BE PRINTED, " <<
         " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
         return;

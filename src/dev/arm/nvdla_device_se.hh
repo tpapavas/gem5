@@ -489,14 +489,14 @@ class NvDlaDeviceSE : public BasicPioDevice
         statistics::Scalar num_spm_miss;
         statistics::Scalar num_spm_use;
         statistics::Scalar nvdla_rtl_cycles = 0;
-        statistics::Scalar nvdla_rtl_cycles_idle = 0;
+        //statistics::Scalar nvdla_rtl_cycles_idle = 0;
 
         statistics::Scalar nvdla_total_Bdma0 =0;
         statistics::Scalar nvdla_total_Bdma1 =0;
         statistics::Scalar nvdla_total_Cdp0 =0;
         statistics::Scalar nvdla_total_Cdp1 =0;
-        statistics::Scalar nvdla_total_Conv0 =0;
-        statistics::Scalar nvdla_total_Conv1 =0;
+        statistics::Scalar nvdla_total_Cmac0 =0;
+        statistics::Scalar nvdla_total_Cmac1 =0;
         statistics::Scalar nvdla_total_Pdp0 =0;
         statistics::Scalar nvdla_total_Pdp1 =0;
         statistics::Scalar nvdla_total_Rubik0 =0;
@@ -610,10 +610,10 @@ public:
     Tick nvdla_end_Cdp0;
     Tick nvdla_start_Cdp1;
     Tick nvdla_end_Cdp1;
-    Tick nvdla_start_Conv0;
-    Tick nvdla_end_Conv0;
-    Tick nvdla_start_Conv1;
-    Tick nvdla_end_Conv1;
+    Tick nvdla_start_Cmac0;
+    Tick nvdla_end_Cmac0;
+    Tick nvdla_start_Cmac1;
+    Tick nvdla_end_Cmac1;
     Tick nvdla_start_Pdp0;
     Tick nvdla_end_Pdp0;
     Tick nvdla_start_Pdp1;

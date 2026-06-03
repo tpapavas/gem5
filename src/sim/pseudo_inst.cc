@@ -531,28 +531,28 @@ void accel_end_count_cdp_1(ThreadContext *tc, int accel_id)
     tc->getCpuPtr()->accelEndCountCdp1(accel_id);
 }
 
-void accel_start_count_conv_0(ThreadContext *tc, int accel_id)
+void accel_start_count_cmac_0(ThreadContext *tc, int accel_id)
 {
-    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_conv_0()\n");
-    tc->getCpuPtr()->accelStartCountConv0(accel_id);
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_cmac_0()\n");
+    tc->getCpuPtr()->accelStartCountCmac0(accel_id);
 }
 
-void accel_end_count_conv_0(ThreadContext *tc, int accel_id)
+void accel_end_count_cmac_0(ThreadContext *tc, int accel_id)
 {
-    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_conv_0()\n");
-    tc->getCpuPtr()->accelEndCountConv0(accel_id);
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_cmac_0()\n");
+    tc->getCpuPtr()->accelEndCountCmac0(accel_id);
 }
 
-void accel_start_count_conv_1(ThreadContext *tc, int accel_id)
+void accel_start_count_cmac_1(ThreadContext *tc, int accel_id)
 {
-    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_conv_1()\n");
-    tc->getCpuPtr()->accelStartCountConv1(accel_id);
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_cmac_1()\n");
+    tc->getCpuPtr()->accelStartCountCmac1(accel_id);
 }
 
-void accel_end_count_conv_1(ThreadContext *tc, int accel_id)
+void accel_end_count_cmac_1(ThreadContext *tc, int accel_id)
 {
-    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_conv_1()\n");
-    tc->getCpuPtr()->accelEndCountConv1(accel_id);
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_cmac_1()\n");
+    tc->getCpuPtr()->accelEndCountCmac1(accel_id);
 }
 
 void accel_start_count_pdp_0(ThreadContext *tc, int accel_id)

@@ -383,7 +383,7 @@ NvDlaDeviceSE::runIterationNVDLA() {
 
     outputNVDLA& output = wr->tick();
     getStats().nvdla_rtl_cycles = getTickfromWrapperNVDLA();
-    getStats().nvdla_rtl_cycles_idle = (getStats().nvdla_rtl_cycles.value() - getStats().nvdla_total_Bdma0.value() - getStats().nvdla_total_Bdma1.value() - getStats().nvdla_total_Bdma0.value() - getStats().nvdla_total_Cdp0.value() - getStats().nvdla_total_Cdp1.value() -getStats().nvdla_total_Conv0.value() - getStats().nvdla_total_Conv1.value() - getStats().nvdla_total_Pdp0.value() - getStats().nvdla_total_Pdp1.value() - getStats().nvdla_total_Rubik0.value() - getStats().nvdla_total_Rubik1.value() - getStats().nvdla_total_Sdp0.value() - getStats().nvdla_total_Sdp1.value() - getStats().nvdla_total_Cacc0.value() - getStats().nvdla_total_Cacc1.value() - getStats().nvdla_total_CdmaDat0.value() - getStats().nvdla_total_CdmaDat1.value() - getStats().nvdla_total_CdmaWt0.value() - getStats().nvdla_total_CdmaWt1.value() );
+    //getStats().nvdla_rtl_cycles_idle = (getStats().nvdla_rtl_cycles.value() - getStats().nvdla_total_Bdma0.value() - getStats().nvdla_total_Bdma1.value() - getStats().nvdla_total_Cdp0.value() - getStats().nvdla_total_Cdp1.value() -getStats().nvdla_total_Cmnv0.value() - getStats().nvdla_total_Conv1.value() - getStats().nvdla_total_Pdp0.value() - getStats().nvdla_total_Pdp1.value() - getStats().nvdla_total_Rubik0.value() - getStats().nvdla_total_Rubik1.value() - getStats().nvdla_total_Sdp0.value() - getStats().nvdla_total_Sdp1.value() - getStats().nvdla_total_Cacc0.value() - getStats().nvdla_total_Cacc1.value() - getStats().nvdla_total_CdmaDat0.value() - getStats().nvdla_total_CdmaDat1.value() - getStats().nvdla_total_CdmaWt0.value() - getStats().nvdla_total_CdmaWt1.value() );
 
     if (dma_enable) {
         try_get_dma_read_data(spm_line_size);
@@ -877,9 +877,9 @@ NvDlaDeviceSE::regStats() {
     stats.nvdla_rtl_cycles
         .name(name() + ".nvdla_rtl_cycles")
         .desc("Number of RTL cycles to run the trace from RTL");
-    stats.nvdla_rtl_cycles_idle
-        .name(name() + ".nvdla_rtl_cycles_idle")
-        .desc("Number of RTL cycles to run the trace from RTL");
+    //stats.nvdla_rtl_cycles_idle
+    //    .name(name() + ".nvdla_rtl_cycles_idle")
+    //    .desc("Number of RTL cycles to run the trace from RTL");
 
     stats.nvdla_total_Bdma0
         .name(name() + ".nvdla_total_Bdma0")
@@ -897,13 +897,13 @@ NvDlaDeviceSE::regStats() {
         .name(name() + ".nvdla_total_Cdp1")
         .desc("Number of Cycles to run the Cdp1 from RTL");
 
-    stats.nvdla_total_Conv0
-        .name(name() + ".nvdla_total_Conv0")
-        .desc("Number of Cycles to run the Conv0 from RTL");
+    stats.nvdla_total_Cmac0
+        .name(name() + ".nvdla_total_Cmac0")
+        .desc("Number of Cycles to run the Cmac0 from RTL");
 
-    stats.nvdla_total_Conv1
-        .name(name() + ".nvdla_total_Conv1")
-        .desc("Number of Cycles to run the Conv1 from RTL");
+    stats.nvdla_total_Cmac1
+        .name(name() + ".nvdla_total_Cmac1")
+        .desc("Number of Cycles to run the Cmac1 from RTL");
 
     stats.nvdla_total_Pdp0
         .name(name() + ".nvdla_total_Pdp0")

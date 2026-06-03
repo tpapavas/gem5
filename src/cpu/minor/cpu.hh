@@ -166,10 +166,10 @@ class MinorCPU : public BaseCPU
     void accelEndCountCdp0(int accel_id) override;
     void accelStartCountCdp1(int accel_id) override;
     void accelEndCountCdp1(int accel_id) override;
-    void accelStartCountConv0(int accel_id) override;
-    void accelEndCountConv0(int accel_id) override;
-    void accelStartCountConv1(int accel_id) override;
-    void accelEndCountConv1(int accel_id) override;
+    void accelStartCountCmac0(int accel_id) override;
+    void accelEndCountCmac0(int accel_id) override;
+    void accelStartCountCmac1(int accel_id) override;
+    void accelEndCountCmac1(int accel_id) override;
     void accelStartCountPdp0(int accel_id) override;
     void accelEndCountPdp0(int accel_id) override;
     void accelStartCountPdp1(int accel_id) override;

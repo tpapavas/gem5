@@ -111,10 +111,10 @@ void accel_start_count_cdp_0(ThreadContext *tc, int accel_id);
 void accel_end_count_cdp_0(ThreadContext *tc, int accel_id);
 void accel_start_count_cdp_1(ThreadContext *tc, int accel_id);
 void accel_end_count_cdp_1(ThreadContext *tc, int accel_id);
-void accel_start_count_conv_0(ThreadContext *tc, int accel_id);
-void accel_end_count_conv_0(ThreadContext *tc, int accel_id);
-void accel_start_count_conv_1(ThreadContext *tc, int accel_id);
-void accel_end_count_conv_1(ThreadContext *tc, int accel_id);
+void accel_start_count_cmac_0(ThreadContext *tc, int accel_id);
+void accel_end_count_cmac_0(ThreadContext *tc, int accel_id);
+void accel_start_count_cmac_1(ThreadContext *tc, int accel_id);
+void accel_end_count_cmac_1(ThreadContext *tc, int accel_id);
 void accel_start_count_pdp_0(ThreadContext *tc, int accel_id);
 void accel_end_count_pdp_0(ThreadContext *tc, int accel_id);
 void accel_start_count_pdp_1(ThreadContext *tc, int accel_id);
@@ -322,17 +322,17 @@ pseudoInstWork(ThreadContext *tc, uint8_t func, uint64_t &result)
       case M5OP_NVDLA_END_CDP_1:
         invokeSimcall<ABI>(tc, accel_end_count_cdp_1);
         return true;
-      case M5OP_NVDLA_START_CONV_0:
-        invokeSimcall<ABI>(tc, accel_start_count_conv_0);
+      case M5OP_NVDLA_START_CMAC_0:
+        invokeSimcall<ABI>(tc, accel_start_count_cmac_0);
         return true;
-      case M5OP_NVDLA_END_CONV_0:
-        invokeSimcall<ABI>(tc, accel_end_count_conv_0);
+      case M5OP_NVDLA_END_CMAC_0:
+        invokeSimcall<ABI>(tc, accel_end_count_cmac_0);
         return true;
-      case M5OP_NVDLA_START_CONV_1:
-        invokeSimcall<ABI>(tc, accel_start_count_conv_1);
+      case M5OP_NVDLA_START_CMAC_1:
+        invokeSimcall<ABI>(tc, accel_start_count_cmac_1);
         return true;
-      case M5OP_NVDLA_END_CONV_1:
-        invokeSimcall<ABI>(tc, accel_end_count_conv_1);
+      case M5OP_NVDLA_END_CMAC_1:
+        invokeSimcall<ABI>(tc, accel_end_count_cmac_1);
         return true;
       case M5OP_NVDLA_START_PDP_0:
         invokeSimcall<ABI>(tc, accel_start_count_pdp_0);
