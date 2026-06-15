@@ -151,10 +151,6 @@ BaseCPU::BaseCPU(const Params &p, bool is_checker)
       powerGatingOnIdle(p.power_gating_on_idle),
       enterPwrGatingEvent([this]{ enterPwrGating(); }, name())
 {
-    nvdla_0 = p.accel_0;
-    nvdla_1 = p.accel_1;
-    nvdla_2 = p.accel_2;
-    nvdla_3 = p.accel_3;
 
     // if Python did not provide a valid ID, do it here
     if (_cpuId == -1 ) {
@@ -241,10 +237,6 @@ BaseCPU::enableFunctionTrace()
 
 BaseCPU::~BaseCPU()
 {
-    delete nvdla_0;
-    delete nvdla_1;
-    delete nvdla_2;
-    delete nvdla_3;
 }
 
 void
@@ -1146,9 +1138,8 @@ bool
 BaseCPU::AccelPort::recvTimingResp(PacketPtr pkt)
 {
     //DPRINTF(SimpleCPU, "Received fetch response %#x\n", pkt->getAddr());
-    std::cout << "[BaseCPU::AccelPort::recvTimingResp] "
-        "Received finished addr: "
-        << pkt->getAddr() << std::endl;
+    std::cout << "[BaseCPU::AccelPort::recvTimingResp] Received finished addr: " << pkt->getAddr() << std::endl;
+
 
     if (pkt->getAddr() == 0) {
         cpu->finishedAccelerator0=true;
@@ -1198,15 +1189,19 @@ BaseCPU::NvDlaPort::recvTimingResp(PacketPtr pkt)
           << std::hex << pkt->getAddr()
           << " data=0x"
           << pkt->getLE<uint32_t>()
-          << " tick=" << std::dec << curTick() / 1000 << " ns"
-          << std::endl;
+          << " tick=" << std::dec << curTick() << std::endl;
 
+    if(pkt->getAddr() == 0x20000 && pkt->getLE<uint32_t>() == 1){
+        printf("[BaseCPU::NvDlaPort::recvTimingResp] cpu got interrupt at @ %llu cycle\n",
+                cpu->ticksToCycles(curTick()));
+    }
     uint32_t data = pkt->getLE<uint32_t>();
 
     cpu->nvdlaReqData = data;
     cpu->nvdlaWaitingResp = false;
-    std::cout << "[BaseCPU::NvDlaPort::recvTimingResp] nvdlaWaitingResp = "
-              << cpu->nvdlaWaitingResp << "\n";
+    std::cout << "[BaseCPU::NvDlaPort::recvTimingResp] nvdlaWaitingResp = " << cpu->nvdlaWaitingResp << "\n";
+
+
 
     return true;
 }
@@ -1214,7 +1209,7 @@ BaseCPU::NvDlaPort::recvTimingResp(PacketPtr pkt)
 void
 BaseCPU::NvDlaPort::recvReqRetry()
 {
-    // we shouldn't get a retry unless we have a packet that we're
+    // we shouldn't  get a retry unless we have a packet that we're
     // waiting to transmit
     //assert(cpu->ifetch_pkt != NULL);
     //assert(cpu->_status == IcacheRetry);
@@ -1228,21 +1223,18 @@ BaseCPU::NvDlaPort::recvReqRetry()
           << std::hex << cpu->blockedPkt->getAddr()
           << " data=0x"
           << cpu->blockedPkt->getLE<uint32_t>()
-          << " tick=" << std::dec << curTick() / 1000 << " ns"
-          << std::endl;
+          << " tick=" << std::dec << curTick() << std::endl;
     std::cout << "[BaseCPU::NvDlaPort::recvReqRetry()]nvdlaReqQ addr=0x"
           << std::hex << cpu->nvdlaReqQ->getAddr()
           << " data=0x"
           << cpu->nvdlaReqQ->getLE<uint32_t>()
-          << " tick=" << std::dec << curTick() / 1000 << " ns"
-          << std::endl;
+          << " tick=" << std::dec << curTick() << std::endl;
 
     if (!cpu->blockedPkt){
         std::cout << "[NvDlaPort::recvReqRetry] No blocked packet!\n";
         return;
     }
-    std::cout << "[NvDlaPort::recvReqRetry] Retrying blocked pkt addr=0x"
-              << std::hex << cpu->blockedPkt->getAddr() << "\n";
+    std::cout << "[NvDlaPort::recvReqRetry] Retrying blocked pkt addr=0x" << std::hex << cpu->blockedPkt->getAddr() << "\n";
 
     bool sent = sendTimingReq(cpu->blockedPkt);
     if (sent) {

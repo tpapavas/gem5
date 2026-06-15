@@ -1,0 +1,4865 @@
+spawn /home/tpapavasileiou/tools/GEM5-NVDLA/vp-bin/aarch64_toplevel -c /home/tpapavasileiou/tools/GEM5-NVDLA/vp-bin/conf/aarch64_nvdla.lua
+
+             SystemC 2.3.0-ASI --- Oct  9 2017 04:21:14
+        Copyright (c) 1996-2012 by all Contributors,
+        ALL RIGHTS RESERVED
+
+sc_log control string: [outfile:sc.log;verbosity_level:sc_debug;csb_adaptor:enable;dbb_adaptor:enable;sram_adaptor:enable]
+Set SC LOG file to sc.log
+Set debug verbosity to sc_debug
+DMI mode enable
+RAM base address: 0xc0000000
+bridge: tlm2c_elaborate..
+
+Info: NV_NVDLA_glb.cpp: 228:calling NV_NVDLA_glb::Update_nvdla_intr_bdma_0
+
+
+Info: NV_NVDLA_glb.cpp: 236:calling NV_NVDLA_glb::Update_nvdla_intr_bdma_1
+
+
+Info: NV_NVDLA_glb.cpp: 244:calling NV_NVDLA_glb::Update_nvdla_intr_pdp_0
+
+
+Info: NV_NVDLA_glb.cpp: 252:calling NV_NVDLA_glb::Update_nvdla_intr_pdp_1
+
+
+Info: NV_NVDLA_glb.cpp: 260:calling NV_NVDLA_glb::Update_nvdla_intr_sdp_0
+
+
+Info: NV_NVDLA_glb.cpp: 268:calling NV_NVDLA_glb::Update_nvdla_intr_sdp_1
+
+
+Info: NV_NVDLA_glb.cpp: 276:calling NV_NVDLA_glb::Update_nvdla_intr_cdp_0
+
+
+Info: NV_NVDLA_glb.cpp: 284:calling NV_NVDLA_glb::Update_nvdla_intr_cdp_1
+
+
+Info: NV_NVDLA_glb.cpp: 292:calling NV_NVDLA_glb::Update_nvdla_intr_rbk_0
+
+
+Info: NV_NVDLA_glb.cpp: 300:calling NV_NVDLA_glb::Update_nvdla_intr_rbk_1
+
+
+Info: NV_NVDLA_glb.cpp: 308:calling NV_NVDLA_glb::Update_nvdla_intr_cdma_dat_0
+
+
+Info: NV_NVDLA_glb.cpp: 316:calling NV_NVDLA_glb::Update_nvdla_intr_cdma_dat_1
+
+
+Info: NV_NVDLA_glb.cpp: 324:calling NV_NVDLA_glb::Update_nvdla_intr_cdma_wt_0
+
+
+Info: NV_NVDLA_glb.cpp: 332:calling NV_NVDLA_glb::Update_nvdla_intr_cdma_wt_1
+
+
+Info: NV_NVDLA_glb.cpp: 340:calling NV_NVDLA_glb::Update_nvdla_intr_cacc_0
+
+
+Info: NV_NVDLA_glb.cpp: 348:calling NV_NVDLA_glb::Update_nvdla_intr_cacc_1
+
+
+Info: NV_NVDLA_cacc.cpp: 288:NV_NVDLA_cacc::ReshapeSequenceThread before ReshapeSequencerDirectConvCommon
+
+
+Info: NV_NVDLA_cacc.cpp: 296:NV_NVDLA_cacc::DeliverSequenceThread before DeliverSequencerDirectConvCommon
+
+
+Info: NV_NVDLA_cacc.cpp: 242:MARKWAIT: before mac_a2acc_fifo_ and mac_b2acc_fifo_
+
+
+Info: NV_NVDLA_cacc.cpp: 304:NV_NVDLA_cacc::SendToSDPThread Layer begin
+
+[    0.000000] Booting Linux on physical CPU 0x0
+[    0.000000] Linux version 4.13.3 (yali@unassigned) (gcc version 6.4.1 20170707 (Linaro GCC 6.4-2017.08)) #1 SMP PREEMPT Mon Nov 27 09:22:34 CST 2017
+[    0.000000] Boot CPU: AArch64 Processor [411fd070]
+[    0.000000] Machine model: linux,dummy-virt
+[    0.000000] efi: Getting EFI parameters from FDT:
+[    0.000000] efi: UEFI not found.
+[    0.000000] cma: Reserved 16 MiB at 0x000000007f000000
+[    0.000000] NUMA: No NUMA configuration found
+[    0.000000] NUMA: Faking a node at [mem 0x0000000000000000-0x000000007fffffff]
+[    0.000000] NUMA: NODE_DATA [mem 0x7efe8900-0x7efea3ff]
+[    0.000000] Zone ranges:
+[    0.000000]   DMA      [mem 0x0000000040000000-0x000000007fffffff]
+[    0.000000]   Normal   empty
+[    0.000000] Movable zone start for each node
+[    0.000000] Early memory node ranges
+[    0.000000]   node   0: [mem 0x0000000040000000-0x000000007fffffff]
+[    0.000000] Initmem setup node 0 [mem 0x0000000040000000-0x000000007fffffff]
+[    0.000000] psci: probing for conduit method from DT.
+[    0.000000] psci: PSCIv0.2 detected in firmware.
+[    0.000000] psci: Using standard PSCI v0.2 function IDs
+[    0.000000] psci: Trusted OS migration not required
+[    0.000000] percpu: Embedded 26 pages/cpu @ffff80003efcb000 s67352 r8192 d30952 u106496
+[    0.000000] Detected PIPT I-cache on CPU0
+[    0.000000] CPU features: enabling workaround for ARM erratum 832075
+[    0.000000] CPU features: enabling workaround for ARM erratum 834220
+[    0.000000] Built 1 zonelists in Node order, mobility grouping on.  Total pages: 258048
+[    0.000000] Policy zone: DMA
+[    0.000000] Kernel command line: "root=/dev/vda"
+[    0.000000] PID hash table entries: 4096 (order: 3, 32768 bytes)
+[    0.000000] Memory: 999232K/1048576K available (9404K kernel code, 1130K rwdata, 4164K rodata, 1088K init, 400K bss, 32960K reserved, 16384K cma-reserved)
+[    0.000000] Virtual kernel memory layout:
+[    0.000000]     modules : 0xffff000000000000 - 0xffff000008000000   (   128 MB)
+[    0.000000]     vmalloc : 0xffff000008000000 - 0xffff7dffbfff0000   (129022 GB)
+[    0.000000]       .text : 0xffff000008080000 - 0xffff0000089b0000   (  9408 KB)
+[    0.000000]     .rodata : 0xffff0000089b0000 - 0xffff000008dd0000   (  4224 KB)
+[    0.000000]       .init : 0xffff000008dd0000 - 0xffff000008ee0000   (  1088 KB)
+[    0.000000]       .data : 0xffff000008ee0000 - 0xffff000008ffaa00   (  1131 KB)
+[    0.000000]        .bss : 0xffff000008ffaa00 - 0xffff00000905ed60   (   401 KB)
+[    0.000000]     fixed   : 0xffff7dfffe7fd000 - 0xffff7dfffec00000   (  4108 KB)
+[    0.000000]     PCI I/O : 0xffff7dfffee00000 - 0xffff7dffffe00000   (    16 MB)
+[    0.000000]     vmemmap : 0xffff7e0000000000 - 0xffff800000000000   (  2048 GB maximum)
+[    0.000000]               0xffff7e0000000000 - 0xffff7e0001000000   (    16 MB actual)
+[    0.000000]     memory  : 0xffff800000000000 - 0xffff800040000000   (  1024 MB)
+[    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=1, Nodes=1
+[    0.000000] Preemptible hierarchical RCU implementation.
+[    0.000000] 	RCU restricting CPUs from NR_CPUS=64 to nr_cpu_ids=1.
+[    0.000000] RCU: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=1
+[    0.000000] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+[    0.000000] GICv2m: range[mem 0x08020000-0x08020fff], SPI[80:143]
+[    0.000000] arch_timer: cp15 timer(s) running at 62.50MHz (virt).
+[    0.000000] clocksource: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0x1cd42e208c, max_idle_ns: 881590405314 ns
+[    0.000150] sched_clock: 56 bits at 62MHz, resolution 16ns, wraps every 4398046511096ns
+[    0.006049] Console: colour dummy device 80x25
+[    0.009101] console [tty0] enabled
+[    0.010150] Calibrating delay loop (skipped), value calculated using timer frequency.. 125.00 BogoMIPS (lpj=250000)
+[    0.010365] pid_max: default: 32768 minimum: 301
+[    0.011364] Security Framework initialized
+[    0.013396] Dentry cache hash table entries: 131072 (order: 8, 1048576 bytes)
+[    0.014153] Inode-cache hash table entries: 65536 (order: 7, 524288 bytes)
+[    0.014366] Mount-cache hash table entries: 2048 (order: 2, 16384 bytes)
+[    0.014482] Mountpoint-cache hash table entries: 2048 (order: 2, 16384 bytes)
+[    0.051997] ASID allocator initialised with 65536 entries
+[    0.059494] Hierarchical SRCU implementation.
+[    0.071906] EFI services will not be available.
+[    0.080013] smp: Bringing up secondary CPUs ...
+[    0.080416] smp: Brought up 1 node, 1 CPU
+[    0.080600] SMP: Total of 1 processors activated.
+[    0.080933] CPU features: detected feature: 32-bit EL0 Support
+[    0.085087] CPU: All CPU(s) started at EL1
+[    0.086249] alternatives: patching kernel code
+[    0.101840] devtmpfs: initialized
+[    0.116211] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns
+[    0.116469] futex hash table entries: 256 (order: 3, 32768 bytes)
+[    0.120233] pinctrl core: initialized pinctrl subsystem
+[    0.140141] random: fast init done
+[    0.148389] DMI not present or invalid.
+[    0.155567] NET: Registered protocol family 16
+[    0.177676] cpuidle: using governor menu
+[    0.179217] vdso: 2 pages (1 code @ ffff0000089b6000, 1 data @ ffff000008ee5000)
+[    0.179542] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+[    0.188327] DMA: preallocated 256 KiB pool for atomic allocations
+[    0.191580] Serial: AMBA PL011 UART driver
+[    0.238921] 9000000.pl011: ttyAMA0 at MMIO 0x9000000 (irq = 40, base_baud = 0) is a PL011 rev1
+[    0.253837] console [ttyAMA0] enabled
+[    0.382208] HugeTLB registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.398521] ACPI: Interpreter disabled.
+[    0.408245] vgaarb: loaded
+[    0.411740] SCSI subsystem initialized
+[    0.416561] usbcore: registered new interface driver usbfs
+[    0.417666] usbcore: registered new interface driver hub
+[    0.418248] usbcore: registered new device driver usb
+[    0.424860] pps_core: LinuxPPS API ver. 1 registered
+[    0.425052] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.426265] PTP clock support registered
+[    0.427819] EDAC MC: Ver: 3.0.0
+[    0.431469] dmi: Firmware registration failed.
+[    0.433505] Advanced Linux Sound Architecture Driver Initialized.
+[    0.447051] clocksource: Switched to clocksource arch_sys_counter
+[    0.447905] VFS: Disk quotas dquot_6.6.0
+[    0.449536] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    0.453285] pnp: PnP ACPI: disabled
+[    0.505973] NET: Registered protocol family 2
+[    0.512194] TCP established hash table entries: 8192 (order: 4, 65536 bytes)
+[    0.512807] TCP bind hash table entries: 8192 (order: 5, 131072 bytes)
+[    0.513226] TCP: Hash tables configured (established 8192 bind 8192)
+[    0.514573] UDP hash table entries: 512 (order: 2, 16384 bytes)
+[    0.515146] UDP-Lite hash table entries: 512 (order: 2, 16384 bytes)
+[    0.516607] NET: Registered protocol family 1
+[    0.527555] RPC: Registered named UNIX socket transport module.
+[    0.527916] RPC: Registered udp transport module.
+[    0.528195] RPC: Registered tcp transport module.
+[    0.528435] RPC: Registered tcp NFSv4.1 backchannel transport module.
+[    0.537075] hw perfevents: enabled with armv8_pmuv3 PMU driver, 1 counters available
+[    0.537988] kvm [1]: HYP mode not available
+[    0.548742] audit: initializing netlink subsys (disabled)
+[    0.553057] audit: type=2000 audit(0.536:1): state=initialized audit_enabled=0 res=1
+[    0.555510] workingset: timestamp_bits=44 max_order=18 bucket_order=0
+[    0.599598] squashfs: version 4.0 (2009/01/31) Phillip Lougher
+[    0.608481] NFS: Registering the id_resolver key type
+[    0.609375] Key type id_resolver registered
+[    0.609557] Key type id_legacy registered
+[    0.609799] nfs4filelayout_init: NFSv4 File Layout Driver Registering...
+[    0.611852] 9p: Installing v9fs 9p2000 file system support
+[    0.630833] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 247)
+[    0.632034] io scheduler noop registered
+[    0.633931] io scheduler cfq registered (default)
+[    0.634189] io scheduler mq-deadline registered
+[    0.634412] io scheduler kyber registered
+[    0.680583] pl061_gpio 9030000.pl061: PL061 GPIO chip @0x0000000009030000 registered
+[    0.691910] OF: PCI: host bridge /pcie@10000000 ranges:
+[    0.692619] OF: PCI:    IO 0x3eff0000..0x3effffff -> 0x00000000
+[    0.693187] OF: PCI:   MEM 0x10000000..0x3efeffff -> 0x10000000
+[    0.693502] OF: PCI:   MEM 0x8000000000..0xffffffffff -> 0x8000000000
+[    0.694437] pci-host-generic 3f000000.pcie: ECAM at [mem 0x3f000000-0x3fffffff] for [bus 00-0f]
+[    0.696868] pci-host-generic 3f000000.pcie: PCI host bridge to bus 0000:00
+[    0.697371] pci_bus 0000:00: root bus resource [bus 00-0f]
+[    0.697691] pci_bus 0000:00: root bus resource [io  0x0000-0xffff]
+[    0.697947] pci_bus 0000:00: root bus resource [mem 0x10000000-0x3efeffff]
+[    0.698222] pci_bus 0000:00: root bus resource [mem 0x8000000000-0xffffffffff]
+[    0.786941] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
+[    0.798475] SuperH (H)SCI(F) driver initialized
+[    0.801063] msm_serial: driver initialized
+[    0.806508] cacheinfo: Unable to detect cache hierarchy for CPU 0
+[    0.834148] loop: module loaded
+[    0.875554] hisi_sas: driver version v1.6
+[    0.898280] libphy: Fixed MDIO Bus: probed
+[    0.902023] tun: Universal TUN/TAP device driver, 1.6
+[    0.924948] e1000e: Intel(R) PRO/1000 Network Driver - 3.2.6-k
+[    0.925192] e1000e: Copyright(c) 1999 - 2015 Intel Corporation.
+[    0.926071] igb: Intel(R) Gigabit Ethernet Network Driver - version 5.4.0-k
+[    0.926331] igb: Copyright (c) 2007-2014 Intel Corporation.
+[    0.927441] igbvf: Intel(R) Gigabit Virtual Function Network Driver - version 2.4.0-k
+[    0.927755] igbvf: Copyright (c) 2009 - 2012 Intel Corporation.
+[    0.930233] sky2: driver version 1.30
+[    0.935858] VFIO - User Level meta-driver version: 0.3
+[    0.948996] ehci_hcd: USB 2.0 'Enhanced' Host Controller (EHCI) Driver
+[    0.949294] ehci-pci: EHCI PCI platform driver
+[    0.949896] ehci-platform: EHCI generic platform driver
+[    0.950717] ehci-orion: EHCI orion driver
+[    0.952109] ehci-exynos: EHCI EXYNOS driver
+[    0.952982] ehci-msm: Qualcomm On-Chip EHCI Host Controller
+[    0.953875] ohci_hcd: USB 1.1 'Open' Host Controller (OHCI) Driver
+[    0.954198] ohci-pci: OHCI PCI platform driver
+[    0.955387] ohci-platform: OHCI generic platform driver
+[    0.956357] ohci-exynos: OHCI EXYNOS driver
+[    0.960232] usbcore: registered new interface driver usb-storage
+[    0.977547] rtc-pl031 9010000.pl031: rtc core: registered pl031 as rtc0
+[    0.981860] i2c /dev entries driver
+[    1.006025] sdhci: Secure Digital Host Controller Interface driver
+[    1.006257] sdhci: Copyright(c) Pierre Ossman
+[    1.009190] Synopsys Designware Multimedia Card Interface Driver
+[    1.014418] sdhci-pltfm: SDHCI platform and OF driver helper
+[    1.023266] ledtrig-cpu: registered to indicate activity on CPUs
+[    1.030733] usbcore: registered new interface driver usbhid
+[    1.031502] usbhid: USB HID core driver
+[    1.048049] NET: Registered protocol family 17
+[    1.049241] 9pnet: Installing 9P2000 support
+[    1.051784] Key type dns_resolver registered
+[    1.054339] registered taskstats version 1
+[    1.062297] input: gpio-keys as /devices/platform/gpio-keys/input/input0
+[    1.066064] rtc-pl031 9010000.pl031: setting system clock to 2026-04-24 06:29:55 UTC (1777012195)
+[    1.067802] ALSA device list:
+[    1.067966]   No soundcards found.
+[    1.070809] uart-pl011 9000000.pl011: no DMA platform data
+[    1.075962] EXT4-fs (vda): couldn't mount as ext3 due to feature incompatibilities
+[    1.079534] EXT4-fs (vda): INFO: recovery required on readonly filesystem
+[    1.079816] EXT4-fs (vda): write access will be enabled during recovery
+[    1.097939] EXT4-fs (vda): recovery complete
+[    1.101935] EXT4-fs (vda): mounted filesystem with ordered data mode. Opts: (null)
+[    1.102474] VFS: Mounted root (ext4 filesystem) readonly on device 254:0.
+[    1.111129] devtmpfs: mounted
+[    1.188583] Freeing unused kernel memory: 1088K
+[    1.320392] EXT4-fs (vda): re-mounted. Opts: data=ordered
+Starting logging: OK
+Initializing random number generator... done.
+Starting network: udhcpc: started, v1.27.2
+udhcpc: sending discover
+udhcpc: sending select for 10.0.2.15
+udhcpc: lease of 10.0.2.15 obtained, lease time 86400
+deleting routers
+adding dns 10.0.2.3
+OK
+Starting sshd: [    2.923480] NET: Registered protocol family 10
+[    2.941679] Segment Routing with IPv6
+OK
+
+Welcome to Buildroot
+
+nvdla login: root
+Password: nvdla
+
+# mount -t 9p -o trans=virtio r /mnt && cd /mnt
+# insmod images/linux-4.13.3/drm.ko && insmod images/linux-4.13.3/opendla_1.ko
+[    3.874024] opendla: loading out-of-tree module taints kernel.
+[    3.879574] Probe NVDLA config nvidia,nvdla_os_initial
+[    3.880232] 0 . 12 . 5
+[    3.880450] reset engine done
+[    3.884489] [drm] Initialized nvdla 0.0.0 20171017 for 10200000.nvdla on minor 0
+# ./nvdla_runtime --loadable usr/local/nvdla/nonet_16x16x1_nv_full_int8.nvdla  -
+-image usr/local/nvdla/nonet_16x16x1_0_0_bin.pgm
+creating new runtime context...
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0
+[Runtime::getDLADeviceContext] handle is NULL, calling NvDlaInitialize
+[Runtime::getDLADeviceContext] NvDlaInitialize -> err=0 m_dla_handle=0
+[Runtime::getDLADeviceContext] calling NvDlaOpen with sel_i=0
+[Runtime::getDLADeviceContext] NvDlaOpen -> err=0 device_handle=0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+ [load] instance=0
+[Runtime] m_task_entries.size()   = 2
+[Runtime] m_task_entries.data()   = 0xb904140
+[Runtime] m_submit_entries.size()   = 2
+[Runtime] m_submit_entries.data()   = 0xb901ab0
+[Runtime] m_memory_entries.size()   = 17
+[Runtime] m_memory_entries.data()   = 0xb904220
+[Runtime] m_address_entries.size()   = 17
+[Runtime] m_address_entries.data()   = 0xb904a30
+[Runtime] m_tensor_desc_entries.size()   = 2
+[Runtime] m_tensor_desc_entries.data()   = 0xb901ab0
+[Runtime] m_reloc_entries.size()   = 4
+[Runtime] m_reloc_entries.data()   = 0xb904cc0
+libnvdla<3> runtime sees loadable gave back 4 reloc entries
+libnvdla<3> load memory list entries=17
+load	 id=0 size=4096 alignment=4096 domain=0 virt addr= 0 memory handler=0 flags=1
+load	 id=1 size=8192 alignment=4096 domain=0 virt addr= 0 memory handler=0 flags=3
+load	 id=2 size=4096 alignment=4096 domain=0 virt addr= 0 memory handler=0 flags=1
+load	 id=3 size=8192 alignment=4096 domain=0 virt addr= 0 memory handler=0 flags=5
+load	 id=4 size=32 alignment=4096 domain=0 virt addr= 0 memory handler=0 flags=9
+load	 id=5 size=40 alignment=4096 domain=0 virt addr= 0 memory handler=0 flags=3
+load	 id=6 size=72 alignment=4096 domain=0 virt addr= 0 memory handler=0 flags=3
+load	 id=7 size=232 alignment=4096 domain=0 virt addr= 0 memory handler=0 flags=3
+load	 id=8 size=1288 alignment=4096 domain=0 virt addr= 0 memory handler=0 flags=3
+load	 id=9 size=700 alignment=4096 domain=0 virt addr= 0 memory handler=0 flags=3
+load	 id=10 size=4096 alignment=4096 domain=0 virt addr= 0 memory handler=0 flags=1
+load	 id=11 size=256 alignment=4096 domain=0 virt addr= 0 memory handler=0 flags=3
+load	 id=12 size=24 alignment=4096 domain=0 virt addr= 0 memory handler=0 flags=3
+load	 id=13 size=512 alignment=4096 domain=0 virt addr= 0 memory handler=0 flags=3
+load	 id=14 size=4096 alignment=4096 domain=0 virt addr= 0 memory handler=0 flags=1
+load	 id=15 size=4096 alignment=4096 domain=0 virt addr= 0 memory handler=0 flags=1
+load	 id=16 size=4096 alignment=4096 domain=0 virt addr= 0 memory handler=0 flags=1
+[Runtime] m_memory.size()   = 17
+[Runtime] m_memory.data()   = 0xb904f60
+[Runtime::initBindableMemory] >>> ENTER
+[Runtime::initBindableMemory] m_tensor_desc_entries.size() = 2
+[Runtime::initBindableMemory] m_memory.size()              = 17
+[Runtime::initBindableMemory] ILoadable m_tensor_desc_entries.size()   = 2
+[Runtime::initBindableMemory] ILoadable m_tensor_desc_entries.data()   = 0xb904bd0
+[Runtime::initBindableMemory] runtime m_tensor_desc.size()   = 2
+[Runtime::initBindableMemory] runtime m_tensor_desc.data()   = 0xb9059e0
+[Runtime::initBindableMemory] TensorDesc init: tdi = 0
+  m_tensor_desc_entries[0]:  name=data id=0 memId=3 size=8192 offset=0 dims=[1,1,16,16] dataFormat=3 dataType=4 dataCategory=2 pixelFormat=36 pixelMapping=0 stride=[1,512,8192,0]
+[Runtime::initBindableMemory] TensorDesc init: tdi = 1
+  m_tensor_desc_entries[1]:  name=prob id=1 memId=4 size=32 offset=0 dims=[1,2,1,1] dataFormat=3 dataType=4 dataCategory=2 pixelFormat=36 pixelMapping=0 stride=[1,32,32,0]
+[Runtime::initBindableMemory] Resize m_bindable_memory to IOD_Max = 3
+[Runtime::initBindableMemory] Scanning m_memory for bindable regions...
+[Runtime::initBindableMemory] Memory index mi = 0
+  bindId() returned: bind_id = -1 , which_iod = 3
+  --> Not bindable (bind_id == -1), continue.
+[Runtime::initBindableMemory] Memory index mi = 1
+  bindId() returned: bind_id = -1 , which_iod = 3
+  --> Not bindable (bind_id == -1), continue.
+[Runtime::initBindableMemory] Memory index mi = 2
+  bindId() returned: bind_id = -1 , which_iod = 3
+  --> Not bindable (bind_id == -1), continue.
+[Runtime::initBindableMemory] Memory index mi = 3
+  bindId() returned: bind_id = 0 , which_iod = 0
+  m_bindable_memory[0].size() before = 0
+ &m_bindable_memory[0] = 0xb905600
+  Checking for duplicate bind_id = 0...
+  No duplicate found. Pushing Memory* for mi=3
+  m_bindable_memory[0].size() now = 1
+[Runtime::initBindableMemory] Memory index mi = 4
+  bindId() returned: bind_id = 0 , which_iod = 1
+  m_bindable_memory[1].size() before = 0
+ &m_bindable_memory[1] = 0xb905618
+  Checking for duplicate bind_id = 0...
+  No duplicate found. Pushing Memory* for mi=4
+  m_bindable_memory[1].size() now = 1
+[Runtime::initBindableMemory] Memory index mi = 5
+  bindId() returned: bind_id = -1 , which_iod = 3
+  --> Not bindable (bind_id == -1), continue.
+[Runtime::initBindableMemory] Memory index mi = 6
+  bindId() returned: bind_id = -1 , which_iod = 3
+  --> Not bindable (bind_id == -1), continue.
+[Runtime::initBindableMemory] Memory index mi = 7
+  bindId() returned: bind_id = -1 , which_iod = 3
+  --> Not bindable (bind_id == -1), continue.
+[Runtime::initBindableMemory] Memory index mi = 8
+  bindId() returned: bind_id = -1 , which_iod = 3
+  --> Not bindable (bind_id == -1), continue.
+[Runtime::initBindableMemory] Memory index mi = 9
+  bindId() returned: bind_id = -1 , which_iod = 3
+  --> Not bindable (bind_id == -1), continue.
+[Runtime::initBindableMemory] Memory index mi = 10
+  bindId() returned: bind_id = -1 , which_iod = 3
+  --> Not bindable (bind_id == -1), continue.
+[Runtime::initBindableMemory] Memory index mi = 11
+  bindId() returned: bind_id = -1 , which_iod = 3
+  --> Not bindable (bind_id == -1), continue.
+[Runtime::initBindableMemory] Memory index mi = 12
+  bindId() returned: bind_id = -1 , which_iod = 3
+  --> Not bindable (bind_id == -1), continue.
+[Runtime::initBindableMemory] Memory index mi = 13
+  bindId() returned: bind_id = -1 , which_iod = 3
+  --> Not bindable (bind_id == -1), continue.
+[Runtime::initBindableMemory] Memory index mi = 14
+  bindId() returned: bind_id = -1 , which_iod = 3
+  --> Not bindable (bind_id == -1), continue.
+[Runtime::initBindableMemory] Memory index mi = 15
+  bindId() returned: bind_id = -1 , which_iod = 3
+  --> Not bindable (bind_id == -1), continue.
+[Runtime::initBindableMemory] Memory index mi = 16
+  bindId() returned: bind_id = -1 , which_iod = 3
+  --> Not bindable (bind_id == -1), continue.
+[Runtime::initBindableMemory] Sorting m_bindable_memory by bindId...
+[Runtime::initBindableMemory] IOD w = 0 -> num_ids = 1
+  Before sort, bindIds: 0
+  After sort, bindIds:  0
+  first_id = 0, last_id = 0, expected last = 0
+  BindId range OK [0..0]
+[Runtime::initBindableMemory] IOD w = 1 -> num_ids = 1
+  Before sort, bindIds: 0
+  After sort, bindIds:  0
+  first_id = 0, last_id = 0, expected last = 0
+  BindId range OK [0..0]
+[Runtime::initBindableMemory] IOD w = 2 -> num_ids = 0
+  No bindable memories for this IOD, continue.
+[Runtime::initBindableMemory] Final bindable_memory[0] has 1 entries.
+  Entry 0: bindId=0 memId=3 handle=0 virtAddr=0 size=8192
+[Runtime::initBindableMemory] Final bindable_memory[1] has 1 entries.
+  Entry 0: bindId=0 memId=4 handle=0 virtAddr=0 size=32
+[Runtime::initBindableMemory] Final bindable_memory[2] has 0 entries.
+[Runtime::initBindableMemory] <<< EXIT (success)
+
+[Runtime::loadMemory] >>> ENTER
+[Runtime::loadMemory] memory id=0 size=4096 flags=1 domain=0 bindable=0
+[Runtime::loadMemory] domain_sysmem(): will allocate / map system memory
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::loadMemory] before alloc/map: hMem=0 size=4096 hDLa 0xb902330 and m_dla_hanndle 0
+[Runtime::loadMemory] before alloc/map: &hMem=0xffffc2ff9bc0
+[Runtime::loadMemory] hMem == 0 (/* Allocate memory for network */) -> NvDlaAllocMem
+[    4.028515] DMA paddr allocated: 0xc0000000 for vaddr 0xffff000040000000
+[    4.030203] nvdla_gem_map_offset allocates args->offset = 0x100000000
+[Runtime::loadMemory] NvDlaAllocMem OK, hMem=0xb905ad0 mapped_mem=0xffff93e26000
+[Runtime::loadMemory] flags_set() NOT set -> no contents copied
+[Runtime::loadMemory] <<< EXIT (success)
+
+[Runtime::loadMemory] >>> ENTER
+[Runtime::loadMemory] memory id=1 size=8192 flags=3 domain=0 bindable=0
+[Runtime::loadMemory] domain_sysmem(): will allocate / map system memory
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::loadMemory] before alloc/map: hMem=0 size=8192 hDLa 0xb902330 and m_dla_hanndle 0
+[Runtime::loadMemory] before alloc/map: &hMem=0xffffc2ff9bc0
+[Runtime::loadMemory] hMem == 0 (/* Allocate memory for network */) -> NvDlaAllocMem
+[    4.039627] DMA paddr allocated: 0xc0002000 for vaddr 0xffff000040002000
+[    4.040134] nvdla_gem_map_offset allocates args->offset = 0x100001000
+[Runtime::loadMemory] NvDlaAllocMem OK, hMem=0xb905af0 mapped_mem=0xffff93e24000
+[Runtime::loadMemory] flags_set() is set -> will copy contents into mapped_mem
+[Runtime::loadMemory] contents.size()=2 offsets.size()=2
+
+[Runtime::loadMemory]   >> content index ci=0 symbol='tb-1' offset=0
+[Runtime::loadMemory]   getSymbolContent() -> ok=1 name=tb-1 size=512 data=0xb903ca0
+[Runtime::loadMemory]   copy blob: dst_base=0xffff93e24000 dst=0xffff93e24000 src=0xb903ca0 blob_size=512
+[Runtime::loadMemory]   copy done for ci=0
+[Runtime::loadMemory]   content_symbol='tb-1' parsed to base='tb' kind='1'
+[Runtime::loadMemory]   recorded tensor blob 'tb-1' size=512 dst=0xffff93e24000
+
+[Runtime::loadMemory]   >> content index ci=1 symbol='tb-2' offset=4096
+[Runtime::loadMemory]   getSymbolContent() -> ok=1 name=tb-2 size=4 data=0xb901630
+[Runtime::loadMemory]   copy blob: dst_base=0xffff93e24000 dst=0xffff93e25000 src=0xb901630 blob_size=4
+[Runtime::loadMemory]   copy done for ci=1
+[Runtime::loadMemory]   content_symbol='tb-2' parsed to base='tb' kind='2'
+[Runtime::loadMemory]   recorded tensor blob 'tb-2' size=4 dst=0xffff93e25000
+[Runtime::loadMemory] <<< EXIT (success)
+
+[Runtime::loadMemory] >>> ENTER
+[Runtime::loadMemory] memory id=2 size=4096 flags=1 domain=0 bindable=0
+[Runtime::loadMemory] domain_sysmem(): will allocate / map system memory
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::loadMemory] before alloc/map: hMem=0 size=4096 hDLa 0xb902330 and m_dla_hanndle 0
+[Runtime::loadMemory] before alloc/map: &hMem=0xffffc2ff9bc0
+[Runtime::loadMemory] hMem == 0 (/* Allocate memory for network */) -> NvDlaAllocMem
+[    4.050268] DMA paddr allocated: 0xc0001000 for vaddr 0xffff000040001000
+[    4.050665] nvdla_gem_map_offset allocates args->offset = 0x100003000
+[Runtime::loadMemory] NvDlaAllocMem OK, hMem=0xb905c70 mapped_mem=0xffff93e23000
+[Runtime::loadMemory] flags_set() NOT set -> no contents copied
+[Runtime::loadMemory] <<< EXIT (success)
+
+[Runtime::loadMemory] >>> ENTER
+[Runtime::loadMemory] memory id=3 size=8192 flags=5 domain=0 bindable=1
+[Runtime::loadMemory] memory is bindable -> handled elsewhere, return NvDlaSuccess
+
+[Runtime::loadMemory] >>> ENTER
+[Runtime::loadMemory] memory id=4 size=32 flags=9 domain=0 bindable=1
+[Runtime::loadMemory] memory is bindable -> handled elsewhere, return NvDlaSuccess
+
+[Runtime::loadMemory] >>> ENTER
+[Runtime::loadMemory] memory id=5 size=40 flags=3 domain=0 bindable=0
+[Runtime::loadMemory] domain_sysmem(): will allocate / map system memory
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::loadMemory] before alloc/map: hMem=0 size=40 hDLa 0xb902330 and m_dla_hanndle 0
+[Runtime::loadMemory] before alloc/map: &hMem=0xffffc2ff9bc0
+[Runtime::loadMemory] hMem == 0 (/* Allocate memory for network */) -> NvDlaAllocMem
+[    4.057231] DMA paddr allocated: 0xc0004000 for vaddr 0xffff000040004000
+[    4.057584] nvdla_gem_map_offset allocates args->offset = 0x100004000
+[Runtime::loadMemory] NvDlaAllocMem OK, hMem=0xb905c90 mapped_mem=0xffff93e22000
+[Runtime::loadMemory] flags_set() is set -> will copy contents into mapped_mem
+[Runtime::loadMemory] contents.size()=1 offsets.size()=1
+
+[Runtime::loadMemory]   >> content index ci=0 symbol='task-0-addr0' offset=0
+[Runtime::loadMemory]   getSymbolContent() -> ok=1 name=task-0-addr0 size=40 data=0xb901b50
+[Runtime::loadMemory]   copy blob: dst_base=0xffff93e22000 dst=0xffff93e22000 src=0xb901b50 blob_size=40
+[Runtime::loadMemory]   copy done for ci=0
+[Runtime::loadMemory]   content_symbol='task-0-addr0' parsed to base='task-0' kind='addr0'
+[Runtime::loadMemory]   recorded blob for base='task-0' kind='addr0' size=40 dst=0xffff93e22000
+[Runtime::loadMemory] <<< EXIT (success)
+
+[Runtime::loadMemory] >>> ENTER
+[Runtime::loadMemory] memory id=6 size=72 flags=3 domain=0 bindable=0
+[Runtime::loadMemory] domain_sysmem(): will allocate / map system memory
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::loadMemory] before alloc/map: hMem=0 size=72 hDLa 0xb902330 and m_dla_hanndle 0
+[Runtime::loadMemory] before alloc/map: &hMem=0xffffc2ff9bc0
+[Runtime::loadMemory] hMem == 0 (/* Allocate memory for network */) -> NvDlaAllocMem
+[    4.064868] DMA paddr allocated: 0xc0005000 for vaddr 0xffff000040005000
+[    4.065205] nvdla_gem_map_offset allocates args->offset = 0x100005000
+[Runtime::loadMemory] NvDlaAllocMem OK, hMem=0xb905d50 mapped_mem=0xffff93e21000
+[Runtime::loadMemory] flags_set() is set -> will copy contents into mapped_mem
+[Runtime::loadMemory] contents.size()=1 offsets.size()=1
+
+[Runtime::loadMemory]   >> content index ci=0 symbol='task-0-dep_graph' offset=0
+[Runtime::loadMemory]   getSymbolContent() -> ok=1 name=task-0-dep_graph size=72 data=0xb901a60
+[Runtime::loadMemory]   copy blob: dst_base=0xffff93e21000 dst=0xffff93e21000 src=0xb901a60 blob_size=72
+[Runtime::loadMemory]   copy done for ci=0
+[Runtime::loadMemory]   content_symbol='task-0-dep_graph' parsed to base='task-0' kind='dep_graph'
+[Runtime::loadMemory]   recorded blob for base='task-0' kind='dep_graph' size=72 dst=0xffff93e21000
+[Runtime::loadMemory] <<< EXIT (success)
+
+[Runtime::loadMemory] >>> ENTER
+[Runtime::loadMemory] memory id=7 size=232 flags=3 domain=0 bindable=0
+[Runtime::loadMemory] domain_sysmem(): will allocate / map system memory
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::loadMemory] before alloc/map: hMem=0 size=232 hDLa 0xb902330 and m_dla_hanndle 0
+[Runtime::loadMemory] before alloc/map: &hMem=0xffffc2ff9bc0
+[Runtime::loadMemory] hMem == 0 (/* Allocate memory for network */) -> NvDlaAllocMem
+[    4.072693] DMA paddr allocated: 0xc0006000 for vaddr 0xffff000040006000
+[    4.073034] nvdla_gem_map_offset allocates args->offset = 0x100006000
+[Runtime::loadMemory] NvDlaAllocMem OK, hMem=0xb905d70 mapped_mem=0xffff939e3000
+[Runtime::loadMemory] flags_set() is set -> will copy contents into mapped_mem
+[Runtime::loadMemory] contents.size()=1 offsets.size()=1
+
+[Runtime::loadMemory]   >> content index ci=0 symbol='task-0-op_list' offset=0
+[Runtime::loadMemory]   getSymbolContent() -> ok=1 name=task-0-op_list size=232 data=0xb903140
+[Runtime::loadMemory]   copy blob: dst_base=0xffff939e3000 dst=0xffff939e3000 src=0xb903140 blob_size=232
+[Runtime::loadMemory]   copy done for ci=0
+[Runtime::loadMemory]   content_symbol='task-0-op_list' parsed to base='task-0' kind='op_list'
+[Runtime::loadMemory]   recorded blob for base='task-0' kind='op_list' size=232 dst=0xffff939e3000
+[Runtime::loadMemory] <<< EXIT (success)
+
+[Runtime::loadMemory] >>> ENTER
+[Runtime::loadMemory] memory id=8 size=1288 flags=3 domain=0 bindable=0
+[Runtime::loadMemory] domain_sysmem(): will allocate / map system memory
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::loadMemory] before alloc/map: hMem=0 size=1288 hDLa 0xb902330 and m_dla_hanndle 0
+[Runtime::loadMemory] before alloc/map: &hMem=0xffffc2ff9bc0
+[Runtime::loadMemory] hMem == 0 (/* Allocate memory for network */) -> NvDlaAllocMem
+[    4.080349] DMA paddr allocated: 0xc0007000 for vaddr 0xffff000040007000
+[    4.080701] nvdla_gem_map_offset allocates args->offset = 0x100007000
+[Runtime::loadMemory] NvDlaAllocMem OK, hMem=0xb905d90 mapped_mem=0xffff939e2000
+[Runtime::loadMemory] flags_set() is set -> will copy contents into mapped_mem
+[Runtime::loadMemory] contents.size()=1 offsets.size()=1
+
+[Runtime::loadMemory]   >> content index ci=0 symbol='task-0-surf_list' offset=0
+[Runtime::loadMemory]   getSymbolContent() -> ok=1 name=task-0-surf_list size=1288 data=0xb9032c0
+[Runtime::loadMemory]   copy blob: dst_base=0xffff939e2000 dst=0xffff939e2000 src=0xb9032c0 blob_size=1288
+[Runtime::loadMemory]   copy done for ci=0
+[Runtime::loadMemory]   content_symbol='task-0-surf_list' parsed to base='task-0' kind='surf_list'
+[Runtime::loadMemory]   recorded blob for base='task-0' kind='surf_list' size=1288 dst=0xffff939e2000
+[Runtime::loadMemory] <<< EXIT (success)
+
+[Runtime::loadMemory] >>> ENTER
+[Runtime::loadMemory] memory id=9 size=700 flags=3 domain=0 bindable=0
+[Runtime::loadMemory] domain_sysmem(): will allocate / map system memory
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::loadMemory] before alloc/map: hMem=0 size=700 hDLa 0xb902330 and m_dla_hanndle 0
+[Runtime::loadMemory] before alloc/map: &hMem=0xffffc2ff9bc0
+[Runtime::loadMemory] hMem == 0 (/* Allocate memory for network */) -> NvDlaAllocMem
+[    4.088675] DMA paddr allocated: 0xc0008000 for vaddr 0xffff000040008000
+[    4.089081] nvdla_gem_map_offset allocates args->offset = 0x100008000
+[Runtime::loadMemory] NvDlaAllocMem OK, hMem=0xb905db0 mapped_mem=0xffff939e1000
+[Runtime::loadMemory] flags_set() is set -> will copy contents into mapped_mem
+[Runtime::loadMemory] contents.size()=1 offsets.size()=1
+
+[Runtime::loadMemory]   >> content index ci=0 symbol='task-0-lut_list' offset=0
+[Runtime::loadMemory]   getSymbolContent() -> ok=1 name=task-0-lut_list size=700 data=0xb901fd0
+[Runtime::loadMemory]   copy blob: dst_base=0xffff939e1000 dst=0xffff939e1000 src=0xb901fd0 blob_size=700
+[Runtime::loadMemory]   copy done for ci=0
+[Runtime::loadMemory]   content_symbol='task-0-lut_list' parsed to base='task-0' kind='lut_list'
+[Runtime::loadMemory]   recorded blob for base='task-0' kind='lut_list' size=700 dst=0xffff939e1000
+[Runtime::loadMemory] <<< EXIT (success)
+
+[Runtime::loadMemory] >>> ENTER
+[Runtime::loadMemory] memory id=10 size=4096 flags=1 domain=0 bindable=0
+[Runtime::loadMemory] domain_sysmem(): will allocate / map system memory
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::loadMemory] before alloc/map: hMem=0 size=4096 hDLa 0xb902330 and m_dla_hanndle 0
+[Runtime::loadMemory] before alloc/map: &hMem=0xffffc2ff9bc0
+[Runtime::loadMemory] hMem == 0 (/* Allocate memory for network */) -> NvDlaAllocMem
+[    4.097173] DMA paddr allocated: 0xc0009000 for vaddr 0xffff000040009000
+[    4.097566] nvdla_gem_map_offset allocates args->offset = 0x100009000
+[Runtime::loadMemory] NvDlaAllocMem OK, hMem=0xb905dd0 mapped_mem=0xffff939e0000
+[Runtime::loadMemory] flags_set() NOT set -> no contents copied
+[Runtime::loadMemory] <<< EXIT (success)
+
+[Runtime::loadMemory] >>> ENTER
+[Runtime::loadMemory] memory id=11 size=256 flags=3 domain=0 bindable=0
+[Runtime::loadMemory] domain_sysmem(): will allocate / map system memory
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::loadMemory] before alloc/map: hMem=0 size=256 hDLa 0xb902330 and m_dla_hanndle 0
+[Runtime::loadMemory] before alloc/map: &hMem=0xffffc2ff9bc0
+[Runtime::loadMemory] hMem == 0 (/* Allocate memory for network */) -> NvDlaAllocMem
+[    4.103291] DMA paddr allocated: 0xc000a000 for vaddr 0xffff00004000a000
+[    4.103647] nvdla_gem_map_offset allocates args->offset = 0x10000a000
+[Runtime::loadMemory] NvDlaAllocMem OK, hMem=0xb905df0 mapped_mem=0xffff939df000
+[Runtime::loadMemory] flags_set() is set -> will copy contents into mapped_mem
+[Runtime::loadMemory] contents.size()=1 offsets.size()=1
+
+[Runtime::loadMemory]   >> content index ci=0 symbol='task-1-addr0' offset=0
+[Runtime::loadMemory]   getSymbolContent() -> ok=1 name=task-1-addr0 size=256 data=0xb9037d0
+[Runtime::loadMemory]   copy blob: dst_base=0xffff939df000 dst=0xffff939df000 src=0xb9037d0 blob_size=256
+[Runtime::loadMemory]   copy done for ci=0
+[Runtime::loadMemory]   content_symbol='task-1-addr0' parsed to base='task-1' kind='addr0'
+[Runtime::loadMemory]   recorded blob for base='task-1' kind='addr0' size=256 dst=0xffff939df000
+[Runtime::loadMemory] <<< EXIT (success)
+
+[Runtime::loadMemory] >>> ENTER
+[Runtime::loadMemory] memory id=12 size=24 flags=3 domain=0 bindable=0
+[Runtime::loadMemory] domain_sysmem(): will allocate / map system memory
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::loadMemory] before alloc/map: hMem=0 size=24 hDLa 0xb902330 and m_dla_hanndle 0
+[Runtime::loadMemory] before alloc/map: &hMem=0xffffc2ff9bc0
+[Runtime::loadMemory] hMem == 0 (/* Allocate memory for network */) -> NvDlaAllocMem
+[    4.111135] DMA paddr allocated: 0xc000b000 for vaddr 0xffff00004000b000
+[    4.111481] nvdla_gem_map_offset allocates args->offset = 0x10000b000
+[Runtime::loadMemory] NvDlaAllocMem OK, hMem=0xb905eb0 mapped_mem=0xffff939de000
+[Runtime::loadMemory] flags_set() is set -> will copy contents into mapped_mem
+[Runtime::loadMemory] contents.size()=1 offsets.size()=1
+
+[Runtime::loadMemory]   >> content index ci=0 symbol='task-1-op_list' offset=0
+[Runtime::loadMemory]   getSymbolContent() -> ok=1 name=task-1-op_list size=24 data=0xb9016b0
+[Runtime::loadMemory]   copy blob: dst_base=0xffff939de000 dst=0xffff939de000 src=0xb9016b0 blob_size=24
+[Runtime::loadMemory]   copy done for ci=0
+[Runtime::loadMemory]   content_symbol='task-1-op_list' parsed to base='task-1' kind='op_list'
+[Runtime::loadMemory]   recorded blob for base='task-1' kind='op_list' size=24 dst=0xffff939de000
+[Runtime::loadMemory] <<< EXIT (success)
+
+[Runtime::loadMemory] >>> ENTER
+[Runtime::loadMemory] memory id=13 size=512 flags=3 domain=0 bindable=0
+[Runtime::loadMemory] domain_sysmem(): will allocate / map system memory
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::loadMemory] before alloc/map: hMem=0 size=512 hDLa 0xb902330 and m_dla_hanndle 0
+[Runtime::loadMemory] before alloc/map: &hMem=0xffffc2ff9bc0
+[Runtime::loadMemory] hMem == 0 (/* Allocate memory for network */) -> NvDlaAllocMem
+[    4.118499] DMA paddr allocated: 0xc000c000 for vaddr 0xffff00004000c000
+[    4.118846] nvdla_gem_map_offset allocates args->offset = 0x10000c000
+[Runtime::loadMemory] NvDlaAllocMem OK, hMem=0xb905ed0 mapped_mem=0xffff939dd000
+[Runtime::loadMemory] flags_set() is set -> will copy contents into mapped_mem
+[Runtime::loadMemory] contents.size()=1 offsets.size()=1
+
+[Runtime::loadMemory]   >> content index ci=0 symbol='task-1-op_buf_list' offset=0
+[Runtime::loadMemory]   getSymbolContent() -> ok=1 name=task-1-op_buf_list size=512 data=0xb903970
+[Runtime::loadMemory]   copy blob: dst_base=0xffff939dd000 dst=0xffff939dd000 src=0xb903970 blob_size=512
+[Runtime::loadMemory]   copy done for ci=0
+[Runtime::loadMemory]   content_symbol='task-1-op_buf_list' parsed to base='task-1' kind='op_buf_list'
+[Runtime::loadMemory] <<< EXIT (success)
+
+[Runtime::loadMemory] >>> ENTER
+[Runtime::loadMemory] memory id=14 size=4096 flags=1 domain=0 bindable=0
+[Runtime::loadMemory] domain_sysmem(): will allocate / map system memory
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::loadMemory] before alloc/map: hMem=0 size=4096 hDLa 0xb902330 and m_dla_hanndle 0
+[Runtime::loadMemory] before alloc/map: &hMem=0xffffc2ff9bc0
+[Runtime::loadMemory] hMem == 0 (/* Allocate memory for network */) -> NvDlaAllocMem
+[    4.126506] DMA paddr allocated: 0xc000d000 for vaddr 0xffff00004000d000
+[    4.126861] nvdla_gem_map_offset allocates args->offset = 0x10000d000
+[Runtime::loadMemory] NvDlaAllocMem OK, hMem=0xb905ef0 mapped_mem=0xffff939dc000
+[Runtime::loadMemory] flags_set() NOT set -> no contents copied
+[Runtime::loadMemory] <<< EXIT (success)
+
+[Runtime::loadMemory] >>> ENTER
+[Runtime::loadMemory] memory id=15 size=4096 flags=1 domain=0 bindable=0
+[Runtime::loadMemory] domain_sysmem(): will allocate / map system memory
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::loadMemory] before alloc/map: hMem=0 size=4096 hDLa 0xb902330 and m_dla_hanndle 0
+[Runtime::loadMemory] before alloc/map: &hMem=0xffffc2ff9bc0
+[Runtime::loadMemory] hMem == 0 (/* Allocate memory for network */) -> NvDlaAllocMem
+[    4.132690] DMA paddr allocated: 0xc000e000 for vaddr 0xffff00004000e000
+[    4.133067] nvdla_gem_map_offset allocates args->offset = 0x10000e000
+[Runtime::loadMemory] NvDlaAllocMem OK, hMem=0xb905f10 mapped_mem=0xffff939db000
+[Runtime::loadMemory] flags_set() NOT set -> no contents copied
+[Runtime::loadMemory] <<< EXIT (success)
+
+[Runtime::loadMemory] >>> ENTER
+[Runtime::loadMemory] memory id=16 size=4096 flags=1 domain=0 bindable=0
+[Runtime::loadMemory] domain_sysmem(): will allocate / map system memory
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::loadMemory] before alloc/map: hMem=0 size=4096 hDLa 0xb902330 and m_dla_hanndle 0
+[Runtime::loadMemory] before alloc/map: &hMem=0xffffc2ff9bc0
+[Runtime::loadMemory] hMem == 0 (/* Allocate memory for network */) -> NvDlaAllocMem
+[    4.138865] DMA paddr allocated: 0xc000f000 for vaddr 0xffff00004000f000
+[    4.139373] nvdla_gem_map_offset allocates args->offset = 0x10000f000
+[Runtime::loadMemory] NvDlaAllocMem OK, hMem=0xb905f30 mapped_mem=0xffff939da000
+[Runtime::loadMemory] flags_set() NOT set -> no contents copied
+[Runtime::loadMemory] <<< EXIT (success)
+
+================ DLA TASK BLOBS DUMP ================
+
+-----------------------------------------------------
+Task 'task-0'
+  addr0      = 0xffff93e22000 (40 bytes)
+  dep_graph  = 0xffff93e21000 (72 bytes)
+  op_list    = 0xffff939e3000 (232 bytes)
+  surf_list  = 0xffff939e2000 (1288 bytes)
+  lut_list   = 0xffff939e1000 (700 bytes)
+[dumpOneTask] Network descriptor:
+  operation_desc_index   = 6
+  surface_desc_index     = 7
+  dependency_graph_index = 5
+  lut_data_index         = 8
+  roi_array_index        = -1
+  surface_index          = -1
+  stat_list_index        = -1
+  num_rois               = 1
+  num_operations         = 2
+  num_luts               = 0
+  num_addresses          = 10
+  input_layer            = 0
+  dynamic_roi            = 0
+  op_head:
+    [0] (BDMA) = -1
+    [1] (CONV) = 0
+    [2] (SDP) = 1
+    [3] (PDP) = -1
+    [4] (CDP) = -1
+    [5] (RUBIK) = -1
+[dumpOneTask] dep_graph present, entry_size=36
+[dumpOneTask] op_list present, entry_size=116
+[dumpOneTask] surf_list present, entry_size=644
+
+[dumpOneTask] Operations (2):
+
+  === OP 0 (CONV) ===
+    dep.index            = 0
+    dep.roi_index        = 0
+    dep.op_type          = 1
+    dep.dependency_count = 1
+    consumers:
+      [2] index=1 event=2
+    fused_parent: index=-1 event=1
+    [CONV op_desc]
+      mode           = 0
+      data_reuse     = 0 weight_reuse=0
+      skip_data_rls  = 0 skip_weight_rls=0
+      entry_per_slice= 4
+      data_format    = 36 pixel_mapping=0
+      fetch_grain    = 1
+      batch          = 1 weight_format=0
+      data_bank      = 1 weight_bank=1
+      batch_stride   = 0
+      post_extension = 0 release=16
+      input CSC WxHxC= 16x16x1
+      kernel WxHxC   = 16x16x1
+      input CMAC WxH = 1x1
+      bytes_per_kernel = 256
+      conv_stride     = (1,1)
+      pad (l,t,r,b)   = (0,0,0,0)
+      dilation (x,y)  = (1,1)
+      in_precision    = 0 out_precision=0
+      pad_val         = 0
+      in_cvt:  scale=1 trunc=0 enable=1 offset=0
+      out_cvt: scale=1 trunc=0 enable=1 offset=0
+    [SRC]
+      type        = 0
+      addr_index  = 3
+      offset      = 0
+      size        = 8192
+      WxHxC       = 16x16x1
+      line_stride = 512
+      surf_stride = 8192
+      plane_stride= 0
+    [DST]
+      type        = 2
+      addr_index  = -1
+      offset      = 0
+      size        = 32
+      WxHxC       = 1x1x2
+      line_stride = 32
+      surf_stride = 32
+      plane_stride= 0
+    [WEIGHT]
+      type        = 0
+      addr_index  = 1
+      offset      = 0
+      size        = 512
+      WxHxC       = 16x16x1
+      line_stride = 0
+      surf_stride = 0
+      plane_stride= 0
+    conv_surface: offset_u=0 in_line_uv_stride=0
+
+  === OP 1 (SDP) ===
+    dep.index            = 1
+    dep.roi_index        = 0
+    dep.op_type          = 2
+    dep.dependency_count = 1
+    consumers:
+    fused_parent: index=0 event=3
+    [SDP op_desc]
+      src_precision = 0 dst_precision=0
+      lut_index     = -1
+      conv_mode     = 0
+      batch_num     = 1 batch_stride=0
+    [X1_OP]
+      enable      = 1
+      type        = 2 mode=1 act=0
+      alu_type    = 2
+      shift_value = 0 truncate=0
+      precision   = 1
+      alu_operand = 0 mul_operand=1
+      alu_cvt: scale=0 trunc=0 enable=0 offset=0
+      mul_cvt: scale=0 trunc=0 enable=0 offset=0
+    [X2_OP]
+      enable      = 0
+      type        = 0 mode=0 act=0
+      alu_type    = 0
+      shift_value = 0 truncate=0
+      precision   = 0
+      alu_operand = 0 mul_operand=0
+      alu_cvt: scale=0 trunc=0 enable=0 offset=0
+      mul_cvt: scale=0 trunc=0 enable=0 offset=0
+    [Y_OP]
+      enable      = 0
+      type        = 0 mode=0 act=0
+      alu_type    = 0
+      shift_value = 0 truncate=0
+      precision   = 0
+      alu_operand = 0 mul_operand=0
+      alu_cvt: scale=0 trunc=0 enable=0 offset=0
+      mul_cvt: scale=0 trunc=0 enable=0 offset=0
+    [SRC]
+      type        = 2
+      addr_index  = -1
+      offset      = 0
+      size        = 32
+      WxHxC       = 1x1x2
+      line_stride = 32
+      surf_stride = 32
+      plane_stride= 0
+    [X1]
+      type        = 0
+      addr_index  = 1
+      offset      = 4096
+      size        = 4
+      WxHxC       = 1x1x2
+      line_stride = 64
+      surf_stride = 64
+      plane_stride= 0
+    [X2]
+      type        = 0
+      addr_index  = 0
+      offset      = 0
+      size        = 0
+      WxHxC       = 0x0x0
+      line_stride = 0
+      surf_stride = 0
+      plane_stride= 0
+    [Y]
+      type        = 0
+      addr_index  = 0
+      offset      = 0
+      size        = 0
+      WxHxC       = 0x0x0
+      line_stride = 0
+      surf_stride = 0
+      plane_stride= 0
+    [DST]
+      type        = 0
+      addr_index  = 2
+      offset      = 0
+      size        = 32
+      WxHxC       = 1x1x2
+      line_stride = 32
+      surf_stride = 32
+      plane_stride= 0
+
+-----------------------------------------------------
+Task 'task-1'
+  addr0      = 0xffff939df000 (256 bytes)
+  dep_graph  = 0 (0 bytes)
+  op_list    = 0xffff939de000 (24 bytes)
+  surf_list  = 0 (0 bytes)
+  lut_list   = 0 (0 bytes)
+[dumpOneTask] Network descriptor:
+  operation_desc_index   = 5
+  surface_desc_index     = 6
+  dependency_graph_index = 1
+  lut_data_index         = 0
+  roi_array_index        = 0
+  surface_index          = 0
+  stat_list_index        = 0
+  num_rois               = 0
+  num_operations         = 0
+  num_luts               = 0
+  num_addresses          = 0
+  input_layer            = 0
+  dynamic_roi            = 0
+  op_head:
+    [0] (BDMA) = 0
+    [1] (CONV) = 0
+    [2] (SDP) = 0
+    [3] (PDP) = 0
+    [4] (CDP) = 0
+    [5] (RUBIK) = 0
+[dumpOneTask] dep_graph missing
+[dumpOneTask] op_list present, entry_size=116
+[dumpOneTask] surf_list missing
+[dumpOneTask] missing dep/op/surf, cannot fully dump operations
+
+-----------------------------------------------------
+Task 'tb'
+  addr0      = 0 (0 bytes)
+  dep_graph  = 0 (0 bytes)
+  op_list    = 0 (0 bytes)
+  surf_list  = 0 (0 bytes)
+  lut_list   = 0 (0 bytes)
+[dumpOneTask] tb: no addr0, skipping
+
+================ END DLA TASK BLOBS DUMP ============
+
+================ TENSOR BLOBS (tb-XX) DUMP ================
+
+--- Tensor 'tb-1' ---
+  data = 0xffff93e24000 size = 512 bytes
+  first 64 bytes (hex):
+    98 98 9a 9b 9b 9b 9d 9e 9a 99 99 9b 96 96 98 99
+    9a 9a 99 9a 9a 9b 99 9a 9a 98 9a 99 97 98 99 9a
+    9b 99 9b 9b db dd de dd a5 a6 97 98 9b 9b a1 a2
+    dc dd ad ae 9f a0 b2 b0 a6 a5 9a 99 9a 99 96 97
+
+--- Tensor 'tb-2' ---
+  data = 0xffff93e25000 size = 4 bytes
+  first 4 bytes (hex):
+    f6 fe f7 fe
+
+================ END TENSOR BLOBS DUMP ====================
+[Runtime] After loadMemory loop
+[Runtime] Lets see the inside of the memories
+  Memory idx=0 handle=0xb905ad0 virt_addr=0xffff93e26000 size=4096
+  Memory idx=1 handle=0xb905af0 virt_addr=0xffff93e24000 size=8192
+  Memory idx=2 handle=0xb905c70 virt_addr=0xffff93e23000 size=4096
+  Memory idx=3 handle=0 virt_addr=0 size=8192
+  Memory idx=4 handle=0 virt_addr=0 size=32
+  Memory idx=5 handle=0xb905c90 virt_addr=0xffff93e22000 size=40
+  Memory idx=6 handle=0xb905d50 virt_addr=0xffff93e21000 size=72
+  Memory idx=7 handle=0xb905d70 virt_addr=0xffff939e3000 size=232
+  Memory idx=8 handle=0xb905d90 virt_addr=0xffff939e2000 size=1288
+  Memory idx=9 handle=0xb905db0 virt_addr=0xffff939e1000 size=700
+  Memory idx=10 handle=0xb905dd0 virt_addr=0xffff939e0000 size=4096
+  Memory idx=11 handle=0xb905df0 virt_addr=0xffff939df000 size=256
+  Memory idx=12 handle=0xb905eb0 virt_addr=0xffff939de000 size=24
+  Memory idx=13 handle=0xb905ed0 virt_addr=0xffff939dd000 size=512
+  Memory idx=14 handle=0xb905ef0 virt_addr=0xffff939dc000 size=4096
+  Memory idx=15 handle=0xb905f10 virt_addr=0xffff939db000 size=4096
+  Memory idx=16 handle=0xb905f30 virt_addr=0xffff939da000 size=4096
+libnvdla<3> load address list entries=17
+libnvdla<3> load	 id=0 mem_id=0 offset=0
+libnvdla<3> load	 id=1 mem_id=1 offset=0
+libnvdla<3> load	 id=2 mem_id=2 offset=0
+libnvdla<3> load	 id=3 mem_id=3 offset=0
+libnvdla<3> load	 id=4 mem_id=4 offset=0
+libnvdla<3> load	 id=5 mem_id=5 offset=0
+libnvdla<3> load	 id=6 mem_id=6 offset=0
+libnvdla<3> load	 id=7 mem_id=7 offset=0
+libnvdla<3> load	 id=8 mem_id=8 offset=0
+libnvdla<3> load	 id=9 mem_id=9 offset=0
+libnvdla<3> load	 id=10 mem_id=10 offset=0
+libnvdla<3> load	 id=11 mem_id=11 offset=0
+libnvdla<3> load	 id=12 mem_id=12 offset=0
+libnvdla<3> load	 id=13 mem_id=13 offset=0
+libnvdla<3> load	 id=14 mem_id=14 offset=0
+libnvdla<3> load	 id=15 mem_id=15 offset=0
+libnvdla<3> load	 id=16 mem_id=16 offset=0
+libnvdla<3> load num tasks=2
+libnvdla<3> load	task id=0 address list entries=10
+libnvdla<3> load	task id=1 address list entries=10
+libnvdla<3> load	submit id0 tasks=1
+libnvdla<3> load	submit id1 tasks=1
+Emulator starting
+
+[Runtime::allocateSystemMemory] >>> ENTER
+[Runtime::allocateSystemMemory]  phMem addr=0xffffc2ff9cb0 *phMem(before)=0
+[Runtime::allocateSystemMemory]  pData addr=0xffffc2ff9da0 *pData(before)=0
+[Runtime::allocateSystemMemory]  size=8192
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::allocateSystemMemory]  hDla=0xb902330
+[Runtime::allocateSystemMemory]  Calling NvDlaAllocMem(NULL, hDla, phMem, pData, size, NvDlaHeap_System)
+[    4.394790] DMA paddr allocated: 0xc0010000 for vaddr 0xffff000040010000
+[    4.395322] nvdla_gem_map_offset allocates args->offset = 0x100010000
+[Runtime::allocateSystemMemory]  NvDlaAllocMem SUCCESS
+[Runtime::allocateSystemMemory]  *phMem(after)=0xb906870 *pData(after)=0xffff931d8000
+[NvDlaError Runtime::allocateSystemMemory]  m_hmem_memory_map.insert(std::make_pair(*phMem, *pData));
+[Runtime::allocateSystemMemory]  Inserted into m_hmem_memory_map: key(*phMem)=0xb906870 value(*pData)=0xffff931d8000
+[Runtime::allocateSystemMemory]  m_hmem_memory_map.size() now=1
+[Runtime::allocateSystemMemory] <<< EXIT success
+pgm2dimg 1 16 16 1 512 8192 8192
+Dims: 16 x 16 x 1: LS: 512 SS: 8192 Size: 8192
+
+[Runtime::allocateSystemMemory] >>> ENTER
+[Runtime::allocateSystemMemory]  phMem addr=0xffffc2ff9ca8 *phMem(before)=0x1
+[Runtime::allocateSystemMemory]  pData addr=0xffffc2ff9da8 *pData(before)=0
+[Runtime::allocateSystemMemory]  size=32
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::allocateSystemMemory]  hDla=0xb902330
+[Runtime::allocateSystemMemory]  Calling NvDlaAllocMem(NULL, hDla, phMem, pData, size, NvDlaHeap_System)
+[    4.415255] DMA paddr allocated: 0xc0012000 for vaddr 0xffff000040012000
+[    4.415638] nvdla_gem_map_offset allocates args->offset = 0x100012000
+[Runtime::allocateSystemMemory]  NvDlaAllocMem SUCCESS
+[Runtime::allocateSystemMemory]  *phMem(after)=0xb9065d0 *pData(after)=0xffff931d7000
+[NvDlaError Runtime::allocateSystemMemory]  m_hmem_memory_map.insert(std::make_pair(*phMem, *pData));
+[Runtime::allocateSystemMemory]  Inserted into m_hmem_memory_map: key(*phMem)=0xb9065d0 value(*pData)=0xffff931d7000
+[Runtime::allocateSystemMemory]  m_hmem_memory_map.size() now=2
+[Runtime::allocateSystemMemory] <<< EXIT success
+submitting tasks...
+
+[Runtime::submitInternal] >>> ENTER
+[Runtime::submitInternal] m_loaded=0xb900ea0 m_task.size()=2 m_submit.size()=2
+[Runtime::submitInternal] Reloading dep_graph memories if needed...
+[Runtime::submitInternal] Checking memory id=0 hmem=0xb905ad0 virt=0xffff93e26000 flags=1
+[Runtime::submitInternal] Checking memory id=1 hmem=0xb905af0 virt=0xffff93e24000 flags=3
+[Runtime::submitInternal]  memory id=1 has flags_set, contents.size()=2
+[Runtime::submitInternal]   content symbol="tb-1"
+[Runtime::submitInternal]   content symbol="tb-2"
+[Runtime::submitInternal] Checking memory id=2 hmem=0xb905c70 virt=0xffff93e23000 flags=1
+[Runtime::submitInternal] Checking memory id=3 hmem=0xb906870 virt=0xffff931d8000 flags=5
+[Runtime::submitInternal] Checking memory id=4 hmem=0xb9065d0 virt=0xffff931d7000 flags=9
+[Runtime::submitInternal] Checking memory id=5 hmem=0xb905c90 virt=0xffff93e22000 flags=3
+[Runtime::submitInternal]  memory id=5 has flags_set, contents.size()=1
+[Runtime::submitInternal]   content symbol="task-0-addr0"
+[Runtime::submitInternal] Checking memory id=6 hmem=0xb905d50 virt=0xffff93e21000 flags=3
+[Runtime::submitInternal]  memory id=6 has flags_set, contents.size()=1
+[Runtime::submitInternal]   content symbol="task-0-dep_graph"
+[Runtime::submitInternal]   -> matches "dep_graph", calling loadMemory()
+
+[Runtime::loadMemory] >>> ENTER
+[Runtime::loadMemory] memory id=6 size=72 flags=3 domain=0 bindable=0
+[Runtime::loadMemory] domain_sysmem(): will allocate / map system memory
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::loadMemory] before alloc/map: hMem=0xb905d50 size=72 hDLa 0xb902330 and m_dla_hanndle 0
+[Runtime::loadMemory] before alloc/map: &hMem=0xffffc2f84870
+[Runtime::loadMemory] hMem already valid, mapped_mem=0xffff93e21000
+[Runtime::loadMemory] flags_set() is set -> will copy contents into mapped_mem
+[Runtime::loadMemory] contents.size()=1 offsets.size()=1
+
+[Runtime::loadMemory]   >> content index ci=0 symbol='task-0-dep_graph' offset=0
+[Runtime::loadMemory]   getSymbolContent() -> ok=1 name=task-0-dep_graph size=72 data=0xb901a60
+[Runtime::loadMemory]   copy blob: dst_base=0xffff93e21000 dst=0xffff93e21000 src=0xb901a60 blob_size=72
+[Runtime::loadMemory]   copy done for ci=0
+[Runtime::loadMemory]   content_symbol='task-0-dep_graph' parsed to base='task-0' kind='dep_graph'
+[Runtime::loadMemory]   recorded blob for base='task-0' kind='dep_graph' size=72 dst=0xffff93e21000
+[Runtime::loadMemory] <<< EXIT (success)
+[Runtime::submitInternal]   loadMemory() OK for memory id=6
+[Runtime::submitInternal] Checking memory id=7 hmem=0xb905d70 virt=0xffff939e3000 flags=3
+[Runtime::submitInternal]  memory id=7 has flags_set, contents.size()=1
+[Runtime::submitInternal]   content symbol="task-0-op_list"
+[Runtime::submitInternal] Checking memory id=8 hmem=0xb905d90 virt=0xffff939e2000 flags=3
+[Runtime::submitInternal]  memory id=8 has flags_set, contents.size()=1
+[Runtime::submitInternal]   content symbol="task-0-surf_list"
+[Runtime::submitInternal] Checking memory id=9 hmem=0xb905db0 virt=0xffff939e1000 flags=3
+[Runtime::submitInternal]  memory id=9 has flags_set, contents.size()=1
+[Runtime::submitInternal]   content symbol="task-0-lut_list"
+[Runtime::submitInternal] Checking memory id=10 hmem=0xb905dd0 virt=0xffff939e0000 flags=1
+[Runtime::submitInternal] Checking memory id=11 hmem=0xb905df0 virt=0xffff939df000 flags=3
+[Runtime::submitInternal]  memory id=11 has flags_set, contents.size()=1
+[Runtime::submitInternal]   content symbol="task-1-addr0"
+[Runtime::submitInternal] Checking memory id=12 hmem=0xb905eb0 virt=0xffff939de000 flags=3
+[Runtime::submitInternal]  memory id=12 has flags_set, contents.size()=1
+[Runtime::submitInternal]   content symbol="task-1-op_list"
+[Runtime::submitInternal] Checking memory id=13 hmem=0xb905ed0 virt=0xffff939dd000 flags=3
+[Runtime::submitInternal]  memory id=13 has flags_set, contents.size()=1
+[Runtime::submitInternal]   content symbol="task-1-op_buf_list"
+[Runtime::submitInternal] Checking memory id=14 hmem=0xb905ef0 virt=0xffff939dc000 flags=1
+[Runtime::submitInternal] Checking memory id=15 hmem=0xb905f10 virt=0xffff939db000 flags=1
+[Runtime::submitInternal] Checking memory id=16 hmem=0xb905f30 virt=0xffff939da000 flags=1
+[Runtime::submitInternal] num_emu_instances=1
+[Runtime::submitInternal] m_submit.size()=2
+
+[Runtime::submitInternal] --- Submission set ss=0 tasks.size()=1 ---
+[Runtime::submitInternal]  Handling task index ii=0 (task_id=0)
+[Runtime::submitInternal]  Task: id=0 interface=1 instance=-1
+[Runtime::submitInternal]   -> Interface_DLA1
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::submitInternal] Done getDLADeviceContext(m_loaded_instance=0) -> 0xb902330
+[Runtime::submitInternal]   dla_task.task_id=0
+[Runtime::submitInternal]   Calling fillTaskAddressList()
+
+[Runtime::fillTaskAddressList] >>> ENTER for task_id=0
+[Runtime::fillTaskAddressList] m_memory.size()=17 num_task_addr_list_entries=10
+[Runtime::fillTaskAddressList] dla_task->num_addresses=10
+[Runtime::fillTaskAddressList]  ali=0 address_list_entry_id=5
+[Runtime::fillTaskAddressList]   m_address[address_list_entry_id].id=5
+[Runtime::fillTaskAddressList]   mapped to memory_id=5
+[Runtime::fillTaskAddressList]   Memory mapping: ali=0 mem=0xb905140 hMem=0xb905c90 offset=0x0
+[Runtime::fillTaskAddressList]  ali=1 address_list_entry_id=1
+[Runtime::fillTaskAddressList]   m_address[address_list_entry_id].id=1
+[Runtime::fillTaskAddressList]   mapped to memory_id=1
+[Runtime::fillTaskAddressList]   Memory mapping: ali=1 mem=0xb904fc0 hMem=0xb905af0 offset=0x0
+[Runtime::fillTaskAddressList]  ali=2 address_list_entry_id=2
+[Runtime::fillTaskAddressList]   m_address[address_list_entry_id].id=2
+[Runtime::fillTaskAddressList]   mapped to memory_id=2
+[Runtime::fillTaskAddressList]   Memory mapping: ali=2 mem=0xb905020 hMem=0xb905c70 offset=0x0
+[Runtime::fillTaskAddressList]  ali=3 address_list_entry_id=3
+[Runtime::fillTaskAddressList]   m_address[address_list_entry_id].id=3
+[Runtime::fillTaskAddressList]   mapped to memory_id=3
+[Runtime::fillTaskAddressList]   Memory mapping: ali=3 mem=0xb905080 hMem=0xb906870 offset=0x0
+[Runtime::fillTaskAddressList]  ali=4 address_list_entry_id=4
+[Runtime::fillTaskAddressList]   m_address[address_list_entry_id].id=4
+[Runtime::fillTaskAddressList]   mapped to memory_id=4
+[Runtime::fillTaskAddressList]   Memory mapping: ali=4 mem=0xb9050e0 hMem=0xb9065d0 offset=0x0
+[Runtime::fillTaskAddressList]  ali=5 address_list_entry_id=6
+[Runtime::fillTaskAddressList]   m_address[address_list_entry_id].id=6
+[Runtime::fillTaskAddressList]   mapped to memory_id=6
+[Runtime::fillTaskAddressList]   Memory mapping: ali=5 mem=0xb9051a0 hMem=0xb905d50 offset=0x0
+[Runtime::fillTaskAddressList]  ali=6 address_list_entry_id=7
+[Runtime::fillTaskAddressList]   m_address[address_list_entry_id].id=7
+[Runtime::fillTaskAddressList]   mapped to memory_id=7
+[Runtime::fillTaskAddressList]   Memory mapping: ali=6 mem=0xb905200 hMem=0xb905d70 offset=0x0
+[Runtime::fillTaskAddressList]  ali=7 address_list_entry_id=8
+[Runtime::fillTaskAddressList]   m_address[address_list_entry_id].id=8
+[Runtime::fillTaskAddressList]   mapped to memory_id=8
+[Runtime::fillTaskAddressList]   Memory mapping: ali=7 mem=0xb905260 hMem=0xb905d90 offset=0x0
+[Runtime::fillTaskAddressList]  ali=8 address_list_entry_id=9
+[Runtime::fillTaskAddressList]   m_address[address_list_entry_id].id=9
+[Runtime::fillTaskAddressList]   mapped to memory_id=9
+[Runtime::fillTaskAddressList]   Memory mapping: ali=8 mem=0xb9052c0 hMem=0xb905db0 offset=0x0
+[Runtime::fillTaskAddressList]  ali=9 address_list_entry_id=10
+[Runtime::fillTaskAddressList]   m_address[address_list_entry_id].id=10
+[Runtime::fillTaskAddressList]   mapped to memory_id=10
+[Runtime::fillTaskAddressList]   Memory mapping: ali=9 mem=0xb905320 hMem=0xb905dd0 offset=0x0
+[Runtime::fillTaskAddressList] <<< EXIT OK
+[Runtime::submitInternal]   fillTaskAddressList() done
+[Runtime::submitInternal]   Calling NvDlaSubmit(DLA1)
+[    4.445680] Enter:dla_read_network_config
+[    4.445896] entered dla_get_dma_address(index = 0):
+[    4.446071]  in branch dla_get_dma_address(DESTINATION_PROCESSOR):
+[    4.446275] before: dst_ptr = 0xffff000000ac142c
+[    4.446310] before set: *temp = 0xffff000000ac142c
+[    4.446630] after set: *temp = 0x0
+[    4.446770] after: dst_ptr = 0x0
+[    4.446788] exiting dla_get_dma_address(), got dst_ptr = 0 (index = 0)
+[    4.448621] dla_data_read(src_index = 0): mapped dma_buf(handle = 7, offset = 0) to vaddr = 0xffff000040004000
+[    4.449143] *********************************************************
+[    4.449370] NVDLA FW dla_network_desc
+[    4.449506] ---------------------------------------------------------
+[    4.449728] op desc index      = 6
+[    4.449861] surface desc index = 7
+[    4.449993] dep graph index    = 5
+[    4.450133] lut data index     = 8
+[    4.450272] stat_list_index    = -1
+[    4.450415] roi array index    = -1
+[    4.450559] surface index      = -1
+[    4.450702] num rois           = 1
+[    4.450842] num ops            = 2
+[    4.452898] num luts           = 0
+[    4.453079] num addr           = 10
+[    4.453220] input layer        = 0
+[    4.453363] dynamic roi        = 0
+[    4.453522] entered dla_get_dma_address(index = 6):
+[    4.453688]  in branch dla_get_dma_address(DESTINATION_PROCESSOR):
+[    4.453897] before: dst_ptr = 0x0
+[    4.453909] before set: *temp = 0x0
+[    4.454151] after set: *temp = 0x6
+[    4.454278] after: dst_ptr = 0x6
+[    4.454289] exiting dla_get_dma_address(), got dst_ptr = 6 (index = 6)
+[    4.454645] getting surface_desc_addr:
+[    4.454788] before: task->surface_desc_addr = 0x0
+[    4.454805] entered dla_get_dma_address(index = 7):
+[    4.457200]  in branch dla_get_dma_address(DESTINATION_PROCESSOR):
+[    4.457429] before: dst_ptr = 0x0
+[    4.457441] before set: *temp = 0x0
+[    4.457686] after set: *temp = 0x7
+[    4.457809] after: dst_ptr = 0x7
+[    4.457821] exiting dla_get_dma_address(), got dst_ptr = 7 (index = 7)
+[    4.458161] after: task->surface_desc_addr = 0x7
+[    4.458180]
+[    4.458411] entered dla_get_dma_address(index = 5):
+[    4.458577]  in branch dla_get_dma_address(DESTINATION_PROCESSOR):
+[    4.458771] before: dst_ptr = 0x0
+[    4.458780] before set: *temp = 0x0
+[    4.460735] after set: *temp = 0x5
+[    4.460903] after: dst_ptr = 0x5
+[    4.460916] exiting dla_get_dma_address(), got dst_ptr = 5 (index = 5)
+[    4.461285] Exit:dla_read_network_config status=0
+[    4.461477] *********************************************************
+[    4.461704] NVDLA FW address list
+[    4.461829] ---------------------------------------------------------
+[    4.462060] task base address        = 0
+[    4.462221] op desc address          = 6
+[    4.462369] surface desc address     = 7
+[    4.462519] dependency graph address = 5
+[    4.462663] LUT data address         = 0
+[    4.462813] stat address             = 0
+[    4.464834] ROI array address        = 0
+[    4.465025] surface address          = 0
+[    4.465209] Enter: dla_initiate_processors
+[    4.465528] dla_data_read(src_index = 5): mapped dma_buf(handle = 8, offset = 0) to vaddr = 0xffff000040005000
+[    4.465930] Enter: dla_submit_operation
+[    4.466093] Prepare Convolution operation index 0 ROI 0 dep_count 1
+[    4.466311] Enter: dla_prepare_operation
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x9000
+
+
+Info: NV_NVDLA_csb_master.cpp: 139:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CACC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 140:Addr: 0x9004
+
+
+Info: NV_NVDLA_csb_master.cpp: 141:Data: 0x7f76
+
+
+Info: NV_NVDLA_csb_master.cpp: 142:Is write: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 143:nposted: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 670:NV_NVDLA_csb_master::cacc2csb_resp_b_transport. Err bit: 0x0 Data: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=0 addr=0x9004 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+[    4.468292] processor:Convolution group:0, rdma_group:0 available
+[    4.468602] Enter: dla_read_config
+[    4.468786] dla_data_read(src_index = 6): mapped dma_buf(handle = 9, offset = 0) to vaddr = 0xffff000040006000
+[    4.469154] dla_data_read(src_index = 7): mapped dma_buf(handle = 10, offset = 0) to vaddr = 0xffff000040007000
+[    4.469639] *********************************************************
+[    4.469852] NVDLA FW ROI[0]: dla_conv_surface_desc
+[    4.470020] ---------------------------------------------------------
+[    4.470226] weight_data         = [ dla_data_cube =>
+[    4.470402]     type          = 0
+[    4.470543]     address       = 1
+[    4.470669]     offset        = 0
+[    4.470794]     width         = 10
+[    4.472753]     height        = 10
+[    4.472951]     channel       = 1
+[    4.473088]     size          = 512
+[    4.473228]     line_stride   = 0
+[    4.473366]     surf_stride   = 0
+[    4.473494]     plane_stride  = 0
+[    4.473610] ]
+[    4.473633] wmb_data            = [ dla_data_cube =>
+[    4.473879]     type          = 0
+[    4.474009]     address       = 0
+[    4.474134]     offset        = 0
+[    4.474266]     width         = 0
+[    4.474392]     height        = 0
+[    4.474520]     channel       = 0
+[    4.474654]     size          = 0
+[    4.474775]     line_stride   = 0
+[    4.474898]     surf_stride   = 0
+[    4.480229]     plane_stride  = 0
+[    4.480597] ]
+[    4.480650] wgs_data            = [ dla_data_cube =>
+[    4.481189]     type          = 0
+[    4.481513]     address       = 0
+[    4.481659]     offset        = 0
+[    4.481813]     width         = 0
+[    4.481966]     height        = 0
+[    4.482111]     channel       = 0
+[    4.482260]     size          = 0
+[    4.482404]     line_stride   = 0
+[    4.482543]     surf_stride   = 0
+[    4.482690]     plane_stride  = 0
+[    4.482829] ]
+[    4.482846] src_data            = [ dla_data_cube =>
+[    4.485649]     type          = 0
+[    4.485806]     address       = 3
+[    4.485954]     offset        = 0
+[    4.486106]     width         = 10
+[    4.486260]     height        = 10
+[    4.486407]     channel       = 1
+[    4.486549]     size          = 8192
+[    4.486700]     line_stride   = 512
+[    4.486853]     surf_stride   = 8192
+[    4.488506]     plane_stride  = 0
+[    4.488699] ]
+[    4.488726] dst_data            = [ dla_data_cube =>
+[    4.489029]     type          = 2
+[    4.489188]     address       = -1
+[    4.489338]     offset        = 0
+[    4.489496]     width         = 1
+[    4.489638]     height        = 1
+[    4.489782]     channel       = 2
+[    4.489936]     size          = 32
+[    4.490086]     line_stride   = 32
+[    4.490235]     surf_stride   = 32
+[    4.490381]     plane_stride  = 0
+[    4.490521] ]
+[    4.490542] offset_u            = 0
+[    4.490782] in_line_uv_stride   = 0
+[    4.490782]
+[    4.493727] *********************************************************
+[    4.494032] NVDLA FW ROI[0]: dla_conv_op_desc
+[    4.494211] ---------------------------------------------------------
+[    4.494461] conv_mode          = 0
+[    4.494634] data_reuse         = 0
+[    4.494789] weight_reuse       = 0
+[    4.496189] skip_data_rls      = 0
+[    4.496393] skip_weight_rls    = 0
+[    4.496553] entry_per_slice    = 4
+[    4.496718] data_format        = 36
+[    4.496880] pixel_mapping      = 0
+[    4.497044] fetch_grain        = 1
+[    4.497202] batch              = 1
+[    4.497375] weight_format      = 0
+[    4.497535] data_bank          = 1
+[    4.497697] weight_bank        = 1
+[    4.497850] batch_stride       = 0
+[    4.498006] post_extension     = 0
+[    4.498158] pixel_override     = 0
+[    4.498318] release            = 16
+[    4.498479] input_width_csc    = 16
+[    4.498642] input_height_csc   = 16
+[    4.498803] input_channel_csc  = 1
+[    4.501526] kernel_width_csc   = 16
+[    4.501739] kernel_height_csc  = 16
+[    4.501904] kernel_channel_csc = 1
+[    4.502055] input_width_cmac   = 1
+[    4.502216] input_height_cmac  = 1
+[    4.502376] bytes_per_kernel   = 256
+[    4.502545] mean_ry            = 0
+[    4.502712] mean_gu            = 0
+[    4.502876] mean_bv            = 0
+[    4.504528] mean_ax            = 0
+[    4.504731] mean_format        = 0
+[    4.504900] conv_stride_x      = 1
+[    4.505064] conv_stride_y      = 1
+[    4.505228] pad_x_left         = 0
+[    4.505407] pad_x_right        = 0
+[    4.505566] pad_y_top          = 0
+[    4.505730] pad_y_bottom       = 0
+[    4.505891] dilation_x         = 1
+[    4.506045] dilation_y         = 1
+[    4.506208] pra_truncate       = 0
+[    4.506365] in_precision       = 0
+[    4.506534] out_precision      = 0
+[    4.506692] pad_val            = 0
+[    4.506852] in_cvt             =
+[    4.509519] [ scale = 1, truncate = 0, enable = 1, offset = 0 ]
+[    4.509803] out_cvt            =
+[    4.509967] [ scale = 1, truncate = 0, enable = 1, offset = 0 ]
+[    4.510202]
+[    4.510325] Exit: dla_read_config
+[    4.510510] Exit: dla_prepare_operation status=0
+[    4.510757] Enter: dla_program_operation
+[    4.512272] Program Convolution operation index 0 ROI 0 Group[0]
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x9000
+
+
+Info: NV_NVDLA_csb_master.cpp: 139:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CACC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 140:Addr: 0x9004
+
+
+Info: NV_NVDLA_csb_master.cpp: 141:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 142:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 143:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x9004 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x7000
+
+
+Info: NV_NVDLA_csb_master.cpp: 121:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CMAC_A_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 122:Addr: 0x7004
+
+
+Info: NV_NVDLA_csb_master.cpp: 123:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 124:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 125:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x7004 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x8000
+
+
+Info: NV_NVDLA_csb_master.cpp: 130:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CMAC_B_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 131:Addr: 0x8004
+
+
+Info: NV_NVDLA_csb_master.cpp: 132:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 133:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 134:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x8004 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6004
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6004 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5004
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5004 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+[    4.513886]
+[    4.513886] entered processor_conv_program():
+[    4.514174] conv getting weight_address:
+[    4.514372] entered dla_get_dma_cube_address(index = 1, offset = 0x0):
+[    4.514623] entered dla_get_dma_address(index = 1):
+[    4.514826] in branch dla_get_dma_address(DESTINATION_DMA):
+[    4.516407] entered dla_read_dma_address(index = 1):
+[    4.516694] pass to nvdla_gem_dma_addr(fd = handles[index=1] = 5):
+[    4.517109] *phys_addr = 0xc0002000 + 0x0
+[    4.517292] exiting dla_get_dma_address(), got dst_ptr = c0002000 (index = 1)
+[    4.517591] back to dla_get_dma_cube_address: dst_ptr += 0x0
+[    4.517834] conv weight_addr = 0xc0002000
+[    4.517834]
+[    4.518081] conv getting input_address:
+[    4.518278] entered dla_read_input_address():
+[    4.518489] passed to dla_get_dma_cube_address(data->address = 3, data->offset = 0)
+[    4.518805] entered dla_get_dma_cube_address(index = 3, offset = 0x0):
+[    4.520729] entered dla_get_dma_address(index = 3):
+[    4.520961] in branch dla_get_dma_address(DESTINATION_DMA):
+[    4.521182] entered dla_read_dma_address(index = 3):
+[    4.521400] pass to nvdla_gem_dma_addr(fd = handles[index=3] = 19):
+[    4.521661] *phys_addr = 0xc0010000 + 0x0
+[    4.521827] exiting dla_get_dma_address(), got dst_ptr = c0010000 (index = 3)
+[    4.522081] back to dla_get_dma_cube_address: dst_ptr += 0x0
+[    4.522331] conv input_addr = 0xc0010000
+[    4.522331]
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x9000
+
+
+Info: NV_NVDLA_csb_master.cpp: 139:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CACC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 140:Addr: 0x9000
+
+
+Info: NV_NVDLA_csb_master.cpp: 141:Data: 0x7f76
+
+
+Info: NV_NVDLA_csb_master.cpp: 142:Is write: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 143:nposted: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 670:NV_NVDLA_csb_master::cacc2csb_resp_b_transport. Err bit: 0x0 Data: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=0 addr=0x9000 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x7000
+
+
+Info: NV_NVDLA_csb_master.cpp: 121:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CMAC_A_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 122:Addr: 0x7000
+
+
+Info: NV_NVDLA_csb_master.cpp: 123:Data: 0x7f76
+
+
+Info: NV_NVDLA_csb_master.cpp: 124:Is write: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 125:nposted: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 582:NV_NVDLA_csb_master::cmac_a2csb_resp_b_transport. Err bit: 0x0 Data: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=0 addr=0x7000 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x8000
+
+
+Info: NV_NVDLA_csb_master.cpp: 130:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CMAC_B_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 131:Addr: 0x8000
+
+
+Info: NV_NVDLA_csb_master.cpp: 132:Data: 0x7f76
+
+
+Info: NV_NVDLA_csb_master.cpp: 133:Is write: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 134:nposted: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 626:NV_NVDLA_csb_master::cmac_b2csb_resp_b_transport. Err bit: 0x0 Data: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=0 addr=0x8000 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x7f76
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 538:NV_NVDLA_csb_master::csc2csb_resp_b_transport. Err bit: 0x0 Data: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=0 addr=0x6000 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x7f76
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 494:NV_NVDLA_csb_master::cdma2csb_resp_b_transport. Err bit: 0x0 Data: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=0 addr=0x5000 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x9000
+
+
+Info: NV_NVDLA_csb_master.cpp: 139:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CACC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 140:Addr: 0x900c
+
+
+Info: NV_NVDLA_csb_master.cpp: 141:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 142:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 143:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x900c len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x9000
+
+
+Info: NV_NVDLA_csb_master.cpp: 139:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CACC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 140:Addr: 0x9010
+
+
+Info: NV_NVDLA_csb_master.cpp: 141:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 142:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 143:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x9010 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x9000
+
+
+Info: NV_NVDLA_csb_master.cpp: 139:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CACC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 140:Addr: 0x9014
+
+
+Info: NV_NVDLA_csb_master.cpp: 141:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 142:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 143:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x9014 len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x9000
+
+
+Info: NV_NVDLA_csb_master.cpp: 139:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CACC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 140:Addr: 0x9018
+
+
+Info: NV_NVDLA_csb_master.cpp: 141:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 142:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 143:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x9018 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x9000
+
+
+Info: NV_NVDLA_csb_master.cpp: 139:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CACC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 140:Addr: 0x901c
+
+
+Info: NV_NVDLA_csb_master.cpp: 141:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 142:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 143:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x901c len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x9000
+
+
+Info: NV_NVDLA_csb_master.cpp: 139:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CACC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 140:Addr: 0x9020
+
+
+Info: NV_NVDLA_csb_master.cpp: 141:Data: 0x20
+
+
+Info: NV_NVDLA_csb_master.cpp: 142:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 143:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x9020 len=4 data=0x 00000020 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x9000
+
+
+Info: NV_NVDLA_csb_master.cpp: 139:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CACC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 140:Addr: 0x9024
+
+
+Info: NV_NVDLA_csb_master.cpp: 141:Data: 0x20
+
+
+Info: NV_NVDLA_csb_master.cpp: 142:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 143:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x9024 len=4 data=0x 00000020 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x9000
+
+
+Info: NV_NVDLA_csb_master.cpp: 139:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CACC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 140:Addr: 0x9028
+
+
+Info: NV_NVDLA_csb_master.cpp: 141:Data: 0x10001
+
+
+Info: NV_NVDLA_csb_master.cpp: 142:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 143:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x9028 len=4 data=0x 00010001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x9000
+
+
+Info: NV_NVDLA_csb_master.cpp: 139:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CACC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 140:Addr: 0x902c
+
+
+Info: NV_NVDLA_csb_master.cpp: 141:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 142:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 143:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x902c len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x7000
+
+
+Info: NV_NVDLA_csb_master.cpp: 121:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CMAC_A_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 122:Addr: 0x700c
+
+
+Info: NV_NVDLA_csb_master.cpp: 123:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 124:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 125:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x700c len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x8000
+
+
+Info: NV_NVDLA_csb_master.cpp: 130:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CMAC_B_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 131:Addr: 0x800c
+
+
+Info: NV_NVDLA_csb_master.cpp: 132:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 133:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 134:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x800c len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x600c
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x600c len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6010
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6010 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6014
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0xf000f
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6014 len=4 data=0x 000f000f resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6018
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6018 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x601c
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x601c len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6020
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6020 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6024
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x3
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6024 len=4 data=0x 00000003 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6028
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6028 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x602c
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0xf000f
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x602c len=4 data=0x 000f000f resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6030
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x10000
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6030 len=4 data=0x 00010000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6034
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x200
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6034 len=4 data=0x 00000200 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6038
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6038 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x603c
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x603c len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6040
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6040 len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6044
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6044 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6048
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0xf
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6048 len=4 data=0x 0000000f resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x604c
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x604c len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6050
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6050 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6054
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6054 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6058
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6058 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x605c
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x605c len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6060
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6060 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5014
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5014 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5018
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5018 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x501c
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0xf000f
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x501c len=4 data=0x 000f000f resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5020
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5020 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5024
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0xf000f
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5024 len=4 data=0x 000f000f resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x502c
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x502c len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5030
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5030 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5034
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0xc0010000
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5034 len=4 data=0x c0010000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5038
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5038 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x503c
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0xc0010000
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x503c len=4 data=0x c0010000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5040
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x200
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5040 len=4 data=0x 00000200 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5048
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x2000
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5048 len=4 data=0x 00002000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5044
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5044 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x504c
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x10001
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x504c len=4 data=0x 00010001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5058
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5058 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x505c
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x505c len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5060
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x3
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5060 len=4 data=0x 00000003 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5064
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5064 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5068
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5068 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x506c
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0xff
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x506c len=4 data=0x 000000ff resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5070
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5070 len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5074
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5074 len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5078
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5078 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x507c
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0xc0002000
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x507c len=4 data=0x c0002000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5080
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x200
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5080 len=4 data=0x 00000200 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5098
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5098 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x50a4
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x50a4 len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x50a8
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x50a8 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x50ac
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x50ac len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x50b0
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x50b0 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x50b4
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x50b4 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x50b8
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x50b8 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x50bc
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x50bc len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+[    4.532721] no desc get due to index==-1
+[    4.533047] no desc get due to index==-1
+[    4.533300] dla_data_read(src_index = 5): mapped dma_buf(handle = 8, offset = 0) to vaddr = 0xffff000040005000
+[    4.533781] no desc get due to index==-1
+[    4.533976] no desc get due to index==-1
+[    4.534165] no desc get due to index==-1
+[    4.534385] no desc get due to index==-1
+[    4.534619] Enter: dla_op_programmed
+[    4.536654] Update dependency operation index 1 ROI 0 DEP_COUNT=1
+[    4.537053] enable SDP in dla_update_dependency as depdency are resolved
+[    4.537406] Enter: dla_enable_operation
+[    4.537652] exit dla_enable_operation without actual enable due to processor hasn't been programmed
+[    4.538089] Exit: dla_enable_operation status=0
+[    4.538390] Exit: dla_op_programmed
+[    4.538588] Exit: dla_program_operation status=0
+[    4.538861] Exit: dla_submit_operation
+[    4.540663] Enter: dla_dequeue_operation
+[    4.540914] exit Convolution as there's no further operation
+[    4.541159] Exit: dla_dequeue_operation
+[    4.541403] Enter: dla_submit_operation
+[    4.541578] Prepare SDP operation index 1 ROI 0 dep_count 0
+[    4.541798] Enter: dla_prepare_operation
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb004
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x7f76
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 758:NV_NVDLA_csb_master::sdp2csb_resp_b_transport. Err bit: 0x0 Data: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=0 addr=0xb004 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa004
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0x7f76
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 714:NV_NVDLA_csb_master::sdp_rdma2csb_resp_b_transport. Err bit: 0x0 Data: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=0 addr=0xa004 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+[    4.542231] processor:SDP group:0, rdma_group:0 available
+[    4.542453] Enter: dla_read_config
+[    4.542632] dla_data_read(src_index = 6): mapped dma_buf(handle = 9, offset = 0) to vaddr = 0xffff000040006000
+[    4.544541] dla_data_read(src_index = 7): mapped dma_buf(handle = 10, offset = 0) to vaddr = 0xffff000040007000
+[    4.545119] *********************************************************
+[    4.545386] NVDLA FW ROI[0]: dla_sdp_surface_desc
+[    4.545584] ---------------------------------------------------------
+[    4.545856] src_data            = [ dla_data_cube =>
+[    4.546072]     type          = 2
+[    4.546226]     address       = -1
+[    4.546375]     offset        = 0
+[    4.546531]     width         = 1
+[    4.546682]     height        = 1
+[    4.546834]     channel       = 2
+[    4.548627]     size          = 32
+[    4.548832]     line_stride   = 32
+[    4.548986]     surf_stride   = 32
+[    4.549141]     plane_stride  = 0
+[    4.549294] ]
+[    4.549318] x1_data             = [ dla_data_cube =>
+[    4.549637]     type          = 0
+[    4.549791]     address       = 1
+[    4.549947]     offset        = 1000
+[    4.550112]     width         = 1
+[    4.550267]     height        = 1
+[    4.550422]     channel       = 2
+[    4.550578]     size          = 4
+[    4.550725]     line_stride   = 64
+[    4.550877]     surf_stride   = 64
+[    4.553420]     plane_stride  = 0
+[    4.553614] ]
+[    4.553638] x2_data             = [ dla_data_cube =>
+[    4.553920]     type          = 0
+[    4.554076]     address       = 0
+[    4.554229]     offset        = 0
+[    4.554370]     width         = 0
+[    4.554510]     height        = 0
+[    4.554655]     channel       = 0
+[    4.554798]     size          = 0
+[    4.556587]     line_stride   = 0
+[    4.556780]     surf_stride   = 0
+[    4.556925]     plane_stride  = 0
+[    4.557069] ]
+[    4.557092] y_data              = [ dla_data_cube =>
+[    4.557387]     type          = 0
+[    4.557547]     address       = 0
+[    4.557698]     offset        = 0
+[    4.557839]     width         = 0
+[    4.557987]     height        = 0
+[    4.558128]     channel       = 0
+[    4.558273]     size          = 0
+[    4.558420]     line_stride   = 0
+[    4.558569]     surf_stride   = 0
+[    4.558717]     plane_stride  = 0
+[    4.558861] ]
+[    4.558878] dst_data            = [ dla_data_cube =>
+[    4.561770]     type          = 0
+[    4.561934]     address       = 2
+[    4.562087]     offset        = 0
+[    4.562239]     width         = 1
+[    4.562394]     height        = 1
+[    4.562538]     channel       = 2
+[    4.562688]     size          = 32
+[    4.562833]     line_stride   = 32
+[    4.564361]     surf_stride   = 32
+[    4.564568]     plane_stride  = 0
+[    4.564713] ]
+[    4.564768] *********************************************************
+[    4.565092] NVDLA FW ROI[0]: dla_sdp_op_desc
+[    4.565270] ---------------------------------------------------------
+[    4.565530] src_precision    = 0
+[    4.565683] dst_precision    = 0
+[    4.565833] lut_index        = -1
+[    4.565988] out_cvt          =
+[    4.566142] [ scale = 22660, truncate = 25, enable = 1, offset = 0 ]
+[    4.566381] conv_mode        = 0
+[    4.566532] batch_num        = 1
+[    4.566677] batch_stride     = 0
+[    4.566826] x1_op            = [ dla_sdp_op =>
+[    4.569678]     enable         = 1
+[    4.569885]     alu_type       = 2
+[    4.570045]     type           = 2
+[    4.570202]     mode           = 1
+[    4.570364]     act            = 0
+[    4.570519]     shift_value    = 0
+[    4.570678]     truncate       = 0
+[    4.570838]     precision      = 1
+[    4.572558]     alu_operand    = 0
+[    4.572766]     mul_operand    = 1
+[    4.572932] cvt.alu_cvt          =
+[    4.573111] [ scale = 0, truncate = 0, enable = 0, offset = 0 ]
+[    4.573346] cvt.mul_cvt          =
+[    4.573519] [ scale = 0, truncate = 0, enable = 0, offset = 0 ]
+[    4.573753] ]
+[    4.573872] x2_op            = [ dla_sdp_op =>
+[    4.574063]     enable         = 0
+[    4.574218]     alu_type       = 0
+[    4.574371]     type           = 0
+[    4.574528]     mode           = 0
+[    4.574676]     act            = 0
+[    4.574833]     shift_value    = 0
+[    4.581147]     truncate       = 0
+[    4.581592]     precision      = 0
+[    4.581936]     alu_operand    = 0
+[    4.582276]     mul_operand    = 0
+[    4.582610] cvt.alu_cvt          =
+[    4.585528] [ scale = 0, truncate = 0, enable = 0, offset = 0 ]
+[    4.585778] cvt.mul_cvt          =
+[    4.585922] [ scale = 0, truncate = 0, enable = 0, offset = 0 ]
+[    4.586125] ]
+[    4.586220] y_op             = [ dla_sdp_op =>
+[    4.586400]     enable         = 0
+[    4.586529]     alu_type       = 0
+[    4.586667]     type           = 0
+[    4.586800]     mode           = 0
+[    4.588150]     act            = 0
+[    4.588325]     shift_value    = 0
+[    4.588462]     truncate       = 0
+[    4.588594]     precision      = 0
+[    4.588736]     alu_operand    = 0
+[    4.588870]     mul_operand    = 0
+[    4.589008] cvt.alu_cvt          =
+[    4.589152] [ scale = 0, truncate = 0, enable = 0, offset = 0 ]
+[    4.589352] cvt.mul_cvt          =
+[    4.589502] [ scale = 0, truncate = 0, enable = 0, offset = 0 ]
+[    4.589702] ]
+[    4.589810] Exit: dla_read_config
+[    4.589989] Exit: dla_prepare_operation status=0
+[    4.590170] Enter: dla_program_operation
+[    4.590318] Program SDP operation index 1 ROI 0 Group[0]
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb004
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb004 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa004
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xa004 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 58:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to GLB_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 59:Addr: 0x4
+
+
+Info: NV_NVDLA_csb_master.cpp: 60:Data: 0x7f76
+
+
+Info: NV_NVDLA_csb_master.cpp: 61:Is write: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 62:nposted: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 274:NV_NVDLA_csb_master::glb2csb_resp_b_transport. Err bit: 0x0 Data: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=0 addr=0x4 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 58:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to GLB_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 59:Addr: 0x4
+
+
+Info: NV_NVDLA_csb_master.cpp: 60:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 61:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 62:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x4 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+[    4.593441]
+[    4.593441] entered processor_sdp_program():
+[    4.593741] sdp skip getting src_addr
+[    4.593741]
+[    4.593944] sdp getting dst_addr:
+[    4.594090] entered dla_get_dma_cube_address(index = 2, offset = 0x0):
+[    4.594302] entered dla_get_dma_address(index = 2):
+[    4.594464] in branch dla_get_dma_address(DESTINATION_DMA):
+[    4.594641] entered dla_read_dma_address(index = 2):
+[    4.594816] pass to nvdla_gem_dma_addr(fd = handles[index=2] = 6):
+[    4.599602] *phys_addr = 0xc0001000 + 0x0
+[    4.600096] exiting dla_get_dma_address(), got dst_ptr = c0001000 (index = 2)
+[    4.600701] back to dla_get_dma_cube_address: dst_ptr += 0x0
+[    4.601238] sdp dst_addr = 0xc0001000
+[    4.601238]
+[    4.601745] sdp getting x1_addr:
+[    4.601911] entered dla_get_dma_cube_address(index = 1, offset = 0x1000):
+[    4.602179] entered dla_get_dma_address(index = 1):
+[    4.602366] in branch dla_get_dma_address(DESTINATION_DMA):
+[    4.602586] entered dla_read_dma_address(index = 1):
+[    4.602789] pass to nvdla_gem_dma_addr(fd = handles[index=1] = 5):
+[    4.604684] *phys_addr = 0xc0002000 + 0x0
+[    4.604902] exiting dla_get_dma_address(), got dst_ptr = c0002000 (index = 1)
+[    4.605167] back to dla_get_dma_cube_address: dst_ptr += 0x1000
+[    4.605426] sdp x1_addr = 0xc0003000
+[    4.605426]
+[    4.605658] sdp skip getting x2_addr
+[    4.605658]
+[    4.605882] sdp skip getting y_addr
+[    4.605882]
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa070
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xa070 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa028
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xa028 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa040
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xa040 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa058
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xa058 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa070
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xa070 len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa00c
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xa00c len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa010
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xa010 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa014
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xa014 len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa028
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0x2a
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xa028 len=4 data=0x 0000002a resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa02c
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0xc0003000
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xa02c len=4 data=0x c0003000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa030
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xa030 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa034
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0x40
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xa034 len=4 data=0x 00000040 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa038
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0x40
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xa038 len=4 data=0x 00000040 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa040
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0x31
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xa040 len=4 data=0x 00000031 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa058
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0x31
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xa058 len=4 data=0x 00000031 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb03c
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb03c len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb040
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb040 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb044
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb044 len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb04c
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb04c len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb048
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0xc0001000
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb048 len=4 data=0x c0001000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb050
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x20
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb050 len=4 data=0x 00000020 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb054
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x20
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb054 len=4 data=0x 00000020 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb058
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x58
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb058 len=4 data=0x 00000058 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb05c
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb05c len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb064
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb064 len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb06c
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x53
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb06c len=4 data=0x 00000053 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb080
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x53
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb080 len=4 data=0x 00000053 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb0b0
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb0b0 len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb0b4
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb0b4 len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb0bc
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb0bc len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb0c0
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb0c0 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb0c4
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x5884
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb0c4 len=4 data=0x 00005884 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb0c8
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x19
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb0c8 len=4 data=0x 00000019 resp=TLM_OK_RESPONSE
+[    4.614133] no desc get due to index==-1
+[    4.614347] no desc get due to index==-1
+[    4.614518] no desc get due to index==-1
+[    4.614683] no desc get due to index==-1
+[    4.614847] no desc get due to index==-1
+[    4.616103] no desc get due to index==-1
+[    4.616341] Enter: dla_op_programmed
+[    4.616500] Exit: dla_op_programmed
+[    4.616656] Exit: dla_program_operation status=0
+[    4.616857] Enter: dla_enable_operation
+[    4.617083] Enable SDP operation index 1 ROI 0
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb004
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb004 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa004
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xa004 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xa000
+
+
+Info: NV_NVDLA_csb_master.cpp: 148:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_RDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 149:Addr: 0xa008
+
+
+Info: NV_NVDLA_csb_master.cpp: 150:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 151:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 152:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xa008 len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0xb000
+
+
+Info: NV_NVDLA_csb_master.cpp: 157:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to SDP_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 158:Addr: 0xb038
+
+
+Info: NV_NVDLA_csb_master.cpp: 159:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 160:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 161:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xb038 len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+[    4.618055] Enter: dla_op_enabled
+[    4.618226] Update dependency operation index 0 ROI 0 DEP_COUNT=1
+[    4.618462] enable Convolution in dla_update_dependency as depdency are resolved
+[    4.618748] Enter: dla_enable_operation
+[    4.620474] Enable Convolution operation index 0 ROI 0
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x9000
+
+
+Info: NV_NVDLA_csb_master.cpp: 139:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CACC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 140:Addr: 0x9004
+
+
+Info: NV_NVDLA_csb_master.cpp: 141:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 142:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 143:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x9004 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0003000
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0003000 len=64 data=0x fef7fef6 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x7000
+
+
+Info: NV_NVDLA_csb_master.cpp: 121:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CMAC_A_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 122:Addr: 0x7004
+
+
+Info: NV_NVDLA_csb_master.cpp: 123:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 124:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 125:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x7004 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x8000
+
+
+Info: NV_NVDLA_csb_master.cpp: 130:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CMAC_B_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 131:Addr: 0x8004
+
+
+Info: NV_NVDLA_csb_master.cpp: 132:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 133:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 134:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x8004 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6004
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6004 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5004
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5004 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x500c
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x7f76
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 494:NV_NVDLA_csb_master::cdma2csb_resp_b_transport. Err bit: 0x0 Data: 0x1
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=0 addr=0x500c len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x9000
+
+
+Info: NV_NVDLA_csb_master.cpp: 139:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CACC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 140:Addr: 0x9008
+
+
+Info: NV_NVDLA_csb_master.cpp: 141:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 142:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 143:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x9008 len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x7000
+
+
+Info: NV_NVDLA_csb_master.cpp: 121:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CMAC_A_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 122:Addr: 0x7008
+
+
+Info: NV_NVDLA_csb_master.cpp: 123:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 124:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 125:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x7008 len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_cacc.cpp: 106:NV_NVDLA_cacc::CaccConsumerThread, group 0 opeartion start
+
+
+Info: NV_NVDLA_cacc.cpp: 165:is_assembly_working_ are = false
+
+
+Info: NV_NVDLA_cacc.cpp: 168:after is_assembly_working_ are = true
+
+
+Info: NV_NVDLA_cacc.cpp: 208:cacc before wait cacc_done_
+
+
+Info: NV_NVDLA_cacc.cpp: 1225:assembly_sram_group_idx_available_=0xfffffffe
+
+
+Info: NV_NVDLA_cacc.cpp: 1226:assembly_sram_group_idx_fetched_=0xfffffffe
+
+
+Info: NV_NVDLA_cacc.cpp: 544:after read assembly2delivery_config_fifo_
+
+
+Info: NV_NVDLA_cacc.cpp: 557:WxHxC=1x1x2, precision:0, batch_num:1, line_packed:1, surf_packed:1, conv_mode:0
+
+
+Info: NV_NVDLA_cacc.cpp: 589:batch_num=1 atom_num=0x1
+
+
+Info: NV_NVDLA_cacc.cpp: 1238:delivery_sram_group_idx_available_=0xfffffffe
+
+
+Info: NV_NVDLA_cacc.cpp: 1239:delivery_sram_group_idx_fetched_=0xfffffffe
+
+
+Info: NV_NVDLA_cacc.cpp: 349:after read assembly2send_config_fifo_
+
+
+Info: NV_NVDLA_cacc.cpp: 365:WxHxC=1x1x2, precision:0, batch_num:1, line_packed:1, surf_packed:1, conv_mode:0
+
+
+Info: NV_NVDLA_cacc.cpp: 408:batch_num=1 atom_num=0x1 atom_num_batch_2sdp=0x1 trans_num=2
+
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x8000
+
+
+Info: NV_NVDLA_csb_master.cpp: 130:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CMAC_B_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 131:Addr: 0x8008
+
+
+Info: NV_NVDLA_csb_master.cpp: 132:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 133:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 134:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x8008 len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x6000
+
+
+Info: NV_NVDLA_csb_master.cpp: 112:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CSC_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 113:Addr: 0x6008
+
+
+Info: NV_NVDLA_csb_master.cpp: 114:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 115:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 116:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x6008 len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x5000
+
+
+Info: NV_NVDLA_csb_master.cpp: 103:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to CDMA_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 104:Addr: 0x5010
+
+
+Info: NV_NVDLA_csb_master.cpp: 105:Data: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 106:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 107:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0x5010 len=4 data=0x 00000001 resp=TLM_OK_RESPONSE
+[    4.622412] Enter: dla_op_enabled
+[    4.622577] Exit: dla_op_enabled
+[    4.622729] Exit: dla_enable_operation status=0
+[    4.624067] Exit: dla_op_enabled
+[    4.624265] Exit: dla_enable_operation status=0
+[    4.624460] Exit: dla_submit_operation
+[    4.624632] Enter: dla_dequeue_operation
+[    4.624813] exit SDP as there's no further operation
+[    4.625023] Exit: dla_dequeue_operation
+[    4.625200] Exit: dla_initiate_processors status=0
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010000
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010000 len=64 data=0x 0000005f 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000060 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010040
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010040 len=64 data=0x 00000061 00000000 00000000 00000000 00000000 00000000 00000000 00000000 0000005f 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010080
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010080 len=64 data=0x 00000061 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000060 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0002000
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0002000 len=64 data=0x 9b9a9898 9e9d9b9b 9b99999a 99989696 9a999a9a 9a999b9a 999a989a 9a999897 9b9b999b dddedddb 9897a6a5 a2a19b9b aeaddddc b0b2a09f 999aa5a6 9796999a resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc00100c0
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc00100c0 len=64 data=0x 0000005f 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000061 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0002040
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0002040 len=64 data=0x dcdd9a9b eeedebe9 9d9ce9eb f4f59596 fbfc0000 b6bab4b5 9998b9bc 9b9a9695 b1b19c9b edeeedec b1b3eef1 fdff9b9d edeefd00 b7b9b7ba 9899b4b9 96969b9b resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010100
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010100 len=64 data=0x 00000061 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000062 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0002080
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0002080 len=64 data=0x 9d9c9999 eeefbcbc ebececed fd019798 c1bcfcff b6bab7bb 9b9bb7bc 99999a9a 9d9c9998 eef18181 edeeedee f8fb9d9c b9b5fb00 b8bab9bb 9997abac 98989796 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010140
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010140 len=64 data=0x 00000061 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000061 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc00020c0
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc00020c0 len=64 data=0x 9b9a9898 ebee9b9b ebedf1f4 c9c8b2b3 b9b3fefe b6bbb9b6 9c9c999a 9a999a9a 999a999a c2c39c9c ecefebf0 8687e7e9 beb8fbfb b7babab6 97969a98 9a9a9898 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010180
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010180 len=64 data=0x 00000063 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000062 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0002100
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0002100 len=64 data=0x 99999c9b eff1e0e1 ebefedf0 9a99eced bbb6fbfb bcb9bab7 afafeef0 9a999796 e7e79b9a edf0eeed e9ecedef 9a9bbdbf bbb6bab9 bab5bdb8 0101fe00 edee0001 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc00101c0
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc00101c0 len=64 data=0x 0000005f 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000064 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0002140
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0002140 len=64 data=0x f0f1e5e4 eceeefee bdbeeef1 99989b9b b7b9a8aa b8b3bbb7 fdfefc00 ff00fbfb ebebf0f1 bfc1efef 99999b9b 9a9b9899 b8bab2b5 a3a6b3b8 0001ced0 fefffeff resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010200
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010200 len=64 data=0x 0000005f 00000000 00000000 00000000 00000000 00000000 00000000 00000000 0000005f 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0002180
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0002180 len=64 data=0x f0efeeed 9e9eedee 9c9c989a 9a999797 b6b8b8bc 9d9eb8bb 9c9a9596 fe00dada eae9efef 9a9beeed 99999a9a 97989b9a b8bbb8bb 9797b9bb bbbb9798 feffff00 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010240
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010240 len=64 data=0x 0000001e 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000020 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc00021c0
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc00021c0 len=64 data=0x eff0f2f0 9a99bdbe ecf0a1a0 fe000000 bab6b9b4 fc02b9b4 00fffc00 fcfdfffe eeedefed 97999d9c fc01f4f7 fcff00ff bcb7bab6 fb00bab5 fefffd00 dcdd0101 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010280
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010280 len=64 data=0x 00000056 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000061 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_glb.cpp: 324:calling NV_NVDLA_glb::Update_nvdla_intr_cdma_wt_0
+
+
+Info: NV_NVDLA_glb.cpp: 327:Generating CDMA_WT interrupt0
+
+
+Info: nvdla.irq_adaptor: IRQ: irq_line=176 value=1
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc00102c0
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc00102c0 len=64 data=0x 00000063 00000000 00000000 00000000 00000000 00000000 00000000 00000000 0000005e 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010300
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010300 len=64 data=0x 00000021 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000050 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 58:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to GLB_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 59:Addr: 0x4
+
+
+Info: NV_NVDLA_csb_master.cpp: 60:Data: 0x7f76
+
+
+Info: NV_NVDLA_csb_master.cpp: 61:Is write: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 62:nposted: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 274:NV_NVDLA_csb_master::glb2csb_resp_b_transport. Err bit: 0x0 Data: 0x0
+
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010340
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010340 len=64 data=0x 0000005a 00000000 00000000 00000000 00000000 00000000 00000000 00000000 0000004b 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: nvdla.csb_adaptor: GP: iswrite=0 addr=0x4 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010380
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010380 len=64 data=0x 00000056 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000063 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 58:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to GLB_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 59:Addr: 0xc
+
+
+Info: NV_NVDLA_csb_master.cpp: 60:Data: 0x7f76
+
+
+Info: NV_NVDLA_csb_master.cpp: 61:Is write: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 62:nposted: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 274:NV_NVDLA_csb_master::glb2csb_resp_b_transport. Err bit: 0x0 Data: 0x40000
+
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc00103c0
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc00103c0 len=64 data=0x 00000063 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000060 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: nvdla.csb_adaptor: GP: iswrite=0 addr=0xc len=4 data=0x 00040000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010400
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010400 len=64 data=0x 00000060 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000020 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 58:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to GLB_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 59:Addr: 0xc
+
+
+Info: NV_NVDLA_csb_master.cpp: 60:Data: 0x40000
+
+
+Info: NV_NVDLA_csb_master.cpp: 61:Is write: 0x1
+
+
+Info: NV_NVDLA_csb_master.cpp: 62:nposted: 0x0
+
+
+Info: nvdla.csb_adaptor: GP: iswrite=1 addr=0xc len=4 data=0x 00040000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010440
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010440 len=64 data=0x 00000013 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000013 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: nvdla.irq_adaptor: IRQ: irq_line=176 value=0
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 58:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to GLB_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 59:Addr: 0x4
+
+
+Info: NV_NVDLA_csb_master.cpp: 60:Data: 0x7f76
+
+
+Info: NV_NVDLA_csb_master.cpp: 61:Is write: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 62:nposted: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 274:NV_NVDLA_csb_master::glb2csb_resp_b_transport. Err bit: 0x0 Data: 0x0
+
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010480
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010480 len=64 data=0x 00000015 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000061 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: nvdla.csb_adaptor: GP: iswrite=0 addr=0x4 len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc00104c0
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc00104c0 len=64 data=0x 00000062 00000000 00000000 00000000 00000000 00000000 00000000 00000000 0000000f 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NV_NVDLA_csb_master.cpp: 54:NV_NVDLA_csb_master::nvdla2csb_b_transport, base_addr: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 58:NV_NVDLA_csb_master::nvdla2csb_b_transport, csb req to GLB_BASE,
+
+
+Info: NV_NVDLA_csb_master.cpp: 59:Addr: 0xc
+
+
+Info: NV_NVDLA_csb_master.cpp: 60:Data: 0x7f76
+
+
+Info: NV_NVDLA_csb_master.cpp: 61:Is write: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 62:nposted: 0x0
+
+
+Info: NV_NVDLA_csb_master.cpp: 274:NV_NVDLA_csb_master::glb2csb_resp_b_transport. Err bit: 0x0 Data: 0x0
+
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010500
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010500 len=64 data=0x 00000007 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000009 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: nvdla.csb_adaptor: GP: iswrite=0 addr=0xc len=4 data=0x 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010540
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010540 len=64 data=0x 00000049 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000049 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010580
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010580 len=64 data=0x 00000046 00000000 00000000 00000000 00000000 00000000 00000000 00000000 0000005f 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc00105c0
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc00105c0 len=64 data=0x 00000062 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000063 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010600
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010600 len=64 data=0x 00000060 00000000 00000000 00000000 00000000 00000000 00000000 00000000 0000004c 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010640
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010640 len=64 data=0x 00000013 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000014 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010680
+
+[
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010680 len=64 data=0x 0000002f 00000000 00000000 00000000 00000000 00000000 00000000 00000000 0000006a 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc00106c0
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc00106c0 len=64 data=0x 00000070 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000070 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010700
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010700 len=64 data=0x 0000006d 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000067 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010740
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010740 len=64 data=0x 00000064 00000000 00000000 00000000 00000000 00000000 00000000 00000000 0000006a 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010780
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010780 len=64 data=0x 00000068 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000069 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc00107c0
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc00107c0 len=64 data=0x 00000061 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000061 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010800
+
+4.
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010800 len=64 data=0x 00000060 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000060 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+638817] Enter:dla_handle_events,
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010840
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010840 len=64 data=0x 00000042 00000000 00000000 00000000 00000000 00000000 00000000 00000000 0000002d 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010880
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010880 len=64 data=0x 00000067 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000062 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc00108c0
+
+ p
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc00108c0 len=64 data=0x 00000065 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000065 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010900
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010900 len=64 data=0x 00000062 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000061 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010940
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010940 len=64 data=0x 00000066 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000065 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010980
+
+roces
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010980 len=64 data=0x 0000006f 00000000 00000000 00000000 00000000 00000000 00000000 00000000 0000006f 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc00109c0
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc00109c0 len=64 data=0x 00000063 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000061 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010a00
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010a00 len=64 data=0x 00000063 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000060 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+sor:BDMA
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010a40
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010a40 len=64 data=0x 0000007d 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000064 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010a80
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010a80 len=64 data=0x 00000065 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000063 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+Info: NvdlaAxiAdaptor.cpp: 71:NvdlaAxiAdaptor::axi_rd_wr_thread, send read request start. address=0xc0010ac0
+
+
+Info: nvdla.dbb_adaptor: GP: iswrite=0 addr=0xc0010ac0 len=64 data=0x 00000066 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000066 00000000 00000000 00000000 00000000 00000000 00000000 00000000 resp=TLM_OK_RESPONSE
+
+[    4.640092] Exit:dla_handle_events, ret:0
+[    4.640473] Enter:dla_handle_events, processor:Convolution
+[    4.640894] Handle cdma weight done event, processor Convolution group 0
+[    4.641389] Exit:dla_handle_events, ret:0
+[    4.641694] Enter:dla_handle_events, processor:SDP
+[    4.642049] Exit:dla_handle_events, ret:0
+[    4.642341] Enter:dla_handle_events, processor:PDP
+[    4.642689] Exit:dla_handle_events, ret:0
+[    4.643007] Enter:dla_handle_events, processor:CDP
+[    4.643373] Exit:dla_handle_events, ret:0
+[    4.643687] Enter:dla_handle_events, processor:RUBIK
+[    4.644031] Exit:dla_handle_events, ret:0
+[    4.655695] Enter:dla_handle_events, processor:BDMA
+[    4.656209] Exit:dla_handle_events, ret:0
+[    4.656559] Enter:dla_handle_events, processor:Convolution
+[    4.657030] Handle cdma data done event, processor Convolution group 0
+[    4.657586] Exit:dla_handle_events, ret:0
+[    4.657937] Enter:dla_handle_events, processor:SDP
+[    4.658334] Exit:dla_handle_events, ret:0
+[    4.658685] Enter:dla_handle_events, processor:PDP
+[    4.659122] Exit:dla_handle_events, ret:0
+[    4.659464] Enter:dla_handle_events, processor:CDP
+[    4.659846] Exit:dla_handle_events, ret:0
+[    4.660183] Enter:dla_handle_events, processor:RUBIK
+[    4.660585] Exit:dla_handle_events, ret:0
+[    4.988617] Enter:dla_handle_events, processor:BDMA
+[    4.988897] Exit:dla_handle_events, ret:0
+[    4.989083] Enter:dla_handle_events, processor:Convolution
+[    4.989328] Handle op complete event, processor Convolution group 0
+[    4.989633] Enter:dla_op_completion processor Convolution group0
+[    4.989902] Completed Convolution operation index 0 ROI 0
+[    4.990206] 1 HWLs done, totally 2 layers
+[    4.990454] Enter: dla_dequeue_operation
+[    4.990630] exit Convolution as there's no further operation
+[    4.990857] Exit: dla_dequeue_operation
+[    4.991070] Exit:dla_op_completion processor Convolution group0 status=0
+[    4.991364] Exit:dla_handle_events, ret:0
+[    4.991541] Enter:dla_handle_events, processor:SDP
+[    4.991745] Handle op complete event, processor SDP group 0
+[    4.991963] Enter:dla_op_completion processor SDP group0
+[    4.992173] Completed SDP operation index 1 ROI 0
+[    4.992397] 2 HWLs done, totally 2 layers
+[    4.992600] Enter: dla_free_op_desc op desc index 0 ROI 0
+[    4.992979] Exit: dla_free_op_desc
+[    4.993163] Enter: dla_free_op_desc op desc index 1 ROI 0
+[    4.993420] Exit: dla_free_op_desc
+[    4.993590] Exit:dla_op_completion processor SDP group0 status=0
+[    4.993827] Exit:dla_handle_events, ret:0
+[    4.993989] Enter:dla_handle_events, processor:PDP
+[    4.994191] Exit:dla_handle_events, ret:0
+[    4.994368] Enter:dla_handle_events, processor:CDP
+[    4.994563] Exit:dla_handle_events, ret:0
+[    4.994728] Enter:dla_handle_events, processor:RUBIK
+[    4.994922] Exit:dla_handle_events, ret:0
+[    4.999640] reset engine done
+[Runtime::submitInternal]   NvDlaSubmit(DLA1) OK
+[Runtime::submitInternal] --- End of submission set ss=0 ---
+
+[Runtime::submitInternal] --- Submission set ss=1 tasks.size()=1 ---
+[Runtime::submitInternal]  Handling task index ii=0 (task_id=1)
+[Runtime::submitInternal]  Task: id=1 interface=2 instance=-1
+[Runtime::submitInternal]   -> Interface_EMU1
+[Runtime::submitInternal]   emu_if @ 0xb908950
+[Runtime::submitInternal]   task_mem @ 0xffff93161010 size=480256
+[Runtime::submitInternal]   EMUTaskDescAccessor created
+[Runtime::submitInternal]   emu_task_descs.size()=1
+[Runtime::submitInternal]   Calling fillEMUTaskAddressList()
+
+[Runtime::fillEMUTaskAddressList] >>> ENTER for task_id=1
+[Runtime::fillEMUTaskAddressList] m_memory.size()=17 num_task_addr_list_entries=10 maxBuffersPerTask()=30000
+libnvdla<3> filling emu task_id=1 address list entries=10
+[Runtime::fillEMUTaskAddressList] *numAddresses()=10
+[Runtime::fillEMUTaskAddressList]  ali=0 address_list_entry_id=11
+[Runtime::fillEMUTaskAddressList]   mapped to memory_id=11
+[Runtime::fillEMUTaskAddressList]   Memory mapping: ali=0 mem=0xb905380 virt=0xffff939df000 domain=  offset=0x0
+libnvdla<3> 	ali=0 offset=0 handle=0xffff939df000
+[Runtime::fillEMUTaskAddressList]  ali=1 address_list_entry_id=1
+[Runtime::fillEMUTaskAddressList]   mapped to memory_id=1
+[Runtime::fillEMUTaskAddressList]   Memory mapping: ali=1 mem=0xb904fc0 virt=0xffff93e24000 domain=  offset=0x0
+libnvdla<3> 	ali=1 offset=0 handle=0xffff93e24000
+[Runtime::fillEMUTaskAddressList]  ali=2 address_list_entry_id=2
+[Runtime::fillEMUTaskAddressList]   mapped to memory_id=2
+[Runtime::fillEMUTaskAddressList]   Memory mapping: ali=2 mem=0xb905020 virt=0xffff93e23000 domain=  offset=0x0
+libnvdla<3> 	ali=2 offset=0 handle=0xffff93e23000
+[Runtime::fillEMUTaskAddressList]  ali=3 address_list_entry_id=3
+[Runtime::fillEMUTaskAddressList]   mapped to memory_id=3
+[Runtime::fillEMUTaskAddressList]   Memory mapping: ali=3 mem=0xb905080 virt=0xffff931d8000 domain=  offset=0x0
+libnvdla<3> 	ali=3 offset=0 handle=0xffff931d8000
+[Runtime::fillEMUTaskAddressList]  ali=4 address_list_entry_id=4
+[Runtime::fillEMUTaskAddressList]   mapped to memory_id=4
+[Runtime::fillEMUTaskAddressList]   Memory mapping: ali=4 mem=0xb9050e0 virt=0xffff931d7000 domain=  offset=0x0
+libnvdla<3> 	ali=4 offset=0 handle=0xffff931d7000
+[Runtime::fillEMUTaskAddressList]  ali=5 address_list_entry_id=12
+[Runtime::fillEMUTaskAddressList]   mapped to memory_id=12
+[Runtime::fillEMUTaskAddressList]   Memory mapping: ali=5 mem=0xb9053e0 virt=0xffff939de000 domain=  offset=0x0
+libnvdla<3> 	ali=5 offset=0 handle=0xffff939de000
+[Runtime::fillEMUTaskAddressList]  ali=6 address_list_entry_id=13
+[Runtime::fillEMUTaskAddressList]   mapped to memory_id=13
+[Runtime::fillEMUTaskAddressList]   Memory mapping: ali=6 mem=0xb905440 virt=0xffff939dd000 domain=  offset=0x0
+libnvdla<3> 	ali=6 offset=0 handle=0xffff939dd000
+[Runtime::fillEMUTaskAddressList]  ali=7 address_list_entry_id=14
+[Runtime::fillEMUTaskAddressList]   mapped to memory_id=14
+[Runtime::fillEMUTaskAddressList]   Memory mapping: ali=7 mem=0xb9054a0 virt=0xffff939dc000 domain=  offset=0x0
+libnvdla<3> 	ali=7 offset=0 handle=0xffff939dc000
+[Runtime::fillEMUTaskAddressList]  ali=8 address_list_entry_id=15
+[Runtime::fillEMUTaskAddressList]   mapped to memory_id=15
+[Runtime::fillEMUTaskAddressList]   Memory mapping: ali=8 mem=0xb905500 virt=0xffff939db000 domain=  offset=0x0
+libnvdla<3> 	ali=8 offset=0 handle=0xffff939db000
+[Runtime::fillEMUTaskAddressList]  ali=9 address_list_entry_id=16
+[Runtime::fillEMUTaskAddressList]   mapped to memory_id=16
+[Runtime::fillEMUTaskAddressList]   Memory mapping: ali=9 mem=0xb905560 virt=0xffff939da000 domain=  offset=0x0
+libnvdla<3> 	ali=9 offset=0 handle=0xffff939da000
+[Runtime::fillEMUTaskAddressList] <<< EXIT OK
+[Runtime::submitInternal]   fillEMUTaskAddressList() done
+[Runtime::submitInternal]   Calling m_emu_engine->submit()
+Work Found!
+Work Done
+[Runtime::submitInternal]   m_emu_engine->submit() OK
+[Runtime::submitInternal]   emu_instance now 0
+[Runtime::submitInternal]   deleted task_mem
+[Runtime::submitInternal]   deleted emu_if
+[Runtime::submitInternal] --- End of submission set ss=1 ---
+[Runtime::submitInternal] <<< EXIT e=0
+execution time = 767473.000000 s
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+Shutdown signal received, exiting
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+[Runtime::getDLADeviceContext] m_dla_device_handles[0] before = 0xb902330
+[Runtime::getDLADeviceContext] handle already exists: 0xb902330
+[Runtime::getDLADeviceContext] <<< EXIT OK, returning handle=0xb902330
+Test pass
+#

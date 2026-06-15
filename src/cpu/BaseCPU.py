@@ -99,10 +99,10 @@ class BaseCPU(ClockedObject):
         self._ccObject.takeOverFrom(old_cpu._ccObject)
 
     # ACCELERATORS
-    accel_0 = Param.rtlNVDLA(NULL, "RTL NVDLA Accelerator Object")
-    accel_1 = Param.rtlNVDLA(NULL, "RTL NVDLA Accelerator Object")
-    accel_2 = Param.rtlNVDLA(NULL, "RTL NVDLA Accelerator Object")
-    accel_3 = Param.rtlNVDLA(NULL, "RTL NVDLA Accelerator Object")
+    # accel_0 = Param.rtlNVDLA(NULL, "RTL NVDLA Accelerator Object")
+    # accel_1 = Param.rtlNVDLA(NULL, "RTL NVDLA Accelerator Object")
+    # accel_2 = Param.rtlNVDLA(NULL, "RTL NVDLA Accelerator Object")
+    # accel_3 = Param.rtlNVDLA(NULL, "RTL NVDLA Accelerator Object")
 
     num_accels = Param.Int(0, "Number of rtl Objects")
 

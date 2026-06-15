@@ -160,6 +160,7 @@ class MinorCPU : public BaseCPU
     uint32_t NvDlaGetData() override;
     bool NvDlaRespReg() override;
 
+
     /** Simple inst count interface from BaseCPU */
     Counter totalInsts() const override;
     Counter totalOps() const override;

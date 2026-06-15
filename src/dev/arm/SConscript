@@ -63,8 +63,8 @@ SimObject('EnergyCtrl.py', sim_objects=['EnergyCtrl'], tags='arm isa')
 SimObject('NoMali.py', sim_objects=['NoMaliGpu', 'CustomNoMaliGpu'],
     enums=['NoMaliGpuType'], tags='arm isa')
 SimObject('VirtIOMMIO.py', sim_objects=['MmioVirtIO'], tags='arm isa')
-SimObject('NvDlaDevice.py', sim_objects=['NvDlaDevice', 'NvDlaDeviceSE'],
-    tags='arm isa')
+#SimObject('NvDlaDevice.py', sim_objects=['NvDlaDevice', 'NvDlaDeviceSE'],
+#    tags='arm isa')
 if env['CONF']['USE_ARM_FASTMODEL']:
     SimObject('VExpressFastmodel.py', sim_objects=[], tags='arm isa')
 
@@ -109,8 +109,8 @@ Source('vio_mmio.cc', tags='arm isa')
 Source('ufs_device.cc', tags='arm isa')
 Source('energy_ctrl.cc', tags='arm isa')
 Source('fvp_base_pwr_ctrl.cc', tags='arm isa')
-Source('nvdla_device.cc')
-Source('nvdla_device_se.cc')
+#Source('nvdla_device.cc')
+#Source('nvdla_device_se.cc')
 
 DebugFlag('AMBA', tags='arm isa')
 DebugFlag('FlashDevice', tags='arm isa')
