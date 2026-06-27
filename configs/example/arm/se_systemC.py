@@ -216,6 +216,7 @@ def addOptions(parser):
     # options.freq_ratio
     parser.add_argument(
         "--freq-ratio",
+        # type=int, # this is the original
         type=float,
         default=1,
         help="=(frequency of LITTLE CPU) / (frequency of NVDLA)",
@@ -499,9 +500,7 @@ def main():
 
     # Program to execute
     # binary = 'tests/test-progs/nvdla-se/nvdla-se'
-    binary = (
-        "/data/tpapavasileiou/tools/GEM5-NVDLA/nvdla/gem5-plus/nvdla_runtime"
-    )
+    binary = "<add-path-to-nvdla-se-binary>"
 
     # Simulation system
     system = System(multi_thread=True)
@@ -684,9 +683,9 @@ def main():
     process.cmd = [
         binary,
         "--loadable",
-        "/data/tpapavasileiou/tools/GEM5-NVDLA/nvdla/gem5-plus/nonet.nvdla",
+        "<path-to-nvdla-se-loadable>",
         "--image",
-        "/data/tpapavasileiou/tools/GEM5-NVDLA/nvdla/gem5-plus/random_2x2_bin.pgm",
+        "<path-to-nvdla-se-image>",
         "--normalize",
         "255",
         "--dlas",
