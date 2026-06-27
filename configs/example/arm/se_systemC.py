@@ -216,7 +216,7 @@ def addOptions(parser):
     # options.freq_ratio
     parser.add_argument(
         "--freq-ratio",
-        type=int,
+        type=float,
         default=1,
         help="=(frequency of LITTLE CPU) / (frequency of NVDLA)",
     )
@@ -589,88 +589,65 @@ def main():
     # for i in range(options.dlas):
     #    system.nvdla[i].pio = system.iobus.mem_side_ports
 
-    csb_bridge = Gem5ToTlmBridge32()
-    # csb_bridge.addr_ranges = [AddrRange(start=0x40000000, size=0x20040)]
-    dbb_bridge = TlmToGem5Bridge32()
-    sram_bridge = TlmToGem5Bridge32()
-
-    # sc_nvdla = ScNVDLAModule()
-    target = TLM_Target()
-    initiator = TLM_Initiator()
-    transactor = Gem5ToTlmBridge32()
-    # system.target = TLM_Target()
-    system.transactor = Gem5ToTlmBridge32()
-
-    # system.nvdla = ScNVDLA(module=sc_nvdla)
-    # system.nvdla = ScNvDlaSE(csb=csb_bridge,sram=sram_bridge, dbb=dbb_bridge, module=sc_nvdla)
-
-    # CSB
-    # system.nvdla.csb.gem5 = system.cpu.nvdla_port_plus_0
-    # system.nvdla.csb.tlm = system.nvdla.module.tlm
-
-    # system.nvdla = ScNvDlaSE(transactor=transactor, tlm_target=target, tlm_initiator=initiator)
-    # system.cpu.nvdla_port_plus_0 = system.nvdla.accel_port
-    # system.cpu.nvdla_port_plus_0 = system.nvdla.transactor.gem5
-    # system.nvdla.transactor.tlm = system.nvdla.tlm_target.tlm
+    system.bridge_csb = Gem5ToTlmBridge32()
 
     system.nvdla = TLM_ScNvDlaSE()
-    system.cpu.nvdla_port_plus_0 = system.transactor.gem5
-    system.transactor.tlm = system.nvdla.tlm
 
-    # system.cpu.nvdla_port_plus_0 = system.transactor.gem5
-    # system.transactor.tlm =  system.target.tlm
+    system.cpu.nvdla_port_plus_0 = system.bridge_csb.gem5
+    system.bridge_csb.tlm = system.nvdla.csb_target
 
-    # system.nvdla.csb.tlm = system.nvdla.module.csb_socket
-    # system.nvdla.csb.tlm = system.nvdla.module.csb_socket
-    # system.iobus.mem_side_ports = system.nvdla.csb.gem5
+    system.bridge_dbb = TlmToGem5Bridge32()
+    system.bridge_sram = TlmToGem5Bridge32()
 
-    # ---------------- DBB ----------------
-    # system.nvdla.module.dbb_socket = system.nvdla.dbb.tlm
-    # system.nvdla.dbb.gem5 = system.membus.cpu_side_ports
+    system.nvdla.dbb_init = system.bridge_dbb.tlm
+    system.nvdla.sram_init = system.bridge_sram.tlm
 
-    # ---------------- SRAM ----------------
-    # system.nvdla.sram.tlm = system.nvdla.module.sram_socket
-    # system.nvdla.sram.gem5 = system.membus.cpu_side_ports
-
-    # system.cpu.nvdla_port_plus_0 = system.nvdla.accel_port
-
-    # Connect CSB (configuration) to I/O bus
-    # system.nvdla.csb.gem5 = system.iobus.mem_side_ports
-    # system.cpu.nvdla_port_plus_0 = system.nvdla.csb.gem5
-    # system.cpu.nvdla_port_plus_0 = system.iobus.cpu_side_ports
-    # system.cpu.nvdla_port_plus_0 = system.membus.cpu_side_ports
-    # system.nvdla.csb.gem5 = system.iobus.mem_side_ports
-
-    # Connect DMA ports (DBB + SRAM) to memory bus
-    # system.nvdla.dbb.gem5  = system.membus.cpu_side_ports
-    # system.nvdla.sram.gem5 = system.membus.cpu_side_ports
-
-    # for DMA
-    # for i in range(options.dlas):
-    #    system.nvdla[i].dram_port = system.membus.cpu_side_ports
-    #    system.nvdla[i].dma_port = system.membus.cpu_side_ports
-
-    # for i in range(options.dlas):
-    #    exec(
-    #        f"system.nvdla[{i}].cmd_cpu_side = system.cpu.nvdla_port_plus_{i}"
-    #    )
-    #    # system.nvdla[0].cmd_cpu_side = system.cpu.nvdla_port_plus_0
-    #    # system.nvdla[1].cmd_cpu_side = system.cpu.nvdla_port_plus_1
-
-    # for caches
     # system.nvdla_pr_cache = Cache(
-    #     tag_latency=options.accel_pr_cache_tag_lat,
-    #     data_latency=options.accel_pr_cache_dat_lat,
-    #     response_latency=options.accel_pr_cache_resp_lat,
-    #     mshrs=options.accel_pr_cache_mshr,
-    #     tgts_per_mshr=options.accel_pr_cache_tgts_per_mshr,
-    #     size=options.accel_pr_cache_size,
-    #     assoc=options.accel_pr_cache_assoc,
-    #     write_buffers=options.accel_pr_cache_wr_buf,
-    #     clusivity=options.accel_pr_cache_clus
+    #    size="64B",
+    #    assoc=1,
+    #    tag_latency=1,
+    #    data_latency=1,
+    #    response_latency=1,
+    #    mshrs=1,
+    #    tgts_per_mshr=1,
+    #    write_buffers=1,
+    #    clusivity="mostly_incl"
     # )
-    # system.nvdla.dram_port = system.nvdla_pr_cache.cpu_side
+    # system.nvdla_pr_cache = Cache(
+    #    size="64B",
+    #    assoc=1,
+    #    tag_latency=1,
+    #    data_latency=1,
+    #    response_latency=1,
+    #    mshrs=1,
+    #    tgts_per_mshr=1,
+    #    write_buffers=1,
+    #    clusivity="mostly_incl",
+    #
+    #    writeback_clean=False,
+    #    writeback_dirty=False,
+    # )
+    # system.bridge_dbb.gem5 = system.nvdla_pr_cache.cpu_side
     # system.nvdla_pr_cache.mem_side = system.membus.cpu_side_ports
+
+    if options.add_accel_private_cache:
+        system.nvdla_pr_cache = Cache(
+            tag_latency=options.accel_pr_cache_tag_lat,
+            data_latency=options.accel_pr_cache_dat_lat,
+            response_latency=options.accel_pr_cache_resp_lat,
+            mshrs=options.accel_pr_cache_mshr,
+            tgts_per_mshr=options.accel_pr_cache_tgts_per_mshr,
+            size=options.accel_pr_cache_size,
+            assoc=options.accel_pr_cache_assoc,
+            write_buffers=options.accel_pr_cache_wr_buf,
+            clusivity=options.accel_pr_cache_clus,
+        )
+        system.bridge_dbb.gem5 = system.nvdla_pr_cache.cpu_side
+        system.nvdla_pr_cache.mem_side = system.membus.cpu_side_ports
+        system.bridge_sram.gem5 = system.membus.cpu_side_ports
+    else:
+        system.bridge_dbb.gem5 = system.membus.cpu_side_ports
+        system.bridge_sram.gem5 = system.membus.cpu_side_ports
 
     # Create interrupt controller
     system.cpu.createInterruptController()
@@ -723,9 +700,7 @@ def main():
     # systemc_kernel = SystemC_Kernel(sc_nvdla=sc_nvdla)
     # Set up the root SimObject and start the simulation
     kernel = SystemC_Kernel(system=system)
-    root = Root(
-        full_system=False, systemc_kernel=kernel
-    )  # , systemc_kernel=systemc_kernel)
+    root = Root(full_system=False, systemc_kernel=kernel)
 
     # Instantiate all of the objects we've created above
     m5.instantiate(None)
