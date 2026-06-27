@@ -1198,8 +1198,7 @@ BaseCPU::NvDlaPort::recvTimingResp(PacketPtr pkt)
           << std::hex << pkt->getAddr()
           << " data=0x"
           << pkt->getLE<uint32_t>()
-          << " tick=" << std::dec << curTick() / 1000 << " ns"
-          << std::endl;
+          << " tick=" << std::dec << curTick() << std::endl;
 
     uint32_t data = pkt->getLE<uint32_t>();
 
@@ -1228,14 +1227,12 @@ BaseCPU::NvDlaPort::recvReqRetry()
           << std::hex << cpu->blockedPkt->getAddr()
           << " data=0x"
           << cpu->blockedPkt->getLE<uint32_t>()
-          << " tick=" << std::dec << curTick() / 1000 << " ns"
-          << std::endl;
+          << " tick=" << std::dec << curTick() << std::endl;
     std::cout << "[BaseCPU::NvDlaPort::recvReqRetry()]nvdlaReqQ addr=0x"
           << std::hex << cpu->nvdlaReqQ->getAddr()
           << " data=0x"
           << cpu->nvdlaReqQ->getLE<uint32_t>()
-          << " tick=" << std::dec << curTick() / 1000 << " ns"
-          << std::endl;
+          << " tick=" << std::dec << curTick() << std::endl;
 
     if (!cpu->blockedPkt){
         std::cout << "[NvDlaPort::recvReqRetry] No blocked packet!\n";
