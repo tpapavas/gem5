@@ -59,21 +59,6 @@ gem5::Port &ScNvDlaSE::gem5_getPort(const std::string &if_name, int idx)
     }
 }
 
-/*
-void ScNvDlaSE::handle_irq(){
-    if (irq.read()) {
-        std::cout << "[NVDLA IRQ] Interrupt raised @ "
-        << sc_time_stamp() << std::endl;
-        interruptRaised = true;
-    }
-    else if (irq.read() == 0) {
-        interruptRaised = false;
-        std::cout << "[NVDLA IRQ] Interrupt reset @ "
-         << sc_time_stamp() << std::endl;
-    }
-}
-    */
-
 void ScNvDlaSE::handle_irq()
 {
     if (irq.read())
@@ -88,10 +73,6 @@ void ScNvDlaSE::handle_irq()
         std::cout << "[NVDLA IRQ] Interrupt reset @ "
                   << sc_time_stamp() << std::endl;
     }
-
-    // std::cout << "[NVDLA IRQ] Interrupt raised @ "
-    //<< std::dec << sc_time_stamp().value() << std::endl;
-    // interruptRaised = true;
 }
 
 void ScNvDlaSE::b_transport_csb(tlm::tlm_generic_payload &trans,
@@ -120,22 +101,6 @@ void ScNvDlaSE::b_transport_csb(tlm::tlm_generic_payload &trans,
             trans.set_response_status(tlm::TLM_OK_RESPONSE);
             return;
         }
-        /*
-                if (trans.get_address() == 0x20000) {
-                    uint32_t status = initiator.read_reg(0x0);
-
-                    uint32_t done = (status != 0) ? 1 : 0;
-
-                    memcpy(trans.get_data_ptr(), &done, 4);
-
-                    std::cout << "[NVDLA POLL] raw=0x"
-                              << std::hex << status
-                              << " -> return " << done << std::endl;
-
-                    //trans.set_response_status(tlm::TLM_OK_RESPONSE);
-                    return;
-                }
-                   */
 
         if (trans.get_address() == 0x20004)
         {
@@ -175,55 +140,6 @@ void ScNvDlaSE::b_transport_csb(tlm::tlm_generic_payload &trans,
     }
 }
 
-/*
-void ScNvDlaSE::b_transport_dbb(tlm::tlm_generic_payload &trans,
-                            sc_time &delay)
-{
-     std::cout << "[SystemC RECEIVE] DBB addr=0x"
-              << std::hex << trans.get_address()
-              << " cmd=" << (trans.is_read() ? "READ" : "WRITE")
-              << " byte_enable_ptr=" << (void*)trans.get_byte_enable_ptr()
-              << " bel=" << trans.get_byte_enable_length()
-              << " time=" << sc_time_stamp() << std::endl;
-
-    // Critical fix: NVDLA may set byte enables,
-    //   but gem5 memory doesn't support them
-    if (trans.get_byte_enable_ptr() != nullptr) {
-        std::cout << "[DBB FIX] Clearing unsupported byte enables"
-                  << std::endl;
-        trans.set_byte_enable_ptr(nullptr);
-        trans.set_byte_enable_length(0);
-    }
-
-    dbb_init->b_transport(trans, delay);
-
-    if (trans.is_read()
-      && trans.get_response_status() == tlm::TLM_OK_RESPONSE) {
-        unsigned char* data_ptr = trans.get_data_ptr();
-        unsigned int data_len   = trans.get_data_length();
-
-        std::cout << "[DBB DATA READ] addr=0x" << std::hex
-                  << trans.get_address()
-                  << " length=" << std::dec << data_len << " bytes:"
-                  << std::endl;
-
-        // Print in hex, 16 bytes per line (very readable)
-        for (unsigned int i = 0; i < data_len; ++i) {
-            if (i % 16 == 0 && i > 0) std::cout << std::endl;
-            if (i % 16 == 0) std::cout << "  0x" << std::setw(4)
-              << std::setfill('0') << std::hex << (i) << ": ";
-            std::cout << std::hex << std::setw(2) << std::setfill('0')
-              << (int)data_ptr[i] << " ";
-        }
-        std::cout << std::dec << std::endl << std::endl;
-    }
-
-    std::cout << "[DBB RSP] addr=0x" << std::hex << trans.get_address()
-              << " response=" << trans.get_response_string()
-              << " time=" << sc_time_stamp() << std::endl;
-}
-*/
-
 tlm::tlm_sync_enum ScNvDlaSE::nb_transport_fw(
     tlm::tlm_generic_payload &trans,
     tlm::tlm_phase &phase,
@@ -259,27 +175,15 @@ void ScNvDlaSE::b_transport_dbb(tlm::tlm_generic_payload &trans,
 
     unsigned char *be = trans.get_byte_enable_ptr();
     unsigned int bel = trans.get_byte_enable_length();
-    //trans.set_byte_enable_length(64);
     trans.set_byte_enable_ptr(nullptr);
     trans.set_byte_enable_length(0);
 
     dbb_init->b_transport(trans, delay); // TO GEM5
-
-    // 🔴 Restore BE (IMPORTANT FIX)
-    // trans.set_byte_enable_ptr(be);
-    // trans.set_byte_enable_length(bel);
-
-    // 🔴 Apply masking AFTER memory access
-    // if (trans.is_read() && be) {
-    //     unsigned char* data = trans.get_data_ptr();
-    //     unsigned int len = trans.get_data_length();
-
-    //    for (unsigned int i = 0; i < len; i++) {
-    //        if (be[i] == 0) {
-    //            data[i] = 0;
-    //        }
-    //    }
-    //}
+    /**
+     * TODO: Check the 2 following cmds if they are necessary
+     */
+    trans.set_byte_enable_ptr(be);
+    trans.set_byte_enable_length(bel);
 
 
     std::cout << "[DBB RSP] addr=0x" << std::hex << trans.get_address()
@@ -345,42 +249,7 @@ void ScNvDlaSE::b_transport_dbb(tlm::tlm_generic_payload &trans,
     }
 }
 
-void ScNvDlaSE::dbb_worker()
-{
-    while (true) {
-        wait(dbb_event);
 
-        while (!dbb_queue.empty()) {
-            auto* trans = dbb_queue.front();
-            dbb_queue.pop();
-
-            unsigned char* be = trans->get_byte_enable_ptr();
-            unsigned int bel = trans->get_byte_enable_length();
-
-            trans->set_byte_enable_ptr(nullptr);
-            trans->set_byte_enable_length(0);
-
-            sc_time delay = SC_ZERO_TIME;
-            dbb_init->b_transport(*trans, delay);
-
-            trans->set_byte_enable_ptr(be);
-            trans->set_byte_enable_length(bel);
-
-            trans->set_response_status(tlm::TLM_OK_RESPONSE);
-        }
-    }
-}
-
-/*
-void ScNvDlaSE::b_transport_dbb(tlm::tlm_generic_payload &trans,
-                                sc_time &delay)
-{
-    dbb_queue.push(&trans);
-
-    dbb_event.notify();
-
-}
-*/
 
 void ScNvDlaSE::b_transport_sram(tlm::tlm_generic_payload &trans,
                                  sc_time &delay)
@@ -392,6 +261,57 @@ void ScNvDlaSE::b_transport_sram(tlm::tlm_generic_payload &trans,
               << " time=" << std::dec << sc_time_stamp().value()
               << std::endl;
 }
+
+/*
+void ScNvDlaSE::b_transport_dbb(tlm::tlm_generic_payload &trans,
+                            sc_time &delay)
+{
+     std::cout << "[SystemC RECEIVE] DBB addr=0x"
+              << std::hex << trans.get_address()
+              << " cmd=" << (trans.is_read() ? "READ" : "WRITE")
+              << " byte_enable_ptr=" << (void*)trans.get_byte_enable_ptr()
+              << " bel=" << trans.get_byte_enable_length()
+              << " time=" << sc_time_stamp() << std::endl;
+
+    // Critical fix: NVDLA may set byte enables,
+    // but gem5 memory doesn't support them
+    if (trans.get_byte_enable_ptr() != nullptr) {
+        std::cout << "[DBB FIX] Clearing unsupported byte enables"
+                  << std::endl;
+        trans.set_byte_enable_ptr(nullptr);
+        trans.set_byte_enable_length(0);
+    }
+
+    dbb_init->b_transport(trans, delay);
+
+    if (trans.is_read() && trans.get_response_status()
+           == tlm::TLM_OK_RESPONSE) {
+        unsigned char* data_ptr = trans.get_data_ptr();
+        unsigned int data_len   = trans.get_data_length();
+
+        std::cout << "[DBB DATA READ] addr=0x" << std::hex
+                  << trans.get_address()
+                  << " length=" << std::dec << data_len << " bytes:"
+                  << std::endl;
+
+        // Print in hex, 16 bytes per line (very readable)
+        for (unsigned int i = 0; i < data_len; ++i) {
+            if (i % 16 == 0 && i > 0) std::cout << std::endl;
+            if (i % 16 == 0) std::cout << "  0x" << std::setw(4)
+                                       << std::setfill('0')
+                                       << std::hex << (i) << ": ";
+            std::cout << std::hex << std::setw(2) << std::setfill('0')
+                      << (int)data_ptr[i] << " ";
+        }
+        std::cout << std::dec << std::endl << std::endl;
+    }
+
+    std::cout << "[DBB RSP] addr=0x" << std::hex << trans.get_address()
+              << " response=" << trans.get_response_string()
+              << " time=" << sc_time_stamp() << std::endl;
+}
+*/
+
 //
 //
 // tlm::tlm_sync_enum
