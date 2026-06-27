@@ -470,26 +470,28 @@ TlmToGem5Bridge<BITWIDTH>::b_transport(tlm::tlm_generic_payload &trans,
 
     if (trans.is_write()) {
         uint32_t data = *reinterpret_cast<uint32_t*>(trans.get_data_ptr());
-        std::cout << "  write data = 0x"
-                  << std::hex << data
-                  << std::endl;
+        DPRINTF(TlmBridge,
+            "%s: write_data=0x%08x\n",
+            __func__,
+            data);
     }
 
     auto [pkt, pkt_created] = payload2packet(_id, trans);
 
-    std::cout << "[TlmToGem5Bridge] packet created\n";
-    std::cout << "  gem5 addr = 0x"
-          << std::hex << pkt->getAddr()
-          << " cmd = "
-          << (pkt->isRead() ? "READ" : "WRITE")
-          << std::endl;
+    DPRINTF(TlmBridge,
+        "[TlmToGem5Bridge] packet created "
+        "gem5_addr=0x%llx cmd=%s\n",
+        (unsigned long long)pkt->getAddr(),
+        pkt->isRead() ? "READ" : "WRITE");
 
     pkt->pushSenderState(new Gem5SystemC::TlmSenderState(trans));
 
     MemBackdoorPtr backdoor = nullptr;
     Tick ticks = bmp.sendAtomicBackdoor(pkt, backdoor);
-    std::cout << "[TlmToGem5Bridge] sendAtomicBackdoor\n";
-    std::cout << "  gem5 ticks = " << ticks << std::endl;
+    DPRINTF(TlmBridge,
+        "[%s] sendAtomicBackdoor ticks=%llu\n",
+        __func__,
+        (unsigned long long)ticks);
     if (backdoor)
         trans.set_dmi_allowed(true);
 
@@ -516,11 +518,9 @@ TlmToGem5Bridge<BITWIDTH>::b_transport(tlm::tlm_generic_payload &trans,
     if (pkt_created)
         destroyPacket(pkt);
 
-    std::cout << "[TlmToGem5Bridge] transaction finished\n";
-    std::cout << "  response = "
-          << (trans.get_response_status() == tlm::TLM_OK_RESPONSE ?
-              "OK" : "ERROR")
-          << std::endl;
+    DPRINTF(TlmBridge, "  response = %s\n",
+        (trans.get_response_status() == tlm::TLM_OK_RESPONSE ?
+        "OK" : "ERROR"));
 }
 
 template <unsigned int BITWIDTH>
