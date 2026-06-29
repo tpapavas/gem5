@@ -55,6 +55,15 @@ class TlmToGem5BridgeBase(SystemC_ScModule):
     gem5 = RequestPort("gem5 request port")
 
 
+class Gem5ToTlmBridge8(Gem5ToTlmBridgeBase):
+    type = "Gem5ToTlmBridge8"
+    cxx_template_params = ["unsigned int BITWIDTH"]
+    cxx_class = "sc_gem5::Gem5ToTlmBridge<8>"
+    cxx_header = "systemc/tlm_bridge/gem5_to_tlm.hh"
+
+    tlm = TlmInitiatorSocket(8, "TLM initiator socket")
+
+
 class Gem5ToTlmBridge32(Gem5ToTlmBridgeBase):
     type = "Gem5ToTlmBridge32"
     cxx_template_params = ["unsigned int BITWIDTH"]
@@ -98,6 +107,15 @@ class Gem5ToTlmBridge512(Gem5ToTlmBridgeBase):
     cxx_header = "systemc/tlm_bridge/gem5_to_tlm.hh"
 
     tlm = TlmInitiatorSocket(512, "TLM initiator socket")
+
+
+class TlmToGem5Bridge8(TlmToGem5BridgeBase):
+    type = "TlmToGem5Bridge8"
+    cxx_template_params = ["unsigned int BITWIDTH"]
+    cxx_class = "sc_gem5::TlmToGem5Bridge<8>"
+    cxx_header = "systemc/tlm_bridge/tlm_to_gem5.hh"
+
+    tlm = TlmTargetSocket(8, "TLM target socket")
 
 
 class TlmToGem5Bridge32(TlmToGem5BridgeBase):

@@ -11,7 +11,7 @@ using namespace gem5;
 ScNvDlaSE *
 gem5::TLM_ScNvDlaSEParams::create() const
 {
-    ScNvDlaSE *sc_nvdla_se = new ScNvDlaSE(name.c_str());
+    ScNvDlaSE *sc_nvdla_se = new ScNvDlaSE(name.c_str(), cpu_freq, freq_ratio);
     return sc_nvdla_se;
 }
 
@@ -89,12 +89,16 @@ void ScNvDlaSE::b_transport_csb(tlm::tlm_generic_payload &trans,
     uint32_t data2;
     if (trans.is_read())
     {
+        gNvdlaStats.csbReads++;
         if (trans.get_address() == 0x20000)
         {
             // data = irq.read() ? 1 : 0;
             // interruptRaised = false;
             data = interruptRaised ? 1 : 0;
 
+            if (data == 1) {
+                gNvdlaStats.interruptsRaised++;
+            }
             memcpy(trans.get_data_ptr(), &data, 4);
             std::cout << "[NVDLA POLL] CSB read 0x20000 -> "
                       << data << std::endl;
@@ -123,6 +127,7 @@ void ScNvDlaSE::b_transport_csb(tlm::tlm_generic_payload &trans,
     }
     else if (trans.is_write())
     {
+        gNvdlaStats.csbWrites++;
         printf("[ScNvDlaSE::b_transport] CSB is write\n");
 
         uint32_t addr = trans.get_address();
@@ -195,6 +200,8 @@ void ScNvDlaSE::b_transport_dbb(tlm::tlm_generic_payload &trans,
     {
         unsigned char *data_ptr = trans.get_data_ptr();
         unsigned int data_len = trans.get_data_length();
+        gNvdlaStats.dbbReads++;
+        gNvdlaStats.dbbReadBytes += data_len;
 
         std::cout << "[DBB DATA READ] addr=0x" << std::hex
                   << trans.get_address()
@@ -220,6 +227,9 @@ void ScNvDlaSE::b_transport_dbb(tlm::tlm_generic_payload &trans,
     {
         unsigned char *data_ptr = trans.get_data_ptr();
         unsigned int data_len = trans.get_data_length();
+
+        gNvdlaStats.dbbWrites++;
+        gNvdlaStats.dbbWriteBytes += data_len;
 
         std::cout << "[DBB DATA WRITE] addr=0x" << std::hex
                   << trans.get_address()

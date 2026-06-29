@@ -447,8 +447,7 @@ bool
 MinorCPU::NvDlaRespReg(){
     std::cout << "[MinorCPU::NvDlaRespReg()] nvdlaWaitingResp = "
               << nvdlaWaitingResp
-              << " tick=" << std::dec << curTick() / 1000 << " ns"
-              << "\n";
+              << " tick=" << std::dec << curTick() << "\n";
     return nvdlaWaitingResp;
 }
 
@@ -456,8 +455,7 @@ uint32_t
 MinorCPU::NvDlaGetData(){
     std::cout << "[MinorCPU::NvDlaGetData()] Data are  0x: "
               << std::hex << nvdlaReqData
-              << " tick=" << std::dec << curTick() / 1000 << " ns"
-              << "\n";
+              << " tick=" << std::dec << curTick() << "\n";
     return nvdlaReqData;
 }
 uint32_t
@@ -475,11 +473,17 @@ MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
     nvdlaReqQ = pkt;
     bool sent;
 
+    if (addr == 0x20000) {
+        // check if interrupt are raised in this address
+        std::cout << "[GEM5 LOG] DLA #%" << accel_id
+                  << ": cpu wait for interrupt at @ %"
+                  << ticksToCycles(curTick()) << " cycle\n";
+    }
     switch(accel_id) {
         case 0:
             std::cout << "[NvDlaReadReg CPU SEND READ] addr=0x"
                 << std::hex << addr
-                << " tick=" << std::dec <<  curTick() / 1000 << " ns"
+                << " tick=" << std::dec << curTick()
                 << std::endl;
             sent = nvdla_port_plus_0.sendTimingReq(pkt);
             std::cout << "[NvDlaReadReg] sendTimingReq sent=" << sent
