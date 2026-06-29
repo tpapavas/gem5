@@ -1,6 +1,8 @@
 import m5
 from m5.objects import *
 from m5.params import *
+from m5.objects.SystemC import SystemC_ScModule
+from m5.objects.Tlm import TlmTargetSocket, TlmInitiatorSocket
 
 # This class is a subclass of sc_module, and all the special magic which makes
 # that work is handled in the base classes.
