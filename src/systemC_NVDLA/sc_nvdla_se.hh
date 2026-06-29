@@ -29,6 +29,18 @@
 #include "systemc.h"
 
 #include "systemc/ext/tlm"
+#include <tlm_utils/multi_passthrough_initiator_socket.h>
+#include <tlm_utils/multi_passthrough_target_socket.h>
+#include <tlm_utils/simple_initiator_socket.h>
+#include <tlm_utils/simple_target_socket.h>
+
+#include <fstream>
+#include <tlm>
+
+#include "base/output.hh"
+#include "base/statistics.hh"
+#include "sim/sim_exit.hh"
+#include "systemC_NVDLA/sc_nvdla_stats.hh"
 #include "systemC_NVDLA/sc_tlm_initiator.hh"
 #include "systemC_NVDLA/sc_tlm_target.hh"
 
@@ -76,11 +88,18 @@ public:
     sc_gem5::TlmTargetWrapper<32> dbb_target_wrapper;
     sc_gem5::TlmTargetWrapper<32> sram_target_wrapper;
 
+    double cpuFreq;
+    double freqRatio;
+
+    double nvdlaFreq;
+    sc_time nvdlaClockPeriod;
 
 public:
     SC_HAS_PROCESS(ScNvDlaSE);
-    ScNvDlaSE(sc_module_name name) :
+    ScNvDlaSE(sc_module_name name, double cpu_freq, double freq_ratio) :
         sc_module(name),
+        cpuFreq(cpu_freq),
+        freqRatio(freq_ratio),
         initiator("dla_tlm_initiator"),
         csb_target("csb_target"),
         csb_wrapper(csb_target,
@@ -102,13 +121,24 @@ public:
     {
         //////////////////////////////////
         // sc_core::sc_report_handler::set_verbosity_level(sc_core::SC_DEBUG);
+        nvdlaFreq = cpuFreq / freqRatio;
+
+        nvdlaClockPeriod =  sc_time(1.0 / nvdlaFreq, SC_NS);
+        gNvdlaStats.nvdlaClockPeriod = nvdlaClockPeriod;
+        std::cout
+            << "CPU freq = " << cpuFreq << " GHz\n"
+            << "freqRatio = " << freqRatio << "\n"
+            << "NVDLA freq = " << nvdlaFreq << " GHz\n"
+            << "NVDLA period = " << nvdlaClockPeriod << "\n";
 
         csb_target.register_b_transport(this, &ScNvDlaSE::b_transport_csb);
-        // dbb_target.register_b_transport(this, &ScNvDlaSE::b_transport_dbb);
+        dbb_target.register_b_transport(this, &ScNvDlaSE::b_transport_dbb);
 
-        dbb_target.register_nb_transport_fw(this,
-            &ScNvDlaSE::nb_transport_fw);
-        dbb_init.register_nb_transport_bw(this, &ScNvDlaSE::nb_transport_bw);
+        // dbb_target.register_nb_transport_fw(this,
+        //     &ScNvDlaSE::nb_transport_fw);
+        // dbb_init.register_nb_transport_bw(
+        //     this, &ScNvDlaSE::nb_transport_bw
+        // );
 
         sram_target.register_b_transport(this, &ScNvDlaSE::b_transport_sram);
 
@@ -127,6 +157,76 @@ public:
 
 
         printf("[ScNvDlaSE] All bindings done\n");
+
+        ////////////////////////////////////////////
+        printf("[ScNvDlaSE] All bindings done\n");
+        nvdlaClockPeriod = sc_time(freqRatio, SC_NS);
+        registerExitCallback([this]()
+        {
+            std::string fname =
+                simout.directory() + "/nvdla_stats.txt";
+
+            std::ofstream out(fname);
+
+            out << "---------- Begin Simulation Statistics NVDLA ----------\n";
+            out << "\n";
+
+
+            out << "CSB Reads      : " << gNvdlaStats.csbReads << "\n";
+            out << "CSB Writes     : " << gNvdlaStats.csbWrites << "\n";
+
+            out << "DBB Reads      : " << gNvdlaStats.dbbReads << "\n";
+            out << "DBB Writes     : " << gNvdlaStats.dbbWrites << "\n";
+
+            out << "DBB ReadBytes  : " << gNvdlaStats.dbbReadBytes << "\n";
+            out << "DBB WriteBytes : " << gNvdlaStats.dbbWriteBytes << "\n";
+
+            out << "SRAM Reads     : " << gNvdlaStats.sramReads << "\n";
+            out << "SRAM Writes    : " << gNvdlaStats.sramWrites << "\n";
+
+            out << "SRAM ReadBytes : " << gNvdlaStats.sramReadBytes << "\n";
+            out << "SRAM WriteBytes: " << gNvdlaStats.sramWriteBytes << "\n";
+
+            out << "Interrupts     : " << gNvdlaStats.interruptsRaised << "\n";
+
+            out << "BDMA ReadReqs  : " << gNvdlaStats.bdmaReadReqs << "\n";
+            out << "BDMA WriteReqs : " << gNvdlaStats.bdmaWriteReqs << "\n";
+
+            out << "BDMA G0 cycles : " << gNvdlaStats.bdmaGrp0Cycles << "\n";
+            out << "BDMA G1 cycles : " << gNvdlaStats.bdmaGrp1Cycles << "\n";
+
+            out << "CACC G0 cycles : " << gNvdlaStats.caccGrp0Cycles << "\n";
+            out << "CACC G1 cycles : " << gNvdlaStats.caccGrp1Cycles << "\n";
+
+            out << "CDMA G0 cycles : " << gNvdlaStats.cdmaGrp0Cycles << "\n";
+            out << "CDMA G1 cycles : " << gNvdlaStats.cdmaGrp1Cycles << "\n";
+
+            out << "CDP G0 cycles : " << gNvdlaStats.cdpGrp0Cycles << "\n";
+            out << "CDP G1 cycles : " << gNvdlaStats.cdpGrp1Cycles << "\n";
+
+            out << "CMAC G0 cycles : " << gNvdlaStats.cmacGrp0Cycles << "\n";
+            out << "CMAC G1 cycles : " << gNvdlaStats.cmacGrp1Cycles << "\n";
+
+            out << "CSC G0 cycles : " << gNvdlaStats.cscGrp0Cycles << "\n";
+            out << "CSC G1 cycles : " << gNvdlaStats.cscGrp1Cycles << "\n";
+
+            out << "PDP G0 cycles : " << gNvdlaStats.pdpGrp0Cycles << "\n";
+            out << "PDP G1 cycles : " << gNvdlaStats.pdpGrp1Cycles << "\n";
+
+            out << "RUBIK G0 cycles : " << gNvdlaStats.rubikGrp0Cycles << "\n";
+            out << "RUBIK G1 cycles : " << gNvdlaStats.rubikGrp1Cycles << "\n";
+
+            out << "SDP G0 cycles : " << gNvdlaStats.sdpGrp0Cycles << "\n";
+            out << "SDP G1 cycles : " << gNvdlaStats.sdpGrp1Cycles << "\n";
+
+            out << "\n";
+            out << "---------- End Simulation Statistics NVDLA ----------\n";
+            out.close();
+
+            std::cout
+                << "[NVDLA] Stats dumped to nvdla_stats.txt"
+                << std::endl;
+        });
     }
 
     void handle_irq();

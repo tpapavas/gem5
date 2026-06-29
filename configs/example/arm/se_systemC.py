@@ -590,7 +590,10 @@ def main():
 
     system.bridge_csb = Gem5ToTlmBridge32()
 
-    system.nvdla = TLM_ScNvDlaSE()
+    system.nvdla = TLM_ScNvDlaSE(
+        cpu_freq=float(options.little_cpu_clock.replace("GHz", "")),
+        freq_ratio=options.freq_ratio,
+    )
 
     system.cpu.nvdla_port_plus_0 = system.bridge_csb.gem5
     system.bridge_csb.tlm = system.nvdla.csb_target

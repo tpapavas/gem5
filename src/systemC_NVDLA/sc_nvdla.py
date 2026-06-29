@@ -26,6 +26,10 @@ class TLM_ScNvDlaSE(SystemC_ScModule):
     cxx_class = "ScNvDlaSE"
     cxx_header = "systemC_NVDLA/sc_nvdla_se.hh"
 
+    cpu_freq = Param.Float(1.0, "CPU frequency in GHz")
+
+    freq_ratio = Param.Float(1.0, "CPU/NVDLA frequency ratio")
+
     csb_target = TlmTargetSocket(32, "TLM NVDLA target socket")
 
     dbb_init = TlmInitiatorSocket(32, "Off chip memory ")

@@ -1,6 +1,10 @@
 Import('*')
 import os
 
+###########################################################################
+# SIMOBJECTS
+###########################################################################
+
 #print('[NVDLA] Using gem5 internal SystemC (ext/systemc)')
 
 # SimObject('sc_nvdla.py', sim_objects=["ScNVDLAModule","ScNVDLA","ScNvDlaSE"])
@@ -13,8 +17,105 @@ Source('sc_tlm_initiator.cc')
 Source('sc_nvdla_se.cc')
 
 print('[NVDLA] Building NVDLA CMOD sources')
+Source('sc_nvdla_stats.cc')
+
+# print('[NVDLA] Building configurable SystemC NVDLA')
+
+# ###########################################################################
+# # CONFIGURATION
+# ###########################################################################
+
+# # nvdla_config = ARGUMENTS.get('NVDLA_CONFIG', 'nv_small')
+# nvdla_config = ARGUMENTS.get('NVDLA_CONFIG', 'nv_full')
+
+# print(f'[NVDLA] CONFIG          : {nvdla_config}')
+
+# ###########################################################################
+# # PATHS
+# ###########################################################################
 
 cmod_dir = Dir('model_nvdla/hw/cmod').srcnode().abspath
+# spec_dir = Dir('model_nvdla/hw/spec').srcnode().abspath
+# hw_dir = Dir('model_nvdla/hw').srcnode().abspath
+# root_dir = Dir('model_nvdla').srcnode().abspath
+
+# build_root = Dir('#/build').abspath
+
+# ###########################################################################
+# # GENERATED DEPENDENCIES
+# ###########################################################################
+
+# defs_dir = os.path.join(hw_dir, 'spec/defs')
+# manual_dir = os.path.join(hw_dir, 'spec/manual')
+# odif_dir = os.path.join(hw_dir, 'spec/odif')
+# cmod_make_dir = os.path.join(hw_dir, 'cmod')
+
+# stamp_dir = os.path.join(build_root, 'nvdla_stamps')
+
+# defs_stamp = os.path.join(stamp_dir, 'defs.stamp')
+# manual_stamp = os.path.join(stamp_dir, 'manual.stamp')
+# odif_stamp = os.path.join(stamp_dir, 'odif.stamp')
+# cmod_stamp = os.path.join(stamp_dir, 'cmod.stamp')
+
+
+# ###########################################################################
+# # defs
+# ###########################################################################
+
+# env.Command(
+#     target=defs_stamp,
+#     source=[],
+#     action=f'''
+# mkdir -p {stamp_dir} && \
+# make -C {defs_dir} PROJECT={nvdla_config} && \
+# touch {defs_stamp}
+# '''
+# )
+
+# ###########################################################################
+# # manual
+# ###########################################################################
+
+# env.Command(
+#     target=manual_stamp,
+#     source=defs_stamp,
+#     action=f'''
+# make -C {manual_dir} PROJECT={nvdla_config} && \
+# touch {manual_stamp}
+# '''
+# )
+
+# ###########################################################################
+# # odif
+# ###########################################################################
+
+# env.Command(
+#     target=odif_stamp,
+#     source=manual_stamp,
+#     action=f'''
+# make -C {odif_dir} PROJECT={nvdla_config} && \
+# touch {odif_stamp}
+# '''
+# )
+
+# ###########################################################################
+# # cmod
+# ###########################################################################
+
+# env.Command(
+#     target=cmod_stamp,
+#     source=odif_stamp,
+#     action=f'''
+# make -C {cmod_make_dir} PROJECT={nvdla_config} && \
+# touch {cmod_stamp}
+# '''
+# )
+
+# print('[NVDLA] Added defs/manual dependency chain')
+
+# ###########################################################################
+# # SOURCES
+# ###########################################################################
 
 #env.Prepend(CPPPATH=[cmod_dir])
 
@@ -66,6 +167,7 @@ sources = [
     os.path.join(cmod_dir, 'mcif/gen/NV_NVDLA_mcif.cpp'),
 
     os.path.join(cmod_dir, 'nvdla_clibs/NvdlaDataFormatConvertor.cpp'),
+    # os.path.join(cmod_dir, 'nvdla_clibs/NvdlaPacker.cpp'),
     os.path.join(cmod_dir, 'nvdla_core/NV_NVDLA_core.cpp'),
     os.path.join(cmod_dir, 'nvdla_core/NvdlaCoreDummy.cpp'),
 
@@ -85,6 +187,10 @@ sources = [
     os.path.join(cmod_dir, 'sdp/gen/sdp_reg_model.cpp'),
     os.path.join(cmod_dir, 'sdp/gen/sdp_rdma_reg_model.cpp'),
 
+    ###########################################################################
+    # HLS
+    ###########################################################################
+
     os.path.join(cmod_dir, 'hls/cdma_libs/cdma_cvt.cpp'),
     os.path.join(cmod_dir, 'hls/cdp_libs/cdp_icvt.cpp'),
     os.path.join(cmod_dir, 'hls/cdp_libs/cdp_ocvt.cpp'),
@@ -96,6 +202,10 @@ sources = [
     os.path.join(cmod_dir, 'hls/sdp/sdp_c.cpp'),
     os.path.join(cmod_dir, 'hls/sdp/sdp_y.cpp'),
     os.path.join(cmod_dir, 'hls/sdp/sdp_y_inp.cpp'),
+
+    ###########################################################################
+    # VLIBS
+    ###########################################################################
 
     os.path.join(cmod_dir, 'hls/vlibs/fp16_add.cpp'),
     os.path.join(cmod_dir, 'hls/vlibs/fp16_max.cpp'),
@@ -121,19 +231,59 @@ sources = [
 
 print(f'[NVDLA] Using fixed order with {len(sources)} sources')
 
+###########################################################################
+# BUILD
+###########################################################################
 
 env.Prepend(CPPPATH=[
 
     ".",
     # CMOD root
+    ###########################################################################
+    # ROOTS
+    ###########################################################################
+
     cmod_dir,
 
     # Core includes
+    # spec_dir,
+    # hw_dir,
+    # spec_dir+'/defs',
+    # spec_dir+'/manual',
+    # #########################################################################
+    # # GENERATED OUTPUTS
+    # #########################################################################
+
+    # os.path.join(hw_dir, 'outdir'),
+    # os.path.join(hw_dir, 'outdir', nvdla_config),
+    # os.path.join(hw_dir, 'outdir', nvdla_config, 'spec'),
+    # os.path.join(hw_dir, 'outdir', nvdla_config, 'spec', 'defs'),
+    # os.path.join(hw_dir, 'outdir', nvdla_config, 'spec', 'manual'),
+    # os.path.join(hw_dir, 'outdir', nvdla_config, 'spec', 'odif'),
+
+    # os.path.join(hw_dir, 'outdir', nvdla_config, 'spec', 'defs'),
+    # os.path.join(hw_dir, 'outdir', nvdla_config, 'spec', 'manual'),
+    # os.path.join(hw_dir, 'outdir', nvdla_config, 'spec', 'odif'),
+
+    # #########################################################################
+    # # CORE
+    # #########################################################################
+
     cmod_dir + '/include',
     cmod_dir + '/include/nvdla_ness_header',
 
     # Submodules
+    ###########################################################################
+    # COMMON
+    ###########################################################################
+
     cmod_dir + '/nvdla_payload',
+    # cmod_dir + '/nvdla_clibs',
+
+    ###########################################################################
+    # MODULES
+    ###########################################################################
+
     cmod_dir + '/bdma',
     cmod_dir + '/cacc',
     cmod_dir + '/cbuf',
@@ -152,6 +302,10 @@ env.Prepend(CPPPATH=[
     cmod_dir + '/sdp',
 
     # generated
+    ###########################################################################
+    # GENERATED
+    ###########################################################################
+
     cmod_dir + '/bdma/gen',
     cmod_dir + '/cacc/gen',
     cmod_dir + '/cdma/gen',
@@ -166,7 +320,10 @@ env.Prepend(CPPPATH=[
     cmod_dir + '/sdp/gen',
     cmod_dir + '/csb_master/gen',
 
+    ###########################################################################
     # HLS
+    ###########################################################################
+
     cmod_dir + '/hls',
     cmod_dir + '/hls/include',
     cmod_dir + '/hls/vlibs',
@@ -185,8 +342,12 @@ env.Prepend(CPPDEFINES=[
 env.Append(CCFLAGS=['-O3'])
 env.Append(CCFLAGS=['-fpermissive'])
 
+# env.Depends(sources, cmod_stamp)
 
 for src in sources:
     Source(src)
 
 print('[NVDLA] CMOD embedded with original Makefile order')
+
+print(f'[NVDLA] Using fixed order with {len(sources)} sources')
+print('[NVDLA] Full SCons-native CMOD build enabled')
