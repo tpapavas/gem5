@@ -112,7 +112,11 @@ Wrapper_nvdla::Wrapper_nvdla(int id_nvdla, const unsigned int maxReq,
 
         .w_wvalid = &dla->nvdla_core2dbb_w_wvalid,
         .w_wready = &dla->nvdla_core2dbb_w_wready,
+#ifndef NV_SMALL_EN
         .w_wdata = dla->nvdla_core2dbb_w_wdata,
+#else
+        .w_wdata = &dla->nvdla_core2dbb_w_wdata,
+#endif
         .w_wstrb = &dla->nvdla_core2dbb_w_wstrb,
         .w_wlast = &dla->nvdla_core2dbb_w_wlast,
 
@@ -130,12 +134,17 @@ Wrapper_nvdla::Wrapper_nvdla(int id_nvdla, const unsigned int maxReq,
         .r_rready = &dla->nvdla_core2dbb_r_rready,
         .r_rid = &dla->nvdla_core2dbb_r_rid,
         .r_rlast = &dla->nvdla_core2dbb_r_rlast,
+#ifndef NV_SMALL_EN
         .r_rdata = dla->nvdla_core2dbb_r_rdata,
+#else
+        .r_rdata = &dla->nvdla_core2dbb_r_rdata,
+#endif
     };
     axi_dbb = new AXIResponder(dbbconn, this, "DBB",
               false, maxReq, _dma_enable);
 
     // AXI CVSRAM
+#ifndef NV_SMALL_EN
     AXIResponder::connections cvsramconn = {
         .aw_awvalid = &dla->nvdla_core2cvsram_aw_awvalid,
         .aw_awready = &dla->nvdla_core2cvsram_aw_awready,
@@ -167,6 +176,9 @@ Wrapper_nvdla::Wrapper_nvdla(int id_nvdla, const unsigned int maxReq,
     };
     axi_cvsram = new AXIResponder(cvsramconn, this, "CVSRAM",
                                       true, maxReq, false);
+#else
+    axi_cvsram = nullptr;
+#endif
 }
 
 

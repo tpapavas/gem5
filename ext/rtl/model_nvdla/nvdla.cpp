@@ -553,6 +553,8 @@ public:
                     buf = (uint8_t *)malloc(len);
                     VERILY_READ(buf, len);
 
+
+
                     VERILY_READ(&namelen, 4);
                     fname = (char *) malloc(namelen+1);
                     VERILY_READ(fname, namelen);
