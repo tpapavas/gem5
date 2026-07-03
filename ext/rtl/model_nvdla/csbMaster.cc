@@ -1,5 +1,11 @@
 #include "csbMaster.hh"
 
+#ifndef NV_SMALL_EN
+#define INTR_STATUS_ADDR (0xffff0003)
+#else
+#define INTR_STATUS_ADDR (0xffff0403)
+#endif
+
 CSBMaster::CSBMaster(VNV_nvdla *_dla, Wrapper_nvdla *_wrapper) {
     dla = _dla;
 
@@ -17,7 +23,10 @@ void CSBMaster::read(uint32_t addr, uint32_t mask, uint32_t data) {
     op.addr = addr;
     op.mask = mask;
     op.data = data;
-    op.tries = 10;
+    
+    if (addr == INTR_STATUS_ADDR) op.tries = 0xffffffff;
+    else op.tries = 10;
+    
     op.reading = 0;
     op.wait_until = 0;
 
@@ -88,7 +97,7 @@ int CSBMaster::eval(int noop) {
         if ((dla->nvdla2csb_data & op.mask) != (op.data & op.mask)) {
             op.reading = 0;
             if(op.wait_until == 0) {
-                if(op.write == 0 && op.addr == 0xffff0003 && op.data == 0x0 && dla->nvdla2csb_data != 0) {
+                if(op.write == 0 && op.addr == INTR_STATUS_ADDR && op.data == 0x0 && dla->nvdla2csb_data != 0) {
 #ifndef AXI_RESP_FAST_IO
                     printf("new interrupts come too early, so ignore this reg txn\n");
 #endif
@@ -193,7 +202,7 @@ int CSBMaster::eval(int noop, uint32_t *data) {
         if ((dla->nvdla2csb_data & op.mask) != (op.data & op.mask)) {
             op.reading = 0;
             if(op.wait_until == 0) {
-                if(op.write == 0 && op.addr == 0xffff0003 && op.data == 0x0 && dla->nvdla2csb_data != 0) {
+                if(op.write == 0 && op.addr == INTR_STATUS_ADDR && op.data == 0x0 && dla->nvdla2csb_data != 0) {
 #ifndef AXI_RESP_FAST_IO
                     printf("new interrupts come too early, so ignore this reg txn\n");
 #endif

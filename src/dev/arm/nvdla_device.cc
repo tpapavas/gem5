@@ -365,10 +365,14 @@ NvDlaDevice::runIterationNVDLA() {
     if (!waiting_for_gem5_mem) {
         if (!use_fake_mem) {
             wr->axi_dbb->eval_timing();
-            wr->axi_cvsram->eval_timing();
+            if (wr->axi_cvsram) {
+                wr->axi_cvsram->eval_timing();
+            }
         } else {
             wr->axi_dbb->eval_ram();
-            wr->axi_cvsram->eval_ram();
+            if (wr->axi_cvsram) {
+                wr->axi_cvsram->eval_ram();
+            }
         }
     }
 
@@ -1068,10 +1072,14 @@ NvDlaDevice::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
                     if (!owner->waiting_for_gem5_mem) {
                         if (!owner->use_fake_mem) {
                             owner->wr->axi_dbb->eval_timing();
-                            owner->wr->axi_cvsram->eval_timing();
+                            if (owner->wr->axi_cvsram) {
+                                owner->wr->axi_cvsram->eval_timing();
+                            }
                         } else {
                             owner->wr->axi_dbb->eval_ram();
-                            owner->wr->axi_cvsram->eval_ram();
+                            if (owner->wr->axi_cvsram) {
+                                owner->wr->axi_cvsram->eval_ram();
+                            }
                         }
                     }
 
@@ -1366,10 +1374,14 @@ NvDlaDevice::read(PacketPtr pkt)
             if (!waiting_for_gem5_mem) {
                 if (!use_fake_mem) {
                     wr->axi_dbb->eval_timing();
-                    wr->axi_cvsram->eval_timing();
+                    if (wr->axi_cvsram) {
+                        wr->axi_cvsram->eval_timing();
+                    }
                 } else {
                     wr->axi_dbb->eval_ram();
-                    wr->axi_cvsram->eval_ram();
+                    if (wr->axi_cvsram) {
+                        wr->axi_cvsram->eval_ram();
+                    }
                 }
             }
 
