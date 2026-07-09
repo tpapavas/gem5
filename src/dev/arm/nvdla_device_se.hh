@@ -28,8 +28,8 @@
  * Authors: Guillem Lopez Paradis
  */
 
-#ifndef __NVDLA_DEVICE_HH__
-#define __NVDLA_DEVICE_HH__
+#ifndef __NVDLA_DEVICE_SE_HH__
+#define __NVDLA_DEVICE_SE_HH__
 
 #include <ctime>
 #include <string>

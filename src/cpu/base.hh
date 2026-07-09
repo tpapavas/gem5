@@ -58,7 +58,7 @@
 #include "sim/probe/probe.hh"
 #include "sim/signal.hh"
 #include "sim/system.hh"
-#include "../dev/arm/nvdla_device_se.hh"
+
 namespace gem5
 {
 
@@ -68,6 +68,7 @@ class CheckerCPU;
 class ThreadContext;
 
 class NvDlaDeviceSE;
+class NvDlaDevice;
 class rtlNVDLA;
 struct AddressMonitor
 {
@@ -262,11 +263,12 @@ class BaseCPU : public ClockedObject
     NvDlaPort nvdla_port_plus_0;
     NvDlaPort nvdla_port_plus_1;
 
-    NvDlaDeviceSE *nvdla_device_0 = nullptr;
-    NvDlaDeviceSE *nvdla_device_1 = nullptr;
+    std::variant<NvDlaDeviceSE *, NvDlaDevice *> nvdla_device_0;
+    std::variant<NvDlaDeviceSE *, NvDlaDevice *> nvdla_device_1;
     int num_accels;
 
-    void setNvDlaDevice(int accel_id, NvDlaDeviceSE *device) {
+    template<typename T>
+    void setNvDlaDevice(int accel_id, T* device) {
         switch (accel_id) {
             case 0:
                 nvdla_device_0 = device;
@@ -278,7 +280,6 @@ class BaseCPU : public ClockedObject
                 assert(false);
         }
     }
-
 
     // Method to use when instruction start accel is used
     virtual void startAccel(Addr addr, int elements, Addr region_nvdla)  {};

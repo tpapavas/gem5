@@ -10,6 +10,12 @@
 #ifndef __AXI_RESPONDER__
 #define __AXI_RESPONDER__
 
+#include <list>
+#include <unordered_map>
+
+#include "wrapper_nvdla.hh"
+
+
 // #define AXI_RESP_FAST_IO
 #ifdef AXI_RESP_FAST_IO
 #define PRINT_16B(str, pos, v64, v32, v8_0, v8_1, v8_2, v4_0, v4_1) \
@@ -33,11 +39,18 @@
 #define PRINT_DEBUG
 
 #define AXI_BLOCK_SIZE 4096
-#define AXI_WIDTH 512
-#include <list>
-#include <unordered_map>
 
-#include "wrapper_nvdla.hh"
+#ifndef NV_SMALL_EN
+#define AXI_WIDTH 512
+#define ADDR_TYPE uint64_t
+#define DATA_TYPE uint32_t
+#define WSTRB_TYPE uint64_t
+#else
+#define AXI_WIDTH 64
+#define ADDR_TYPE uint32_t
+#define DATA_TYPE uint64_t
+#define WSTRB_TYPE uint8_t
+#endif
 
 class Wrapper_nvdla;
 
@@ -48,12 +61,12 @@ public:
         uint8_t *aw_awready;
         uint8_t *aw_awid;
         uint8_t *aw_awlen;
-        uint64_t *aw_awaddr;
+        ADDR_TYPE *aw_awaddr;
 
         uint8_t *w_wvalid;
         uint8_t *w_wready;
-        uint32_t *w_wdata;
-        uint64_t *w_wstrb;
+        DATA_TYPE *w_wdata;
+        WSTRB_TYPE *w_wstrb;
         uint8_t *w_wlast;
 
         uint8_t *b_bvalid;
@@ -64,13 +77,13 @@ public:
         uint8_t *ar_arready;
         uint8_t *ar_arid;
         uint8_t *ar_arlen;
-        uint64_t *ar_araddr;
+        ADDR_TYPE *ar_araddr;
 
         uint8_t *r_rvalid;
         uint8_t *r_rready;
         uint8_t *r_rid;
         uint8_t *r_rlast;
-        uint32_t *r_rdata;
+        DATA_TYPE *r_rdata;
     };
 
 private:
@@ -144,8 +157,6 @@ public:
                  const unsigned int maxReq,
                  bool _dma_enable);
 
-    void addLatancy();
-    
     uint32_t getRequestsOnFlight();
 
     // In this function we read from memory

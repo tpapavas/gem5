@@ -60,6 +60,7 @@ class NvDlaDevice(BasicPioDevice):
     enableWaveform = Param.Bool(False, "Enable Trace Waveform")
 
     system = Param.System(Parent.any, "System this accelerator belongs to")
+    cpu = Param.BaseCPU(Parent.any, "System this accelerator belongs to")
 
     # rtlNVDLA stuff
     cpu_side = ResponsePort("CPU side port, receives requests")

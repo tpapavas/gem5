@@ -10,7 +10,7 @@
  * 
  * Guillem Lopez Paradis
  */
-
+#define PRINT_DEBUG 1
 
 #include <assert.h>
 #include "axiResponder.hh"
@@ -22,7 +22,7 @@ AXIResponder::AXIResponder(struct connections _dla,
                            const unsigned int maxReq,
                            bool _dma_enable):
                                AXI_R_LATENCY(_dma_enable ? _wrapper->spm->spm_latency : 0), dla(_dla), name(_name),
-                               max_req_inflight((maxReq < 240) ? maxReq : 240), dma_enable(_dma_enable),
+                               max_req_inflight(maxReq), dma_enable(_dma_enable),
                                inflight_count_for_sets(_wrapper->spm->num_sets, 0),
                                pft_threshold(16), dma_pft_threshold(8), wrapper(_wrapper), sram(sram_) {
     *dla.aw_awready = 1;
@@ -32,23 +32,6 @@ AXIResponder::AXIResponder(struct connections _dla,
     *dla.r_rvalid = 0;
 
     // add some latency...
-    //for (int i = 0; i < AXI_R_LATENCY; i++) {
-    //    axi_r_txn txn;
-//
-    //    txn.rvalid = 0;
-    //    txn.rvalid = 0;
-    //    txn.rid = 0;
-    //    txn.rlast = 0;
-    //    for (int j = 0; j < AXI_WIDTH / 8; j++) {
-    //        txn.rdata[i] = 0xAA;
-    //    }
-//
-    //    r0_fifo.push(txn);
-    //}
-    addLatancy();    
-}
-
-void AXIResponder::addLatancy(){
     for (int i = 0; i < AXI_R_LATENCY; i++) {
         axi_r_txn txn;
 
@@ -57,7 +40,7 @@ void AXIResponder::addLatancy(){
         txn.rid = 0;
         txn.rlast = 0;
         for (int j = 0; j < AXI_WIDTH / 8; j++) {
-            txn.rdata[j] = 0xAA;
+            txn.rdata[i] = 0xAA;
         }
 
         r0_fifo.push(txn);
@@ -69,8 +52,6 @@ AXIResponder::read_ram(uint64_t addr) {
     ram[addr / AXI_BLOCK_SIZE].resize(AXI_BLOCK_SIZE, 0);
     return ram[addr / AXI_BLOCK_SIZE][addr % AXI_BLOCK_SIZE];
 }
-
-
 
 void
 AXIResponder::write_ram(uint64_t addr, uint8_t data) {
@@ -88,10 +69,6 @@ void
 AXIResponder::eval_ram() {
     /* write request */
     if (*dla.aw_awvalid && *dla.aw_awready) {
-        #ifdef PRINT_DEBUG
-            printf("(%lu) %s: write request from dla, addr %08lx id %d\n",
-                    wrapper->tickcount, name, *dla.aw_awaddr, *dla.aw_awid);
-        #endif
         axi_aw_txn txn;
 
         txn.awid = *dla.aw_awid;
@@ -105,18 +82,17 @@ AXIResponder::eval_ram() {
 
     /* write data */
     if (*dla.w_wvalid) {
-        #ifdef PRINT_DEBUG
-            printf("(%lu) %s: write data from dla (%08x %08x...)\n",
-                wrapper->tickcount, name, dla.w_wdata[0], dla.w_wdata[1]);
-        #endif
         axi_w_txn txn;
-
+#ifndef NV_SMALL_EN
         for (int i = 0; i < AXI_WIDTH / 32; i++) {
             txn.wdata[4 * i    ] =  dla.w_wdata[i]        & 0xFF;
             txn.wdata[4 * i + 1] = (dla.w_wdata[i] >>  8) & 0xFF;
             txn.wdata[4 * i + 2] = (dla.w_wdata[i] >> 16) & 0xFF;
             txn.wdata[4 * i + 3] = (dla.w_wdata[i] >> 24) & 0xFF;
         }
+#else
+        std::memcpy(txn.wdata, dla.w_wdata, sizeof(uint64_t));
+#endif
         txn.wstrb = *dla.w_wstrb;
         txn.wlast = *dla.w_wlast;
         w_fifo.push(txn);
@@ -210,13 +186,21 @@ AXIResponder::eval_ram() {
 
     /* read response */
     if (!r_fifo.empty()) {
-        
         axi_r_txn &txn = r_fifo.front();
 
         r0_fifo.push(txn);
         r_fifo.pop();
     } else {
-        addLatancy();
+        axi_r_txn txn;
+
+        txn.rvalid = 0;
+        txn.rid = 0;
+        txn.rlast = 0;
+        for (int i = 0; i < AXI_WIDTH / 8; i++) {
+            txn.rdata[i] = 0xAA;
+        }
+
+        r0_fifo.push(txn);
     }
 
     *dla.r_rvalid = 0;
@@ -226,12 +210,16 @@ AXIResponder::eval_ram() {
         *dla.r_rvalid = txn.rvalid;
         *dla.r_rid = txn.rid;
         *dla.r_rlast = txn.rlast;
+#ifndef NV_SMALL_EN
         for (int i = 0; i < AXI_WIDTH / 32; i++) {
             dla.r_rdata[i] = txn.rdata[4 * i    ]         +
                 (((uint32_t) txn.rdata[4 * i + 1]) <<  8) +
                 (((uint32_t) txn.rdata[4 * i + 2]) << 16) +
                 (((uint32_t) txn.rdata[4 * i + 3]) << 24);
         }
+#else
+        std::memcpy(dla.r_rdata, txn.rdata, sizeof(uint64_t));
+#endif
         #ifdef PRINT_DEBUG
             if (txn.rvalid) {
                 printf("(%lu) %s: read push: id %d, da %02x %02x %02x %02x %02x %02x %02x %02x\n",
@@ -282,24 +270,18 @@ AXIResponder::eval_timing() {
 
     /* write data */
     if (*dla.w_wvalid) {
-        #ifdef PRINT_DEBUG
-            printf("(%lu) nvdla#%d %s: write data from dla (%08x %08x...)\n",
-                    wrapper->tickcount,
-                    wrapper->id_nvdla,
-                    name,
-                    dla.w_wdata[0],
-                    dla.w_wdata[1]);
-        #endif
-
         axi_w_txn txn;
-#ifndef NO_DATA
+#ifndef NV_SMALL_EN
         for (int i = 0; i < AXI_WIDTH / 32; i++) {
             txn.wdata[4 * i    ] = (dla.w_wdata[i]      ) & 0xFF;
             txn.wdata[4 * i + 1] = (dla.w_wdata[i] >>  8) & 0xFF;
             txn.wdata[4 * i + 2] = (dla.w_wdata[i] >> 16) & 0xFF;
             txn.wdata[4 * i + 3] = (dla.w_wdata[i] >> 24) & 0xFF;
         }
+#else
+        std::memcpy(txn.wdata, dla.w_wdata, sizeof(uint64_t));
 #endif
+
         txn.wstrb = *dla.w_wstrb;
         txn.wlast = *dla.w_wlast;
         w_fifo.push(txn);
@@ -399,14 +381,19 @@ AXIResponder::eval_timing() {
         if (txn.rvalid) {
             *dla.r_rid = txn.rid;
             *dla.r_rlast = txn.rlast;
-#ifndef NO_DATA
+
+#ifndef NV_SMALL_EN
             for (int i = 0; i < AXI_WIDTH / 32; i++) {
                 dla.r_rdata[i] = (txn.rdata[4 * i]) +
                     (((uint32_t)txn.rdata[4 * i + 1]) << 8) +
                     (((uint32_t)txn.rdata[4 * i + 2]) << 16) +
                     (((uint32_t)txn.rdata[4 * i + 3]) << 24);
             }
+#else
+            std::memcpy(dla.r_rdata, txn.rdata, sizeof(uint64_t));
+
 #endif
+
             #ifdef PRINT_DEBUG
             printf("(%lu) nvdla#%d %s: read push: id %d, da %08x %08x %08x %08x\n",
                 wrapper->tickcount, wrapper->id_nvdla, name, txn.rid, txn.rdata[0],
@@ -597,11 +584,6 @@ AXIResponder::process_read_resp() {
 
 void
 AXIResponder::inflight_resp(uint64_t addr, const uint8_t* data) {
-    #ifdef PRINT_DEBUG
-        printf("(%lu) nvdla#%d %s: Inflight Resp Timing: addr 0x%08x \n",
-                wrapper->tickcount, wrapper->id_nvdla, name, addr);
-    #endif
-
     auto addr_it = inflight_req.find(addr);
     std::list<axi_r_txn>& req_list = addr_it->second;
 
@@ -656,7 +638,7 @@ AXIResponder::inflight_resp(uint64_t addr, const uint8_t* data) {
 #endif
     }
     #ifdef PRINT_DEBUG
-    printf("Remaining %d\n", inflight_req_order.size());
+    printf("Remaining %lu\n", inflight_req_order.size());
     printf("(%lu) nvdla#%d %s: Inflight Resp Timing Finished: addr %08lx \n",
             wrapper->tickcount, wrapper->id_nvdla, name, addr);
     #endif

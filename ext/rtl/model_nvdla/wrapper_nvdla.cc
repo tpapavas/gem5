@@ -47,10 +47,9 @@
 
 #include "wrapper_nvdla.hh"
 #include <iostream>
-uint64_t _tickcount = 0;
 
 double sc_time_stamp() {
-  return double_t(_tickcount);
+  return double_t(0);
 }
 
 embeddedBuffer* Wrapper_nvdla::shared_spm = nullptr;
@@ -87,7 +86,7 @@ Wrapper_nvdla::Wrapper_nvdla(int id_nvdla, const unsigned int maxReq,
     if (!print_buffer) {
         print_buffer = new uint64_t[PB_SIZE * 2];
     }
-    
+
 
     int argcc = 1;
     char* buf[] = {(char*)"aaa",(char*)"bbb"};
@@ -113,7 +112,11 @@ Wrapper_nvdla::Wrapper_nvdla(int id_nvdla, const unsigned int maxReq,
 
         .w_wvalid = &dla->nvdla_core2dbb_w_wvalid,
         .w_wready = &dla->nvdla_core2dbb_w_wready,
+#ifndef NV_SMALL_EN
         .w_wdata = dla->nvdla_core2dbb_w_wdata,
+#else
+        .w_wdata = &dla->nvdla_core2dbb_w_wdata,
+#endif
         .w_wstrb = &dla->nvdla_core2dbb_w_wstrb,
         .w_wlast = &dla->nvdla_core2dbb_w_wlast,
 
@@ -131,12 +134,17 @@ Wrapper_nvdla::Wrapper_nvdla(int id_nvdla, const unsigned int maxReq,
         .r_rready = &dla->nvdla_core2dbb_r_rready,
         .r_rid = &dla->nvdla_core2dbb_r_rid,
         .r_rlast = &dla->nvdla_core2dbb_r_rlast,
+#ifndef NV_SMALL_EN
         .r_rdata = dla->nvdla_core2dbb_r_rdata,
+#else
+        .r_rdata = &dla->nvdla_core2dbb_r_rdata,
+#endif
     };
     axi_dbb = new AXIResponder(dbbconn, this, "DBB",
               false, maxReq, _dma_enable);
 
     // AXI CVSRAM
+#ifndef NV_SMALL_EN
     AXIResponder::connections cvsramconn = {
         .aw_awvalid = &dla->nvdla_core2cvsram_aw_awvalid,
         .aw_awready = &dla->nvdla_core2cvsram_aw_awready,
@@ -168,8 +176,9 @@ Wrapper_nvdla::Wrapper_nvdla(int id_nvdla, const unsigned int maxReq,
     };
     axi_cvsram = new AXIResponder(cvsramconn, this, "CVSRAM",
                                       true, maxReq, false);
-
-
+#else
+    axi_cvsram = nullptr;
+#endif
 }
 
 
@@ -211,7 +220,6 @@ void Wrapper_nvdla::init() {
     dla->nvdla_pwrbus_ram_o_pd = 0;
     dla->nvdla_pwrbus_ram_a_pd = 0;
     
-
     printf("reset...\n");
     dla->dla_reset_rstn = 1;
     dla->direct_reset_ = 1;
@@ -321,7 +329,7 @@ outputNVDLA& Wrapper_nvdla::tick() {
     dla->eval();
 
     tickcount++;    // align this tick advancement with stats.txt
-    _tickcount++;
+
     return output;
 }
 
