@@ -23,10 +23,10 @@ void CSBMaster::read(uint32_t addr, uint32_t mask, uint32_t data) {
     op.addr = addr;
     op.mask = mask;
     op.data = data;
-    
+
     if (addr == INTR_STATUS_ADDR) op.tries = 0xffffffff;
     else op.tries = 10;
-    
+
     op.reading = 0;
     op.wait_until = 0;
 

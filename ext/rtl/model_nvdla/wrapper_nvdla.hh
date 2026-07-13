@@ -53,7 +53,7 @@
 
 #define NV_SMALL_EN
 
-#ifndef NV_SMALL_EN 
+#ifndef NV_SMALL_EN
 
 #define NVDLA_WEIGHT_COMPRESSION_ENABLE
 #define NVDLA_WINOGRAD_ENABLE
