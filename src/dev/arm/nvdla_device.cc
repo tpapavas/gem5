@@ -46,6 +46,7 @@ NvDlaDevice::NvDlaDevice(const NvDlaDeviceParams &params) :
     engineStarted(false),
     onRead(false),
     system(params.system),
+    cpu(params.cpu),
     enableObject(params.enableRTLObject),
     enableWaveform(params.enableWaveform),
     to_retry_vaddr(0),
@@ -81,6 +82,7 @@ NvDlaDevice::NvDlaDevice(const NvDlaDeviceParams &params) :
     {
     fatal_if(!interrupt, "No NvDlaDevice interrupt specified\n");
 
+    cpu->setNvDlaDevice(id_nvdla, this);
     switch (params.buffer_mode) {
         case 0:
             buffer_mode = BUF_MODE_ALL;
@@ -812,6 +814,19 @@ NvDlaDevice::regStats() {
     stats.nvdla_writes
         .name(name() + ".nvdla_writes")
         .desc("Number of writes performed");
+
+    stats.nvdla_csb_reads
+        .name(name() + ".nvdla_csb_reads")
+        .desc("Number of reads performed");
+
+    stats.nvdla_csb_writes
+        .name(name() + ".nvdla_csb_writes")
+        .desc("Number of writes performed");
+
+    stats.nvdla_idle_cycles
+        .name(name() + ".nvdla_idle_cycles")
+        .desc("Number of idle cycles");
+
     stats.nvdla_avgReqCVSRAM
         .init(256)
         .name(name() + ".nvdla_avgReqCVSRAM")
@@ -825,12 +840,80 @@ NvDlaDevice::regStats() {
         .flags(pdf);
 
 
-    // stats.num_dma_rd
-    //     .name(name() + ".num_dma_rd")
-    //     .desc("Number of DMA read issued by this NVDLA");
-    // stats.num_dma_wr
-    //     .name(name() + ".num_dma_wr")
-    //     .desc("Number of DMA write issued by this NVDLA");
+    stats.num_dma_rd
+        .name(name() + ".num_dma_rd")
+        .desc("Number of DMA read issued by this NVDLA");
+    stats.num_dma_wr
+        .name(name() + ".num_dma_wr")
+        .desc("Number of DMA write issued by this NVDLA");
+
+    stats.nvdla_rtl_cycles
+        .name(name() + ".nvdla_rtl_cycles")
+        .desc("Number of RTL cycles to run the trace from RTL");
+    //stats.nvdla_rtl_cycles_idle
+    //    .name(name() + ".nvdla_rtl_cycles_idle")
+    //    .desc("Number of RTL cycles to run the trace from RTL");
+
+    stats.nvdla_total_Bdma0
+        .name(name() + ".nvdla_total_Bdma0")
+        .desc("Number of Cycles to run the Bdma0 from RTL");
+
+    stats.nvdla_total_Bdma1
+        .name(name() + ".nvdla_total_Bdma1")
+        .desc("Number of Cycles to run the Bdma1 from RTL");
+
+    stats.nvdla_total_Cdp0
+        .name(name() + ".nvdla_total_Cdp0")
+        .desc("Number of Cycles to run the Cdp0 from RTL");
+
+    stats.nvdla_total_Cdp1
+        .name(name() + ".nvdla_total_Cdp1")
+        .desc("Number of Cycles to run the Cdp1 from RTL");
+
+    stats.nvdla_total_Cmac0
+        .name(name() + ".nvdla_total_Cmac0")
+        .desc("Number of Cycles to run the Cmac0 from RTL");
+
+    stats.nvdla_total_Cmac1
+        .name(name() + ".nvdla_total_Cmac1")
+        .desc("Number of Cycles to run the Cmac1 from RTL");
+
+    stats.nvdla_total_Pdp0
+        .name(name() + ".nvdla_total_Pdp0")
+        .desc("Number of Cycles to run the Pdp0 from RTL");
+    stats.nvdla_total_Pdp1
+        .name(name() + ".nvdla_total_Pdp1")
+        .desc("Number of Cycles to run the Pdp1 from RTL");
+    stats.nvdla_total_Rubik0
+        .name(name() + ".nvdla_total_Rubik0")
+        .desc("Number of Cycles to run the Rubik0 from RTL");
+    stats.nvdla_total_Rubik1
+        .name(name() + ".nvdla_total_Rubik1")
+        .desc("Number of Cycles to run the Rubik1 from RTL");
+    stats.nvdla_total_Sdp0
+        .name(name() + ".nvdla_total_Sdp0")
+        .desc("Number of Cycles to run the Sdp0 from RTL");
+    stats.nvdla_total_Sdp1
+        .name(name() + ".nvdla_total_Sdp1")
+        .desc("Number of Cycles to run the Sdp1 from RTL ");
+    stats.nvdla_total_Cacc0
+        .name(name() + ".nvdla_total_Cacc0")
+        .desc("Number of Cycles to run the Cacc0 from RTL");
+    stats.nvdla_total_Cacc1
+        .name(name() + ".nvdla_total_Cacc1")
+        .desc("Number of Cycles to run the Cacc1 from RTL");
+    stats.nvdla_total_CdmaDat0
+        .name(name() + ".nvdla_total_CdmaDat0")
+        .desc("Number of Cycles to run the CdmaDat0 from RTL");
+    stats.nvdla_total_CdmaDat1
+        .name(name() + ".nvdla_total_CdmaDat1")
+        .desc("Number of Cycles to run the CdmaDat1 from RTL");
+    stats.nvdla_total_CdmaWt0
+        .name(name() + ".nvdla_total_CdmaWt0")
+        .desc("Number of Cycles to run the CdmaWt0 from RTL");
+    stats.nvdla_total_CdmaWt1
+        .name(name() + ".nvdla_total_CdmaWt1")
+        .desc("Number of Cycles to run the CdmaWt1 from RTL");
 }
 
 //// rtlObject code ////

@@ -48,6 +48,7 @@
 #include "arch/generic/interrupts.hh"
 #include "base/statistics.hh"
 #include "debug/Mwait.hh"
+#include "dev/arm/nvdla_device.hh"
 #include "dev/arm/nvdla_device_se.hh"
 #include "mem/htm.hh"
 #include "mem/port_proxy.hh"
@@ -69,6 +70,7 @@ class CheckerCPU;
 class ThreadContext;
 
 class NvDlaDeviceSE;
+class NvDlaDevice;
 class rtlNVDLA;
 class ScNvDlaSE;
 struct AddressMonitor
@@ -266,11 +268,12 @@ class BaseCPU : public ClockedObject
     NvDlaPort nvdla_port_plus_0;
     NvDlaPort nvdla_port_plus_1;
 
-    NvDlaDeviceSE *nvdla_device_0 = nullptr;
-    NvDlaDeviceSE *nvdla_device_1 = nullptr;
+    std::variant<NvDlaDeviceSE *, NvDlaDevice *> nvdla_device_0;
+    std::variant<NvDlaDeviceSE *, NvDlaDevice *> nvdla_device_1;
     int num_accels;
 
-    void setNvDlaDevice(int accel_id, NvDlaDeviceSE *device) {
+    template<typename T>
+    void setNvDlaDevice(int accel_id, T* device) {
         switch (accel_id) {
             case 0:
                 nvdla_device_0 = device;
