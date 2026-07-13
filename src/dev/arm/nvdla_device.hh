@@ -429,6 +429,7 @@ class NvDlaDevice : public BasicPioDevice
 
     // System pointer
     System * system;
+    BaseCPU * cpu;
 
     // Enable RTL Object
     bool enableObject;
@@ -467,15 +468,43 @@ class NvDlaDevice : public BasicPioDevice
         statistics::Scalar nvdla_cycles;
         statistics::Scalar nvdla_reads;
         statistics::Scalar nvdla_writes;
+
+        statistics::Scalar nvdla_csb_reads;
+        statistics::Scalar nvdla_csb_writes;
+
+        statistics::Scalar nvdla_idle_cycles;
+
         statistics::Histogram nvdla_avgReqCVSRAM;
         statistics::Histogram nvdla_avgReqDBBIF;
 
-        // statistics::Scalar num_dma_rd;
-        // statistics::Scalar num_dma_wr;
+        statistics::Scalar num_dma_rd;
+        statistics::Scalar num_dma_wr;
 
-        // statistics::Scalar num_spm_hit;
-        // statistics::Scalar num_spm_miss;
-        // statistics::Scalar num_spm_use;
+        statistics::Scalar num_spm_hit;
+        statistics::Scalar num_spm_miss;
+        statistics::Scalar num_spm_use;
+
+        statistics::Scalar nvdla_rtl_cycles = 0;
+        //statistics::Scalar nvdla_rtl_cycles_idle = 0;
+
+        statistics::Scalar nvdla_total_Bdma0 =0;
+        statistics::Scalar nvdla_total_Bdma1 =0;
+        statistics::Scalar nvdla_total_Cdp0 =0;
+        statistics::Scalar nvdla_total_Cdp1 =0;
+        statistics::Scalar nvdla_total_Cmac0 =0;
+        statistics::Scalar nvdla_total_Cmac1 =0;
+        statistics::Scalar nvdla_total_Pdp0 =0;
+        statistics::Scalar nvdla_total_Pdp1 =0;
+        statistics::Scalar nvdla_total_Rubik0 =0;
+        statistics::Scalar nvdla_total_Rubik1 =0;
+        statistics::Scalar nvdla_total_Sdp0 =0;
+        statistics::Scalar nvdla_total_Sdp1 =0;
+        statistics::Scalar nvdla_total_Cacc0 =0;
+        statistics::Scalar nvdla_total_Cacc1 =0;
+        statistics::Scalar nvdla_total_CdmaDat0 =0;
+        statistics::Scalar nvdla_total_CdmaDat1 =0;
+        statistics::Scalar nvdla_total_CdmaWt0 =0;
+        statistics::Scalar nvdla_total_CdmaWt1 =0;
     };
     nvdla_stats stats;
     void processOutput(outputNVDLA& out);
@@ -567,6 +596,48 @@ public:
     bool isSquashed() const { return false; }
     void startTranslate(Addr vaddr, ContextID contextId);
     void retryTranslate();
+
+    Tick nvdla_start_Bdma0;
+    Tick nvdla_end_Bdma0;
+    Tick nvdla_start_Bdma1;
+    Tick nvdla_end_Bdma1;
+    Tick nvdla_start_Cdp0;
+    Tick nvdla_end_Cdp0;
+    Tick nvdla_start_Cdp1;
+    Tick nvdla_end_Cdp1;
+    Tick nvdla_start_Cmac0;
+    Tick nvdla_end_Cmac0;
+    Tick nvdla_start_Cmac1;
+    Tick nvdla_end_Cmac1;
+    Tick nvdla_start_Pdp0;
+    Tick nvdla_end_Pdp0;
+    Tick nvdla_start_Pdp1;
+    Tick nvdla_end_Pdp1;
+    Tick nvdla_start_Rubik0;
+    Tick nvdla_end_Rubik0;
+    Tick nvdla_start_Rubik1;
+    Tick nvdla_end_Rubik1;
+    Tick nvdla_start_Sdp0;
+    Tick nvdla_end_Sdp0;
+    Tick nvdla_start_Sdp1;
+    Tick nvdla_end_Sdp1;
+    Tick nvdla_start_Cacc0;
+    Tick nvdla_end_Cacc0;
+    Tick nvdla_start_Cacc1;
+    Tick nvdla_end_Cacc1;
+    Tick nvdla_start_CdmaDat0;
+    Tick nvdla_end_CdmaDat0;
+    Tick nvdla_start_CdmaDat1;
+    Tick nvdla_end_CdmaDat1;
+    Tick nvdla_start_CdmaWt0;
+    Tick nvdla_end_CdmaWt0;
+    Tick nvdla_start_CdmaWt1;
+    Tick nvdla_end_CdmaWt1;
+    nvdla_stats& getStats() { return stats; }
+
+    const uint32_t getFreqRatio() const { return freq_ratio; }
+
+    uint64_t getTickfromWrapperNVDLA() const { return (wr->tickcount); }
 
   protected:
     ArmInterruptPin *const interrupt;

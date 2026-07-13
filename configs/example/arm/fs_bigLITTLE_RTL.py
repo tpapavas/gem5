@@ -175,24 +175,24 @@ def createSystem(
     for range in sys.mem_ranges:
         print(range.start)
 
-    sys.fake_nvdla = NvDlaDevice(
-        pio_addr=0x10200000,
-        pio_size=0x20000,
-        interrupt=ArmSPI(num=208),
-        dma_enable=options.dma_enable,
-        spm_latency=options.embed_spm_lat,
-        spm_line_size=1024,
-        spm_size=options.embed_spm_size,
-        use_shared_spm=options.shared_spm,
-        assoc=options.embed_spm_assoc.lower(),
-        base_addr_dram=0xC0000000,
-        base_addr_sram=0x0,
-    )
-    sys.fake_nvdla.pio = sys.iobus.mem_side_ports
+    # sys.fake_nvdla = NvDlaDevice(
+    #     pio_addr=0x10200000,
+    #     pio_size=0x20000,
+    #     interrupt=ArmSPI(num=208),
+    #     dma_enable=options.dma_enable,
+    #     spm_latency=options.embed_spm_lat,
+    #     spm_line_size=1024,
+    #     spm_size=options.embed_spm_size,
+    #     use_shared_spm=options.shared_spm,
+    #     assoc=options.embed_spm_assoc.lower(),
+    #     base_addr_dram=0xC0000000,
+    #     base_addr_sram=0x0,
+    # )
+    # sys.fake_nvdla.pio = sys.iobus.mem_side_ports
 
-    # for DMA
-    sys.fake_nvdla.dram_port = sys.membus.cpu_side_ports
-    sys.fake_nvdla.dma_port = sys.membus.cpu_side_ports
+    # # for DMA
+    # sys.fake_nvdla.dram_port = sys.membus.cpu_side_ports
+    # sys.fake_nvdla.dma_port = sys.membus.cpu_side_ports
 
     # for caches
     # sys.fake_nvdla_pr_cache = Cache(
@@ -785,6 +785,26 @@ def build(options):
 
     if options.vio_9p:
         FSConfig.attach_9p(system.realview, system.iobus)
+
+    system.fake_nvdla = NvDlaDevice(
+        pio_addr=0x10200000,
+        pio_size=0x20000,
+        interrupt=ArmSPI(num=208),
+        dma_enable=options.dma_enable,
+        spm_latency=options.embed_spm_lat,
+        spm_line_size=1024,
+        spm_size=options.embed_spm_size,
+        use_shared_spm=options.shared_spm,
+        assoc=options.embed_spm_assoc.lower(),
+        base_addr_dram=0xC0000000,
+        base_addr_sram=0x0,
+        cpu=system.littleCluster.cpus[0],
+    )
+    system.fake_nvdla.pio = system.iobus.mem_side_ports
+
+    # for DMA
+    system.fake_nvdla.dram_port = system.membus.cpu_side_ports
+    system.fake_nvdla.dma_port = system.membus.cpu_side_ports
 
     system.fake_nvdla.cmd_cpu_side = system.littleCluster.cpus[
         0

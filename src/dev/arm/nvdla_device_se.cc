@@ -463,7 +463,7 @@ NvDlaDeviceSE::tick() {
             || waiting_for_gem5_mem || flushing_spm) {
 
         if (wr->axi_dbb->getRequestsOnFlight() == 0 &&
-            wr->axi_cvsram->getRequestsOnFlight() == 0 &&
+            //wr->axi_cvsram->getRequestsOnFlight() == 0 &&
             !waiting_for_gem5_mem &&
             !flushing_spm)
         {

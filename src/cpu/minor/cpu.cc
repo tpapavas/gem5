@@ -585,1629 +585,561 @@ MinorCPU::NvDlaWriteReg(int accel_id, uint32_t data, Addr addr)
 void
 MinorCPU::accelStartCountBdma0(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "Start counting Bdma0 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_start_Bdma0 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            break;
-        case 1:
-            nvdla_device_1->nvdla_start_Bdma0 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto dev = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Bdma0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Bdma0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, dev);
 }
 
 void
 MinorCPU::accelEndCountBdma0(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "End counting Bdma0 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_end_Bdma0 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            nvdla_device_0->getStats().nvdla_total_Bdma0 +=
-                (nvdla_device_0->nvdla_end_Bdma0 -
-                 nvdla_device_0->nvdla_start_Bdma0);
-            break;
-        case 1:
-            nvdla_device_1->nvdla_end_Bdma0 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            nvdla_device_1->getStats().nvdla_total_Bdma0 +=
-                (nvdla_device_1->nvdla_end_Bdma0 -
-                 nvdla_device_1->nvdla_start_Bdma0);
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Bdma0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Bdma0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Bdma0 +=
+            (nvdla_device->nvdla_end_Bdma0 -
+            nvdla_device->nvdla_start_Bdma0);
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelStartCountBdma1(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "Start counting Bdma1 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_start_Bdma1 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            break;
-        case 1:
-            nvdla_device_1->nvdla_start_Bdma1 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
 
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Bdma1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Bdma1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelEndCountBdma1(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "End counting Bdma1 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_end_Bdma1 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            nvdla_device_0->getStats().nvdla_total_Bdma1 +=
-                (nvdla_device_0->nvdla_end_Bdma1 -
-                 nvdla_device_0->nvdla_start_Bdma1);
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting Bdma1 for DLA #%d @ %llu\n",
-                accel_id, nvdla_device_1->getTickfromWrapperNVDLA());
-            nvdla_device_1->nvdla_end_Bdma1 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            nvdla_device_1->getStats().nvdla_total_Bdma1 +=
-                (nvdla_device_1->nvdla_end_Bdma1 -
-                 nvdla_device_1->nvdla_start_Bdma1);
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Bdma1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Bdma1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Bdma1 +=
+            (nvdla_device->nvdla_end_Bdma1 -
+            nvdla_device->nvdla_start_Bdma1) ;
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelStartCountCdp0(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "Start counting Cdp0 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_start_Cdp0 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            break;
-        case 1:
-            nvdla_device_1->nvdla_start_Cdp0 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Cdp0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Cdp0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelEndCountCdp0(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "End counting Cdp0 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_end_Cdp0 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            nvdla_device_0->getStats().nvdla_total_Cdp0 +=
-                (nvdla_device_0->nvdla_end_Cdp0 -
-                 nvdla_device_0->nvdla_start_Cdp0);
-            break;
-        case 1:
-            nvdla_device_1->nvdla_end_Cdp0 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            nvdla_device_1->getStats().nvdla_total_Cdp0 +=
-                (nvdla_device_1->nvdla_end_Cdp0 -
-                 nvdla_device_1->nvdla_start_Cdp0);
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Cdp0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Cdp0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Cdp0 +=
+            (nvdla_device->nvdla_end_Cdp0 -
+            nvdla_device->nvdla_start_Cdp0);
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelStartCountCdp1(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "Start counting Cdp1 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_start_Cdp1 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            break;
-        case 1:
-            nvdla_device_1->nvdla_start_Cdp1 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Cdp1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Cdp1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelEndCountCdp1(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "End counting Cdp1 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_end_Cdp1 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            nvdla_device_0->getStats().nvdla_total_Cdp1 +=
-                (nvdla_device_0->nvdla_end_Cdp1 -
-                 nvdla_device_0->nvdla_start_Cdp1);
-            break;
-        case 1:
-            nvdla_device_1->nvdla_end_Cdp1 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            nvdla_device_1->getStats().nvdla_total_Cdp1 +=
-                (nvdla_device_1->nvdla_end_Cdp1 -
-                 nvdla_device_1->nvdla_start_Cdp1);
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Cdp1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Cdp1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Cdp1 +=
+            (nvdla_device->nvdla_end_Cdp1 -
+            nvdla_device->nvdla_start_Cdp1);
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelStartCountCmac0(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "Start counting Cmac0 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_start_Cmac0 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            break;
-        case 1:
-            nvdla_device_1->nvdla_start_Cmac0 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Cmac0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Cmac0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelEndCountCmac0(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "End counting Cmac0 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_end_Cmac0 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            nvdla_device_0->getStats().nvdla_total_Cmac0 +=
-                (nvdla_device_0->nvdla_end_Cmac0 -
-                 nvdla_device_0->nvdla_start_Cmac0);
-            break;
-        case 1:
-            nvdla_device_1->nvdla_end_Cmac0 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            nvdla_device_1->getStats().nvdla_total_Cmac0 +=
-                (nvdla_device_1->nvdla_end_Cmac0 -
-                 nvdla_device_1->nvdla_start_Cmac0);
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Cmac0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Cmac0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Cmac0 +=
+            (nvdla_device->nvdla_end_Cmac0 -
+            nvdla_device->nvdla_start_Cmac0);
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelStartCountCmac1(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "Start counting Cmac1 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_start_Cmac1 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            break;
-        case 1:
-            nvdla_device_1->nvdla_start_Cmac1 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Cmac1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Cmac1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelEndCountCmac1(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "End counting Cmac1 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_end_Cmac1 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            nvdla_device_0->getStats().nvdla_total_Cmac1 +=
-                (nvdla_device_0->nvdla_end_Cmac1 -
-                 nvdla_device_0->nvdla_start_Cmac1);
-            break;
-        case 1:
-            nvdla_device_1->nvdla_end_Cmac1 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            nvdla_device_1->getStats().nvdla_total_Cmac1 +=
-                (nvdla_device_1->nvdla_end_Cmac1 -
-                 nvdla_device_1->nvdla_start_Cmac1);
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Cmac1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Cmac1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Cmac1 +=
+            (nvdla_device->nvdla_end_Cmac1 -
+            nvdla_device->nvdla_start_Cmac1);
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelStartCountPdp0(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "Start counting Pdp0 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_start_Pdp0 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            break;
-        case 1:
-            nvdla_device_1->nvdla_start_Pdp0 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Pdp0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Pdp0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelEndCountPdp0(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "End counting Pdp0 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_end_Pdp0 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            nvdla_device_0->getStats().nvdla_total_Pdp0 +=
-                (nvdla_device_0->nvdla_end_Pdp0 -
-                 nvdla_device_0->nvdla_start_Pdp0);
-            break;
-        case 1:
-            nvdla_device_1->nvdla_end_Pdp0 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            nvdla_device_1->getStats().nvdla_total_Pdp0 +=
-                (nvdla_device_1->nvdla_end_Pdp0 -
-                 nvdla_device_1->nvdla_start_Pdp0);
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Pdp0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Pdp0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Pdp0 +=
+            (nvdla_device->nvdla_end_Pdp0 -
+            nvdla_device->nvdla_start_Pdp0);
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelStartCountPdp1(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "Start counting Pdp1 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_start_Pdp1 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            break;
-        case 1:
-            nvdla_device_1->nvdla_start_Pdp1 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Pdp1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Pdp1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelEndCountPdp1(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "End counting Pdp1 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_end_Pdp1 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            nvdla_device_0->getStats().nvdla_total_Pdp1 +=
-                (nvdla_device_0->nvdla_end_Pdp1 -
-                 nvdla_device_0->nvdla_start_Pdp1);
-            break;
-        case 1:
-            nvdla_device_1->nvdla_end_Pdp1 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            nvdla_device_1->getStats().nvdla_total_Pdp1 +=
-                (nvdla_device_1->nvdla_end_Pdp1 -
-                 nvdla_device_1->nvdla_start_Pdp1);
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Pdp1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Pdp1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Pdp1 +=
+            (nvdla_device->nvdla_end_Pdp1 -
+            nvdla_device->nvdla_start_Pdp1);
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelStartCountRubik0(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "Start counting Rubik0 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_start_Rubik0 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            break;
-        case 1:
-            nvdla_device_1->nvdla_start_Rubik0 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Rubik0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Rubik0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelEndCountRubik0(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "End counting Rubik0 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_end_Rubik0 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            nvdla_device_0->getStats().nvdla_total_Rubik0 +=
-                (nvdla_device_0->nvdla_end_Rubik0 -
-                 nvdla_device_0->nvdla_start_Rubik0);
-            break;
-        case 1:
-            nvdla_device_1->nvdla_end_Rubik0 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            nvdla_device_1->getStats().nvdla_total_Rubik0 +=
-                (nvdla_device_1->nvdla_end_Rubik0 -
-                 nvdla_device_1->nvdla_start_Rubik0);
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Rubik0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Rubik0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Rubik0 +=
+            (nvdla_device->nvdla_end_Rubik0 -
+            nvdla_device->nvdla_start_Rubik0);
+    }, nvdla_device);
+
 }
 
 void
 MinorCPU::accelStartCountRubik1(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "Start counting Rubik1 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_start_Rubik1 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            break;
-        case 1:
-            nvdla_device_1->nvdla_start_Rubik1 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Rubik1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Rubik1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelEndCountRubik1(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "End counting Rubik1 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_end_Rubik1 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            nvdla_device_0->getStats().nvdla_total_Rubik1 +=
-                (nvdla_device_0->nvdla_end_Rubik1 -
-                 nvdla_device_0->nvdla_start_Rubik1) ;
-            break;
-        case 1:
-            nvdla_device_1->nvdla_end_Rubik1 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            nvdla_device_1->getStats().nvdla_total_Rubik1 +=
-                (nvdla_device_1->nvdla_end_Rubik1 -
-                 nvdla_device_1->nvdla_start_Rubik1) ;
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Rubik1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Rubik1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Rubik1 +=
+            (nvdla_device->nvdla_end_Rubik1 -
+            nvdla_device->nvdla_start_Rubik1) ;
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelStartCountSdp0(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "Start counting Sdp0 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_start_Sdp0 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            break;
-        case 1:
-            nvdla_device_1->nvdla_start_Sdp0 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Sdp0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Sdp0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelEndCountSdp0(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "End counting Sdp0 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_end_Sdp0 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            nvdla_device_0->getStats().nvdla_total_Sdp0 +=
-                (nvdla_device_0->nvdla_end_Sdp0 -
-                 nvdla_device_0->nvdla_start_Sdp0);
-            break;
-        case 1:
-            nvdla_device_1->nvdla_end_Sdp0 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            nvdla_device_1->getStats().nvdla_total_Sdp0 +=
-                (nvdla_device_1->nvdla_end_Sdp0 -
-                 nvdla_device_1->nvdla_start_Sdp0);
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Sdp0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Sdp0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Sdp0 +=
+            (nvdla_device->nvdla_end_Sdp0 -
+            nvdla_device->nvdla_start_Sdp0) ;
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelStartCountSdp1(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "Start counting Sdp1 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_start_Sdp1 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            break;
-        case 1:
-            nvdla_device_1->nvdla_start_Sdp1 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            break;
-        default:
-            assert(false);
-    }
-}
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
 
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Sdp1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Sdp1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+}
 void
 MinorCPU::accelEndCountSdp1(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "End counting Sdp1 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_end_Sdp1 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            nvdla_device_0->getStats().nvdla_total_Sdp1 +=
-                (nvdla_device_0->nvdla_end_Sdp1 -
-                 nvdla_device_0->nvdla_start_Sdp1);
-            break;
-        case 1:
-            nvdla_device_1->nvdla_end_Sdp1 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            nvdla_device_1->getStats().nvdla_total_Sdp1 +=
-                (nvdla_device_1->nvdla_end_Sdp1 -
-                 nvdla_device_1->nvdla_start_Sdp1);
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Sdp1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Sdp1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Sdp1 +=
+            (nvdla_device->nvdla_end_Sdp1 -
+            nvdla_device->nvdla_start_Sdp1) ;
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelStartCountCacc0(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "Start counting Cacc0 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_start_Cacc0 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            break;
-        case 1:
-            nvdla_device_1->nvdla_start_Cacc0 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Cacc0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Cacc0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+
 }
 
 void
 MinorCPU::accelEndCountCacc0(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "End counting Cacc0 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_end_Cacc0 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            nvdla_device_0->getStats().nvdla_total_Cacc0 +=
-                (nvdla_device_0->nvdla_end_Cacc0 -
-                 nvdla_device_0->nvdla_start_Cacc0);
-            break;
-        case 1:
-            nvdla_device_1->nvdla_end_Cacc0 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            nvdla_device_1->getStats().nvdla_total_Cacc0 +=
-                (nvdla_device_1->nvdla_end_Cacc0 -
-                 nvdla_device_1->nvdla_start_Cacc0);
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Cacc0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Cacc0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Cacc0 +=
+            (nvdla_device->nvdla_end_Cacc0 -
+            nvdla_device->nvdla_start_Cacc0) ;
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelStartCountCacc1(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "Start counting Cacc1 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_start_Cacc1 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            break;
-        case 1:
-            nvdla_device_1->nvdla_start_Cacc1 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Cacc1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Cacc1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelEndCountCacc1(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "End counting Cacc1 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_end_Cacc1 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            nvdla_device_0->getStats().nvdla_total_Cacc1 +=
-                (nvdla_device_0->nvdla_end_Cacc1 -
-                 nvdla_device_0->nvdla_start_Cacc1);
-            break;
-        case 1:
-            nvdla_device_1->nvdla_end_Cacc1 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            nvdla_device_1->getStats().nvdla_total_Cacc1 +=
-                (nvdla_device_1->nvdla_end_Cacc1 -
-                 nvdla_device_1->nvdla_start_Cacc1);
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Cacc1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Cacc1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Cacc1 +=
+            (nvdla_device->nvdla_end_Cacc1 -
+            nvdla_device->nvdla_start_Cacc1);
+    }, nvdla_device);
+
 }
 
 void
 MinorCPU::accelStartCountCdmaDat0(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "Start counting CdmaDat0 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_start_CdmaDat0 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            break;
-        case 1:
-            nvdla_device_1->nvdla_start_CdmaDat0 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting CdmaDat0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_CdmaDat0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelEndCountCdmaDat0(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "End counting CdmaDat0 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_end_CdmaDat0 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            nvdla_device_0->getStats().nvdla_total_CdmaDat0 +=
-                (nvdla_device_0->nvdla_end_CdmaDat0 -
-                 nvdla_device_0->nvdla_start_CdmaDat0);
-            break;
-        case 1:
-            nvdla_device_1->nvdla_end_CdmaDat0 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            nvdla_device_1->getStats().nvdla_total_CdmaDat0 +=
-                (nvdla_device_1->nvdla_end_CdmaDat0 -
-                 nvdla_device_1->nvdla_start_CdmaDat0);
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting CdmaDat0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_CdmaDat0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_CdmaDat0 +=
+            (nvdla_device->nvdla_end_CdmaDat0 -
+            nvdla_device->nvdla_start_CdmaDat0);
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelStartCountCdmaDat1(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "Start counting CdmaDat1 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
 
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_start_CdmaDat1 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            break;
-        case 1:
-            nvdla_device_1->nvdla_start_CdmaDat1 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            break;
-        default:
-            assert(false);
-    }
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting CdmaDat1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_CdmaDat1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelEndCountCdmaDat1(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "End counting CdmaDat1 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_end_CdmaDat1 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            nvdla_device_0->getStats().nvdla_total_CdmaDat1 +=
-                (nvdla_device_0->nvdla_end_CdmaDat1 -
-                 nvdla_device_0->nvdla_start_CdmaDat1);
-            break;
-        case 1:
-            nvdla_device_1->nvdla_end_CdmaDat1 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            nvdla_device_1->getStats().nvdla_total_CdmaDat1 +=
-                (nvdla_device_1->nvdla_end_CdmaDat1 -
-                 nvdla_device_1->nvdla_start_CdmaDat1);
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting CdmaDat1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_CdmaDat1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_CdmaDat1 +=
+            (nvdla_device->nvdla_end_CdmaDat1 -
+            nvdla_device->nvdla_start_CdmaDat1);
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelStartCountCdmaWt0(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "Start counting CdmaWt0 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_start_CdmaWt0 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            break;
-        case 1:
-            nvdla_device_1->nvdla_start_CdmaWt0 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting CdmaWt0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_CdmaWt0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelEndCountCdmaWt0(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "End counting CdmaWt0 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_end_CdmaWt0 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            nvdla_device_0->getStats().nvdla_total_CdmaWt0 +=
-                (nvdla_device_0->nvdla_end_CdmaWt0 -
-                 nvdla_device_0->nvdla_start_CdmaWt0);
-            break;
-        case 1:
-            nvdla_device_1->nvdla_end_CdmaWt0 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            nvdla_device_1->getStats().nvdla_total_CdmaWt0 +=
-                (nvdla_device_1->nvdla_end_CdmaWt0 -
-                 nvdla_device_1->nvdla_start_CdmaWt0);
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting CdmaWt0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_CdmaWt0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_CdmaWt0 +=
+            (nvdla_device->nvdla_end_CdmaWt0 -
+            nvdla_device->nvdla_start_CdmaWt0);
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelStartCountCdmaWt1(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "Start counting CdmaWt1 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_start_CdmaWt1 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            break;
-        case 1:
-            nvdla_device_1->nvdla_start_CdmaWt1 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting CdmaWt1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_CdmaWt1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
 }
 
 void
 MinorCPU::accelEndCountCdmaWt1(int accel_id)
 {
-    DPRINTF(NvDlaDevice, "End counting CdmaWt1 for DLA #%d @ %llu\n",
-        accel_id, nvdla_device_0->getTickfromWrapperNVDLA());
-    switch(accel_id) {
-        case 0:
-            nvdla_device_0->nvdla_end_CdmaWt1 =
-                nvdla_device_0->getTickfromWrapperNVDLA();
-            nvdla_device_0->getStats().nvdla_total_CdmaWt1 +=
-                (nvdla_device_0->nvdla_end_CdmaWt1 -
-                 nvdla_device_0->nvdla_start_CdmaWt1);
-            break;
-        case 1:
-            nvdla_device_1->nvdla_end_CdmaWt1 =
-                nvdla_device_1->getTickfromWrapperNVDLA();
-            nvdla_device_1->getStats().nvdla_total_CdmaWt1 +=
-                (nvdla_device_1->nvdla_end_CdmaWt1 -
-                 nvdla_device_1->nvdla_start_CdmaWt1);
-            break;
-        default:
-            assert(false);
-    }
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting CdmaWt1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_CdmaWt1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_CdmaWt1 +=
+            (nvdla_device->nvdla_end_CdmaWt1 -
+            nvdla_device->nvdla_start_CdmaWt1);
+    }, nvdla_device);
 }
-
-
-/*
-void
-MinorCPU::accelStartCountBdma0(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice,"Start counting Bdma0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_start_Bdma0 = curTick();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "Start counting Bdma0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_start_Bdma0 = curTick();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelEndCountBdma0(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "End counting Bdma0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_end_Bdma0 = curTick();
-            nvdla_device_0->getStats().nvdla_total_Bdma0 +=
-                ticksToCycles(nvdla_device_0->nvdla_end_Bdma0 -
-                    nvdla_device_0->nvdla_start_Bdma0
-                ) / nvdla_device_0->getFreqRatio();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting Bdma0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_end_Bdma0 = curTick();
-            nvdla_device_1->getStats().nvdla_total_Bdma0 +=
-                ticksToCycles(nvdla_device_1->nvdla_end_Bdma0 -
-                    nvdla_device_1->nvdla_start_Bdma0
-                ) / nvdla_device_1->getFreqRatio();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelStartCountBdma1(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "Start counting Bdma1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_start_Bdma1 = curTick();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "Start counting Bdma1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_start_Bdma1 = curTick();
-            break;
-        default:
-            assert(false);
-    }
-
-}
-
-void
-MinorCPU::accelEndCountBdma1(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "End counting Bdma1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_end_Bdma1 = curTick();
-            nvdla_device_0->getStats().nvdla_total_Bdma1 +=
-                ticksToCycles(nvdla_device_0->nvdla_end_Bdma1 -
-                    nvdla_device_0->nvdla_start_Bdma1
-                ) / nvdla_device_0->getFreqRatio();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting Bdma1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_end_Bdma1 = curTick();
-            nvdla_device_1->getStats().nvdla_total_Bdma1 +=
-                ticksToCycles(nvdla_device_1->nvdla_end_Bdma1 -
-                    nvdla_device_1->nvdla_start_Bdma1
-                ) / nvdla_device_1->getFreqRatio();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelStartCountCdp0(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "Start counting Cdp0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_start_Cdp0 = curTick();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "Start counting Cdp0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_start_Cdp0 = curTick();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelEndCountCdp0(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "End counting Cdp0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_end_Cdp0 = curTick();
-            nvdla_device_0->getStats().nvdla_total_Cdp0 +=
-                ticksToCycles(nvdla_device_0->nvdla_end_Cdp0 -
-                    nvdla_device_0->nvdla_start_Cdp0
-                ) / nvdla_device_0->getFreqRatio();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting Cdp0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_end_Cdp0 = curTick();
-            nvdla_device_1->getStats().nvdla_total_Cdp0 +=
-                ticksToCycles(nvdla_device_1->nvdla_end_Cdp0 -
-                    nvdla_device_1->nvdla_start_Cdp0
-                ) / nvdla_device_1->getFreqRatio();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelStartCountCdp1(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "Start counting Cdp1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_start_Cdp1 = curTick();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "Start counting Cdp1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_start_Cdp1 = curTick();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelEndCountCdp1(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "End counting Cdp1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_end_Cdp1 = curTick();
-            nvdla_device_0->getStats().nvdla_total_Cdp1 +=
-                ticksToCycles(nvdla_device_0->nvdla_end_Cdp1 -
-                    nvdla_device_0->nvdla_start_Cdp1
-                ) / nvdla_device_0->getFreqRatio();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting Cdp1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_end_Cdp1 = curTick();
-            nvdla_device_1->getStats().nvdla_total_Cdp1 +=
-                ticksToCycles(nvdla_device_1->nvdla_end_Cdp1 -
-                    nvdla_device_1->nvdla_start_Cdp1
-                ) / nvdla_device_1->getFreqRatio();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelStartCountConv0(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "Start counting Conv0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_start_Conv0 = curTick();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "Start counting Conv0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_start_Conv0 = curTick();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelEndCountConv0(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "End counting Conv0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_end_Conv0 = curTick();
-            nvdla_device_0->getStats().nvdla_total_Conv0 +=
-                ticksToCycles(nvdla_device_0->nvdla_end_Conv0 -
-                    nvdla_device_0->nvdla_start_Conv0
-                ) / nvdla_device_0->getFreqRatio();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting Conv0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_end_Conv0 = curTick();
-            nvdla_device_1->getStats().nvdla_total_Conv0 +=
-                ticksToCycles(nvdla_device_1->nvdla_end_Conv0 -
-                    nvdla_device_1->nvdla_start_Conv0
-                ) / nvdla_device_1->getFreqRatio();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelStartCountConv1(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "Start counting Conv1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_start_Conv1 = curTick();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "Start counting Conv1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_start_Conv1 = curTick();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelEndCountConv1(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "End counting Conv1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_end_Conv1 = curTick();
-            nvdla_device_0->getStats().nvdla_total_Conv1 +=
-                ticksToCycles(nvdla_device_0->nvdla_end_Conv1 -
-                    nvdla_device_0->nvdla_start_Conv1
-                ) / nvdla_device_0->getFreqRatio();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting Conv1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_end_Conv1 = curTick();
-            nvdla_device_1->getStats().nvdla_total_Conv1 +=
-                ticksToCycles(nvdla_device_1->nvdla_end_Conv1 -
-                    nvdla_device_1->nvdla_start_Conv1
-                ) / nvdla_device_1->getFreqRatio();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelStartCountPdp0(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "Start counting Pdp0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_start_Pdp0 = curTick();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "Start counting Pdp0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_start_Pdp0 = curTick();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelEndCountPdp0(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "End counting Pdp0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_end_Pdp0 = curTick();
-            nvdla_device_0->getStats().nvdla_total_Pdp0 +=
-                ticksToCycles(nvdla_device_0->nvdla_end_Pdp0 -
-                    nvdla_device_0->nvdla_start_Pdp0
-                ) / nvdla_device_0->getFreqRatio();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting Pdp0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_end_Pdp0 = curTick();
-            nvdla_device_1->getStats().nvdla_total_Pdp0 +=
-                ticksToCycles(nvdla_device_1->nvdla_end_Pdp0 -
-                    nvdla_device_1->nvdla_start_Pdp0
-                ) / nvdla_device_1->getFreqRatio();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelStartCountPdp1(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "Start counting Pdp1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_start_Pdp1 = curTick();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "Start counting Pdp1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_start_Pdp1 = curTick();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelEndCountPdp1(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "End counting Pdp1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_end_Pdp1 = curTick();
-            nvdla_device_0->getStats().nvdla_total_Pdp1 +=
-                ticksToCycles(nvdla_device_0->nvdla_end_Pdp1 -
-                    nvdla_device_0->nvdla_start_Pdp1
-                ) / nvdla_device_0->getFreqRatio();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting Pdp1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_end_Pdp1 = curTick();
-            nvdla_device_1->getStats().nvdla_total_Pdp1 +=
-                ticksToCycles(nvdla_device_1->nvdla_end_Pdp1 -
-                    nvdla_device_1->nvdla_start_Pdp1
-                ) / nvdla_device_1->getFreqRatio();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelStartCountRubik0(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "Start counting Rubik0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_start_Rubik0 = curTick();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "Start counting Rubik0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_start_Rubik0 = curTick();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelEndCountRubik0(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "End counting Rubik0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_end_Rubik0 = curTick();
-            nvdla_device_0->getStats().nvdla_total_Rubik0 +=
-                ticksToCycles(nvdla_device_0->nvdla_end_Rubik0 -
-                    nvdla_device_0->nvdla_start_Rubik0
-                ) / nvdla_device_0->getFreqRatio();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting Rubik0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_end_Rubik0 = curTick();
-            nvdla_device_1->getStats().nvdla_total_Rubik0 +=
-                ticksToCycles(nvdla_device_1->nvdla_end_Rubik0 -
-                    nvdla_device_1->nvdla_start_Rubik0
-                ) / nvdla_device_1->getFreqRatio();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelStartCountRubik1(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "Start counting Rubik1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_start_Rubik1 = curTick();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "Start counting Rubik1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_start_Rubik1 = curTick();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelEndCountRubik1(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "End counting Rubik1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_end_Rubik1 = curTick();
-            nvdla_device_0->getStats().nvdla_total_Rubik1 +=
-                ticksToCycles(nvdla_device_0->nvdla_end_Rubik1 -
-                    nvdla_device_0->nvdla_start_Rubik1
-                ) / nvdla_device_0->getFreqRatio();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting Rubik1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_end_Rubik1 = curTick();
-            nvdla_device_1->getStats().nvdla_total_Rubik1 +=
-                ticksToCycles(nvdla_device_1->nvdla_end_Rubik1 -
-                    nvdla_device_1->nvdla_start_Rubik1
-                ) / nvdla_device_1->getFreqRatio();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelStartCountSdp0(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "Start counting Sdp0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_start_Sdp0 = curTick();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "Start counting Sdp0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_start_Sdp0 = curTick();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelEndCountSdp0(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "End counting Sdp0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_end_Sdp0 = curTick();
-            nvdla_device_0->getStats().nvdla_total_Sdp0 +=
-                ticksToCycles(nvdla_device_0->nvdla_end_Sdp0 -
-                    nvdla_device_0->nvdla_start_Sdp0
-                ) / nvdla_device_0->getFreqRatio();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting Sdp0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_end_Sdp0 = curTick();
-            nvdla_device_1->getStats().nvdla_total_Sdp0 +=
-                ticksToCycles(nvdla_device_1->nvdla_end_Sdp0 -
-                    nvdla_device_1->nvdla_start_Sdp0
-                ) / nvdla_device_1->getFreqRatio();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelStartCountSdp1(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "Start counting Sdp1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_start_Sdp1 = curTick();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "Start counting Sdp1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_start_Sdp1 = curTick();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelEndCountSdp1(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "End counting Sdp1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_end_Sdp1 = curTick();
-            nvdla_device_0->getStats().nvdla_total_Sdp1 +=
-                ticksToCycles(nvdla_device_0->nvdla_end_Sdp1 -
-                    nvdla_device_0->nvdla_start_Sdp1
-                ) / nvdla_device_0->getFreqRatio();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting Sdp1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_end_Sdp1 = curTick();
-            nvdla_device_1->getStats().nvdla_total_Sdp1 +=
-                ticksToCycles(nvdla_device_1->nvdla_end_Sdp1 -
-                    nvdla_device_1->nvdla_start_Sdp1
-                ) / nvdla_device_1->getFreqRatio();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelStartCountCacc0(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "Start counting Cacc0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_start_Cacc0 = curTick();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "Start counting Cacc0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_start_Cacc0 = curTick();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelEndCountCacc0(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "End counting Cacc0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_end_Cacc0 = curTick();
-            nvdla_device_0->getStats().nvdla_total_Cacc0 +=
-                ticksToCycles(nvdla_device_0->nvdla_end_Cacc0 -
-                    nvdla_device_0->nvdla_start_Cacc0
-                ) / nvdla_device_0->getFreqRatio();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting Cacc0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_end_Cacc0 = curTick();
-            nvdla_device_1->getStats().nvdla_total_Cacc0 +=
-                ticksToCycles(nvdla_device_1->nvdla_end_Cacc0 -
-                    nvdla_device_1->nvdla_start_Cacc0
-                ) / nvdla_device_1->getFreqRatio();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelStartCountCacc1(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "Start counting Cacc1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_start_Cacc1 = curTick();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "Start counting Cacc1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_start_Cacc1 = curTick();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelEndCountCacc1(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "End counting Cacc1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_end_Cacc1 = curTick();
-            nvdla_device_0->getStats().nvdla_total_Cacc1 +=
-                ticksToCycles(nvdla_device_0->nvdla_end_Cacc1 -
-                    nvdla_device_0->nvdla_start_Cacc1
-                ) / nvdla_device_0->getFreqRatio();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting Cacc1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_end_Cacc1 = curTick();
-            nvdla_device_1->getStats().nvdla_total_Cacc1 +=
-                ticksToCycles(nvdla_device_1->nvdla_end_Cacc1 -
-                    nvdla_device_1->nvdla_start_Cacc1
-                ) / nvdla_device_1->getFreqRatio();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelStartCountCdmaDat0(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "Start counting CdmaDat0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_start_CdmaDat0 = curTick();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "Start counting CdmaDat0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_start_CdmaDat0 = curTick();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelEndCountCdmaDat0(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "End counting CdmaDat0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_end_CdmaDat0 = curTick();
-            nvdla_device_0->getStats().nvdla_total_CdmaDat0 +=
-                ticksToCycles(nvdla_device_0->nvdla_end_CdmaDat0 -
-                    nvdla_device_0->nvdla_start_CdmaDat0
-                ) / nvdla_device_0->getFreqRatio();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting CdmaDat0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_end_CdmaDat0 = curTick();
-            nvdla_device_1->getStats().nvdla_total_CdmaDat0 +=
-                ticksToCycles(nvdla_device_1->nvdla_end_CdmaDat0 -
-                    nvdla_device_1->nvdla_start_CdmaDat0
-                ) / nvdla_device_1->getFreqRatio();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelStartCountCdmaDat1(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "Start counting CdmaDat1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_start_CdmaDat1 = curTick();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "Start counting CdmaDat1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_start_CdmaDat1 = curTick();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelEndCountCdmaDat1(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "End counting CdmaDat1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_end_CdmaDat1 = curTick();
-            nvdla_device_0->getStats().nvdla_total_CdmaDat1 +=
-                ticksToCycles(nvdla_device_0->nvdla_end_CdmaDat1 -
-                    nvdla_device_0->nvdla_start_CdmaDat1
-                ) / nvdla_device_0->getFreqRatio();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting CdmaDat1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_end_CdmaDat1 = curTick();
-            nvdla_device_1->getStats().nvdla_total_CdmaDat1 +=
-                ticksToCycles(nvdla_device_1->nvdla_end_CdmaDat1 -
-                    nvdla_device_1->nvdla_start_CdmaDat1
-                ) / nvdla_device_1->getFreqRatio();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelStartCountCdmaWt0(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "Start counting CdmaWt0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_start_CdmaWt0 = curTick();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "Start counting CdmaWt0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_start_CdmaWt0 = curTick();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelEndCountCdmaWt0(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "End counting CdmaWt0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_end_CdmaWt0 = curTick();
-            nvdla_device_0->getStats().nvdla_total_CdmaWt0 +=
-                ticksToCycles(nvdla_device_0->nvdla_end_CdmaWt0 -
-                    nvdla_device_0->nvdla_start_CdmaWt0
-                ) / nvdla_device_0->getFreqRatio();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting CdmaWt0 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_end_CdmaWt0 = curTick();
-            nvdla_device_1->getStats().nvdla_total_CdmaWt0 +=
-                ticksToCycles(nvdla_device_1->nvdla_end_CdmaWt0 -
-                    nvdla_device_1->nvdla_start_CdmaWt0
-                ) / nvdla_device_1->getFreqRatio();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelStartCountCdmaWt1(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "Start counting CdmaWt1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_start_CdmaWt1 = curTick();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "Start counting CdmaWt1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_start_CdmaWt1 = curTick();
-            break;
-        default:
-            assert(false);
-    }
-}
-
-void
-MinorCPU::accelEndCountCdmaWt1(int accel_id)
-{
-    switch(accel_id) {
-        case 0:
-            DPRINTF(NvDlaDevice, "End counting CdmaWt1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_0->nvdla_end_CdmaWt1 = curTick();
-            nvdla_device_0->getStats().nvdla_total_CdmaWt1 +=
-                ticksToCycles(nvdla_device_0->nvdla_end_CdmaWt1 -
-                    nvdla_device_0->nvdla_start_CdmaWt1
-                ) / nvdla_device_0->getFreqRatio();
-            break;
-        case 1:
-            DPRINTF(NvDlaDevice, "End counting CdmaWt1 for DLA #%d\n",
-                accel_id);
-            nvdla_device_1->nvdla_end_CdmaWt1 = curTick();
-            nvdla_device_1->getStats().nvdla_total_CdmaWt1 +=
-                ticksToCycles(nvdla_device_1->nvdla_end_CdmaWt1 -
-                    nvdla_device_1->nvdla_start_CdmaWt1
-                ) / nvdla_device_1->getFreqRatio();
-            break;
-        default:
-            assert(false);
-    }
-}
-*/
 
 } // namespace gem5
