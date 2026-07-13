@@ -47,6 +47,7 @@ NvDlaDeviceSE::NvDlaDeviceSE(const NvDlaDeviceSEParams &params) :
     onRead(false),
     netFinished(false),
     system(params.system),
+    cpu(params.cpu),
     enableObject(params.enableRTLObject),
     enableWaveform(params.enableWaveform),
     to_retry_vaddr(0),
@@ -82,6 +83,7 @@ NvDlaDeviceSE::NvDlaDeviceSE(const NvDlaDeviceSEParams &params) :
     {
     // fatal_if(!interrupt, "No NvDlaDeviceSE interrupt specified\n");
 
+    cpu->setNvDlaDevice(id_nvdla, this);
     switch (params.buffer_mode) {
         case 0:
             buffer_mode = BUF_MODE_ALL;
@@ -192,9 +194,11 @@ NvDlaDeviceSE::initNVDLA(bool use_shared_spm) {
 
     // wrapper trace from nvidia
     if (traceMode) {
+        std::cout << "trace loaded!!" << std::endl;
         trace = new TraceLoaderGem5(wr->csb, wr->axi_dbb, wr->axi_cvsram);
     } else {
         // reset NVDLA
+        std::cout << "reset NVDLA... at else " << std::endl;
         wr->init();
         // init some variable before exec of trace
         quiesc_timer = 200;
@@ -224,7 +228,9 @@ NvDlaDeviceSE::loadTraceNVDLA(char *ptr) {
     quiesc_timer = 200;
     waiting = 0;
 
-    schedule(tickEvent, nextCycle() + (freq_ratio - 1) * clockPeriod());
+    //schedule(tickEvent, nextCycle() + (freq_ratio - 1) * clockPeriod());
+    schedule(tickEvent,
+        nextCycle() + static_cast<Tick>(abs((freq_ratio-1.0))*clockPeriod()));
     sim_time = time(nullptr);
 }
 
@@ -271,6 +277,10 @@ NvDlaDeviceSE::processOutput(outputNVDLA& out) {
     // memory requests already in spm is dealt with in wrapper_nvdla
     // only one DMA request can be tackled at once
     if (!out.dma_read_buffer.empty()) {
+        std::cout << "DMA read req: addr "
+                  << std::hex << out.dma_read_buffer.front().first
+                  << ", len " << std::dec << out.dma_read_buffer.front().second
+                  << std::endl;
         auto& aux = out.dma_read_buffer.front();
 
         uint64_t real_addr = getRealAddr(aux.first, false);
@@ -282,7 +292,7 @@ NvDlaDeviceSE::processOutput(outputNVDLA& out) {
                    "addr 0x%08lx, len %d\n",
                    wr->tickcount, id_nvdla, aux.first, aux.second);
 #endif
-            // stats.num_dma_rd++;
+            stats.num_dma_rd++;
             // after successfully calling DMA, pop aux
             out.dma_read_buffer.pop();
         }   // if previous DMA request not sent, have to stop here
@@ -303,7 +313,7 @@ NvDlaDeviceSE::processOutput(outputNVDLA& out) {
                    "addr 0x%08lx, len %ld\n",
                    wr->tickcount, id_nvdla, aux.first, aux.second.size());
 #endif
-            // stats.num_dma_wr++;
+            stats.num_dma_wr++;
             out.dma_write_buffer.pop_front();
         }
     }
@@ -378,6 +388,27 @@ NvDlaDeviceSE::runIterationNVDLA() {
     }
 
     outputNVDLA& output = wr->tick();
+    getStats().nvdla_rtl_cycles = getTickfromWrapperNVDLA();
+    //getStats().nvdla_rtl_cycles_idle =
+        // (getStats().nvdla_rtl_cycles.value() -
+        // getStats().nvdla_total_Bdma0.value() -
+        // getStats().nvdla_total_Bdma1.value() -
+        // getStats().nvdla_total_Cdp0.value() -
+        // getStats().nvdla_total_Cdp1.value() -
+        // getStats().nvdla_total_Cmnv0.value() -
+        // getStats().nvdla_total_Conv1.value() -
+        // getStats().nvdla_total_Pdp0.value() -
+        // getStats().nvdla_total_Pdp1.value() -
+        // getStats().nvdla_total_Rubik0.value() -
+        // getStats().nvdla_total_Rubik1.value() -
+        // getStats().nvdla_total_Sdp0.value() -
+        // getStats().nvdla_total_Sdp1.value() -
+        // getStats().nvdla_total_Cacc0.value() -
+        // getStats().nvdla_total_Cacc1.value() -
+        // getStats().nvdla_total_CdmaDat0.value() -
+        // getStats().nvdla_total_CdmaDat1.value() -
+        // getStats().nvdla_total_CdmaWt0.value() -
+        // getStats().nvdla_total_CdmaWt1.value());
 
     if (dma_enable) {
         try_get_dma_read_data(spm_line_size);
@@ -430,6 +461,15 @@ NvDlaDeviceSE::tick() {
     // schedule new iteration
     if (!wr->csb->done() || (quiesc_timer-- > 0)
             || waiting_for_gem5_mem || flushing_spm) {
+
+        if (wr->axi_dbb->getRequestsOnFlight() == 0 &&
+            wr->axi_cvsram->getRequestsOnFlight() == 0 &&
+            !waiting_for_gem5_mem &&
+            !flushing_spm)
+        {
+            stats.nvdla_idle_cycles++;
+        }
+
         // Update stats
         // stats.nvdla_avgReqCVSRAM.sample(
         //     wr->axi_cvsram->getRequestsOnFlight());
@@ -437,7 +477,10 @@ NvDlaDeviceSE::tick() {
         stats.nvdla_cycles++;
         cyclesNVDLA++;
         runIterationNVDLA();
-        schedule(tickEvent, nextCycle() + (freq_ratio - 1) * clockPeriod());
+        //schedule(tickEvent, nextCycle() + (freq_ratio - 1) * clockPeriod());
+        schedule(tickEvent,
+            nextCycle() +
+            static_cast<Tick>(abs((freq_ratio-1.0))*clockPeriod()));
     } else {
         if (traceMode) {
             // we have finished running the trace
@@ -475,7 +518,10 @@ NvDlaDeviceSE::tick() {
             cpuPort.sendPacket(packet);
         } else {
             runIterationNVDLA();
-            schedule(tickEvent, nextCycle() + (freq_ratio-1) * clockPeriod());
+            //schedule(tickEvent, nextCycle() + (freq_ratio-1)*clockPeriod());
+            schedule(tickEvent,
+                nextCycle() +
+                static_cast<Tick>(abs((freq_ratio-1.0))*clockPeriod()));
         }
     }
     // check DRAM Ports
@@ -805,6 +851,7 @@ NvDlaDeviceSE::try_get_dma_read_data(uint32_t size) {
     uint8_t dma_temp_buffer[size];
     bool get_success = dma_rd_engine->tryGet(dma_temp_buffer, size);
     if (get_success) {
+        std::cout << " Success Got DMA "<< std::endl;
         // we assume only DBB involves DMA.
         // SRAM should not be accessed with DMA
         wr->axi_dbb->inflight_dma_resp(dma_temp_buffer, size);
@@ -829,6 +876,19 @@ NvDlaDeviceSE::regStats() {
     stats.nvdla_writes
         .name(name() + ".nvdla_writes")
         .desc("Number of writes performed");
+
+    stats.nvdla_csb_reads
+        .name(name() + ".nvdla_csb_reads")
+        .desc("Number of reads performed");
+
+    stats.nvdla_csb_writes
+        .name(name() + ".nvdla_csb_writes")
+        .desc("Number of writes performed");
+
+    stats.nvdla_idle_cycles
+        .name(name() + ".nvdla_idle_cycles")
+        .desc("Number of idle cycles");
+
     stats.nvdla_avgReqCVSRAM
         .init(256)
         .name(name() + ".nvdla_avgReqCVSRAM")
@@ -842,12 +902,80 @@ NvDlaDeviceSE::regStats() {
         .flags(pdf);
 
 
-    // stats.num_dma_rd
-    //     .name(name() + ".num_dma_rd")
-    //     .desc("Number of DMA read issued by this NVDLA");
-    // stats.num_dma_wr
-    //     .name(name() + ".num_dma_wr")
-    //     .desc("Number of DMA write issued by this NVDLA");
+    stats.num_dma_rd
+        .name(name() + ".num_dma_rd")
+        .desc("Number of DMA read issued by this NVDLA");
+    stats.num_dma_wr
+        .name(name() + ".num_dma_wr")
+        .desc("Number of DMA write issued by this NVDLA");
+
+    stats.nvdla_rtl_cycles
+        .name(name() + ".nvdla_rtl_cycles")
+        .desc("Number of RTL cycles to run the trace from RTL");
+    //stats.nvdla_rtl_cycles_idle
+    //    .name(name() + ".nvdla_rtl_cycles_idle")
+    //    .desc("Number of RTL cycles to run the trace from RTL");
+
+    stats.nvdla_total_Bdma0
+        .name(name() + ".nvdla_total_Bdma0")
+        .desc("Number of Cycles to run the Bdma0 from RTL");
+
+    stats.nvdla_total_Bdma1
+        .name(name() + ".nvdla_total_Bdma1")
+        .desc("Number of Cycles to run the Bdma1 from RTL");
+
+    stats.nvdla_total_Cdp0
+        .name(name() + ".nvdla_total_Cdp0")
+        .desc("Number of Cycles to run the Cdp0 from RTL");
+
+    stats.nvdla_total_Cdp1
+        .name(name() + ".nvdla_total_Cdp1")
+        .desc("Number of Cycles to run the Cdp1 from RTL");
+
+    stats.nvdla_total_Cmac0
+        .name(name() + ".nvdla_total_Cmac0")
+        .desc("Number of Cycles to run the Cmac0 from RTL");
+
+    stats.nvdla_total_Cmac1
+        .name(name() + ".nvdla_total_Cmac1")
+        .desc("Number of Cycles to run the Cmac1 from RTL");
+
+    stats.nvdla_total_Pdp0
+        .name(name() + ".nvdla_total_Pdp0")
+        .desc("Number of Cycles to run the Pdp0 from RTL");
+    stats.nvdla_total_Pdp1
+        .name(name() + ".nvdla_total_Pdp1")
+        .desc("Number of Cycles to run the Pdp1 from RTL");
+    stats.nvdla_total_Rubik0
+        .name(name() + ".nvdla_total_Rubik0")
+        .desc("Number of Cycles to run the Rubik0 from RTL");
+    stats.nvdla_total_Rubik1
+        .name(name() + ".nvdla_total_Rubik1")
+        .desc("Number of Cycles to run the Rubik1 from RTL");
+    stats.nvdla_total_Sdp0
+        .name(name() + ".nvdla_total_Sdp0")
+        .desc("Number of Cycles to run the Sdp0 from RTL");
+    stats.nvdla_total_Sdp1
+        .name(name() + ".nvdla_total_Sdp1")
+        .desc("Number of Cycles to run the Sdp1 from RTL ");
+    stats.nvdla_total_Cacc0
+        .name(name() + ".nvdla_total_Cacc0")
+        .desc("Number of Cycles to run the Cacc0 from RTL");
+    stats.nvdla_total_Cacc1
+        .name(name() + ".nvdla_total_Cacc1")
+        .desc("Number of Cycles to run the Cacc1 from RTL");
+    stats.nvdla_total_CdmaDat0
+        .name(name() + ".nvdla_total_CdmaDat0")
+        .desc("Number of Cycles to run the CdmaDat0 from RTL");
+    stats.nvdla_total_CdmaDat1
+        .name(name() + ".nvdla_total_CdmaDat1")
+        .desc("Number of Cycles to run the CdmaDat1 from RTL");
+    stats.nvdla_total_CdmaWt0
+        .name(name() + ".nvdla_total_CdmaWt0")
+        .desc("Number of Cycles to run the CdmaWt0 from RTL");
+    stats.nvdla_total_CdmaWt1
+        .name(name() + ".nvdla_total_CdmaWt1")
+        .desc("Number of Cycles to run the CdmaWt1 from RTL");
 }
 
 //// rtlObject code ////
@@ -992,6 +1120,7 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
             write_addr, pkt->getLE<uint32_t>());
 
             owner->wr->csb->write(write_addr, pkt->getLE<uint32_t>());
+            owner->stats.nvdla_csb_writes++;
 
             if (write_addr == 0xFFFF0003) {
                 // owner->interrupt->clear();
@@ -1001,9 +1130,16 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
             owner->onRead = true;
             if (!owner->engineStarted) {
                 owner->engineStarted = true;
+                //owner->schedule(owner->tickEvent,
+                //    owner->nextCycle() +
+                //    (owner->freq_ratio - 1) * owner->clockPeriod());
+
                 owner->schedule(owner->tickEvent,
                     owner->nextCycle() +
-                    (owner->freq_ratio - 1) * owner->clockPeriod());
+                    static_cast<Tick>(
+                        (owner->freq_ratio-1)*owner->clockPeriod()
+                    )
+                );
             }
 
             uint32_t *data = new uint32_t;
@@ -1040,6 +1176,7 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
             DPRINTF(NvDlaDeviceSE, "read req: reg: 0x%08x\n", read_addr);
 
             owner->wr->csb->read(read_addr, 0xffffffff, 0);
+            owner->stats.nvdla_csb_reads++;
 
             // temp solution
             while (!owner->wr->csb->done()) {
@@ -1315,7 +1452,10 @@ NvDlaDeviceSE::read(PacketPtr pkt)
     onRead = true;
     if (!engineStarted) {
         engineStarted = true;
-        schedule(tickEvent, nextCycle() + (freq_ratio - 1) * clockPeriod());
+        //schedule(tickEvent, nextCycle() + (freq_ratio - 1) * clockPeriod());
+        schedule(tickEvent,
+            nextCycle() +
+            static_cast<Tick>(abs((freq_ratio-1.0))*clockPeriod()));
     }
 
     uint32_t *data = new uint32_t;
@@ -1344,6 +1484,7 @@ NvDlaDeviceSE::read(PacketPtr pkt)
     DPRINTF(NvDlaDeviceSE, "read req: reg: 0x%08x\n", read_addr);
 
     wr->csb->read(read_addr, 0xffffffff, 0);
+    stats.nvdla_csb_reads++;
 
     // half solution
     // while (!wr->csb->done()) {
@@ -1533,6 +1674,7 @@ NvDlaDeviceSE::write(PacketPtr pkt)
       write_addr, pkt->getLE<uint32_t>());
 
     wr->csb->write(write_addr, pkt->getLE<uint32_t>());
+    stats.nvdla_csb_writes++;
 
     if (write_addr == 0xFFFF0003) {
         // interrupt->clear();

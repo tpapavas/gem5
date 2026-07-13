@@ -47,9 +47,10 @@
 
 #include "wrapper_nvdla.hh"
 #include <iostream>
+uint64_t _tickcount = 0;
 
 double sc_time_stamp() {
-  return double_t(0);
+  return double_t(_tickcount);
 }
 
 embeddedBuffer* Wrapper_nvdla::shared_spm = nullptr;
@@ -330,6 +331,7 @@ outputNVDLA& Wrapper_nvdla::tick() {
 
     tickcount++;    // align this tick advancement with stats.txt
 
+    _tickcount++;
     return output;
 }
 
