@@ -499,7 +499,7 @@ def main():
 
     # Program to execute
     # binary = 'tests/test-progs/nvdla-se/nvdla-se'
-    binary = "/data/imanthopoulos/nvdla/sw/kumd/umd/out/apps/runtime/nvdla_runtime/nvdla_runtime"
+    binary = "<custom-path-to-runtime>/nvdla_runtime"
     # Simulation system
     system = System(multi_thread=True)
 
@@ -576,7 +576,7 @@ def main():
             id_nvdla=i,
             pio_addr=0x40000000 + 0x20040 * i,
             pio_size=0x20040,
-            dma_enable=True,
+            dma_enable=True,  # options.dma_enable,
             spm_latency=options.embed_spm_lat,
             spm_line_size=1024,
             spm_size=options.embed_spm_size,
@@ -650,27 +650,17 @@ def main():
     process = Process()
 
     # Command is a list which begins with the executable (like argv)
-    p1 = [
+    process.cmd = [
         binary,
         "--loadable",
-        "/data/imanthopoulos/vp_big_g1/models/resnet18/resnet18_nvsmall_int8.nvdla",
+        "/data/tpapavasileiou/tools/GEM5-NVDLA/nvdla/gem5-plus/nonet.nvdla",
         "--image",
-        "/data/imanthopoulos/vp_big_g1/models/resnet18/cat_32.jpg",
+        "/data/tpapavasileiou/tools/GEM5-NVDLA/nvdla/gem5-plus/random_2x2_bin.pgm",
+        # "--normalize",
+        # "255",
         "--dlas",
         options.dlas,
     ]
-
-    p2 = [
-        binary,
-        "--loadable",
-        "/data/imanthopoulos/vp_big_g1/models/lenet5/lenet5_nvsmall_int8.nvdla",
-        "--image",
-        "/data/imanthopoulos/vp_big_g1/models/lenet5/eight_invert.pgm",
-        "--dlas",
-        options.dlas,
-    ]
-
-    process.cmd = p2
 
     # Set the cpu to use the process as its workload and create thread contexts
     system.cpu.workload = [process, process]
