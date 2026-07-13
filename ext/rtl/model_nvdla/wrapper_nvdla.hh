@@ -212,6 +212,7 @@ public:
     uint64_t tickcount;
     int id_nvdla;
 
+    VerilatedVcdC* tfp;
     //! CSB Wrapper
     CSBMaster *csb;
     AXIResponder *axi_dbb;

@@ -157,6 +157,8 @@ public:
                  const unsigned int maxReq,
                  bool _dma_enable);
 
+    void addLatency();
+
     uint32_t getRequestsOnFlight();
 
     // In this function we read from memory

@@ -216,7 +216,7 @@ def addOptions(parser):
     # options.freq_ratio
     parser.add_argument(
         "--freq-ratio",
-        type=int,
+        type=float,
         default=1,
         help="=(frequency of LITTLE CPU) / (frequency of NVDLA)",
     )
@@ -505,7 +505,9 @@ def main():
 
     # Clock configuration
     system.clk_domain = SrcClockDomain()
-    system.clk_domain.clock = "2GHz"
+    # system.clk_domain.clock = "3GHz"
+    print("Little CPU clock:", options.little_cpu_clock)
+    system.clk_domain.clock = options.little_cpu_clock
     system.clk_domain.voltage_domain = VoltageDomain()
 
     # Memory configuration
@@ -570,6 +572,7 @@ def main():
     system.iobridge.mem_side_port = system.iobus.cpu_side_ports
     system.iobridge.cpu_side_port = system.membus.mem_side_ports
 
+    print("options.freq_ratio:", options.freq_ratio)
     # Create NVDLA Device
     system.nvdla = [
         NvDlaDeviceSE(
@@ -581,6 +584,7 @@ def main():
             spm_line_size=1024,
             spm_size=options.embed_spm_size,
             use_shared_spm=options.shared_spm,
+            freq_ratio=options.freq_ratio,
             assoc=options.embed_spm_assoc.lower(),
             base_addr_dram=0x40000000,
             base_addr_sram=0x0,

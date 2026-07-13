@@ -483,6 +483,225 @@ triggerWorkloadEvent(ThreadContext *tc)
     tc->getSystemPtr()->workload->event(tc);
 }
 
+void accel_start_count_bdma_0(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_bdma_0()\n");
+    tc->getCpuPtr()->accelStartCountBdma0(accel_id);
+}
+
+void accel_end_count_bdma_0(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_bdma_0()\n");
+    tc->getCpuPtr()->accelEndCountBdma0(accel_id);
+}
+
+void accel_start_count_bdma_1(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_bdma_1()\n");
+    tc->getCpuPtr()->accelStartCountBdma1(accel_id);
+}
+
+void accel_end_count_bdma_1(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_bdma_1()\n");
+    tc->getCpuPtr()->accelEndCountBdma1(accel_id);
+}
+
+void accel_start_count_cdp_0(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_cdp_0()\n");
+    tc->getCpuPtr()->accelStartCountCdp0(accel_id);
+}
+
+void accel_end_count_cdp_0(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_cdp_0()\n");
+    tc->getCpuPtr()->accelEndCountCdp0(accel_id);
+}
+
+void accel_start_count_cdp_1(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_cdp_1()\n");
+    tc->getCpuPtr()->accelStartCountCdp1(accel_id);
+}
+
+void accel_end_count_cdp_1(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_cdp_1()\n");
+    tc->getCpuPtr()->accelEndCountCdp1(accel_id);
+}
+
+void accel_start_count_cmac_0(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_cmac_0()\n");
+    tc->getCpuPtr()->accelStartCountCmac0(accel_id);
+}
+
+void accel_end_count_cmac_0(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_cmac_0()\n");
+    tc->getCpuPtr()->accelEndCountCmac0(accel_id);
+}
+
+void accel_start_count_cmac_1(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_cmac_1()\n");
+    tc->getCpuPtr()->accelStartCountCmac1(accel_id);
+}
+
+void accel_end_count_cmac_1(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_cmac_1()\n");
+    tc->getCpuPtr()->accelEndCountCmac1(accel_id);
+}
+
+void accel_start_count_pdp_0(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_pdp_0()\n");
+    tc->getCpuPtr()->accelStartCountPdp0(accel_id);
+}
+
+void accel_end_count_pdp_0(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_pdp_0()\n");
+    tc->getCpuPtr()->accelEndCountPdp0(accel_id);
+}
+
+void accel_start_count_pdp_1(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_pdp_1()\n");
+    tc->getCpuPtr()->accelStartCountPdp1(accel_id);
+}
+
+void accel_end_count_pdp_1(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_pdp_1()\n");
+    tc->getCpuPtr()->accelEndCountPdp1(accel_id);
+}
+
+void accel_start_count_rubik_0(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_rubik_0()\n");
+    tc->getCpuPtr()->accelStartCountRubik0(accel_id);
+}
+
+void accel_end_count_rubik_0(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_rubik_0()\n");
+    tc->getCpuPtr()->accelEndCountRubik0(accel_id);
+}
+
+void accel_start_count_rubik_1(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_rubik_1()\n");
+    tc->getCpuPtr()->accelStartCountRubik1(accel_id);
+}
+
+void accel_end_count_rubik_1(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_rubik_1()\n");
+    tc->getCpuPtr()->accelEndCountRubik1(accel_id);
+}
+
+void accel_start_count_sdp_0(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_sdp_0()\n");
+    tc->getCpuPtr()->accelStartCountSdp0(accel_id);
+}
+
+void accel_end_count_sdp_0(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_sdp_0()\n");
+    tc->getCpuPtr()->accelEndCountSdp0(accel_id);
+}
+
+void accel_start_count_sdp_1(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_sdp_1()\n");
+    tc->getCpuPtr()->accelStartCountSdp1(accel_id);
+}
+
+void accel_end_count_sdp_1(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_sdp_1()\n");
+    tc->getCpuPtr()->accelEndCountSdp1(accel_id);
+}
+
+void accel_start_count_cacc_0(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_cacc_0()\n");
+    tc->getCpuPtr()->accelStartCountCacc0(accel_id);
+}
+
+void accel_end_count_cacc_0(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_cacc_0()\n");
+    tc->getCpuPtr()->accelEndCountCacc0(accel_id);
+}
+
+void accel_start_count_cacc_1(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_cacc_1()\n");
+    tc->getCpuPtr()->accelStartCountCacc1(accel_id);
+}
+
+void accel_end_count_cacc_1(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_cacc_1()\n");
+    tc->getCpuPtr()->accelEndCountCacc1(accel_id);
+}
+
+void accel_start_count_cdma_dat_0(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_cdma_dat_0()\n");
+    tc->getCpuPtr()->accelStartCountCdmaDat0(accel_id);
+}
+
+void accel_end_count_cdma_dat_0(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_cdma_dat_0()\n");
+    tc->getCpuPtr()->accelEndCountCdmaDat0(accel_id);
+}
+
+void accel_start_count_cdma_dat_1(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_cdma_dat_1()\n");
+    tc->getCpuPtr()->accelStartCountCdmaDat1(accel_id);
+}
+
+void accel_end_count_cdma_dat_1(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_cdma_dat_1()\n");
+    tc->getCpuPtr()->accelEndCountCdmaDat1(accel_id);
+}
+
+void accel_start_count_cdma_wt_0(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_cdma_wt_0()\n");
+    tc->getCpuPtr()->accelStartCountCdmaWt0(accel_id);
+}
+
+void accel_end_count_cdma_wt_0(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_cdma_wt_0()\n");
+    tc->getCpuPtr()->accelEndCountCdmaWt0(accel_id);
+}
+
+void accel_start_count_cdma_wt_1(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_start_count_cdma_wt_1()\n");
+    tc->getCpuPtr()->accelStartCountCdmaWt1(accel_id);
+}
+
+void accel_end_count_cdma_wt_1(ThreadContext *tc, int accel_id)
+{
+    DPRINTF(PseudoInst, "pseudo_inst::accel_end_count_cdma_wt_1()\n");
+    tc->getCpuPtr()->accelEndCountCdmaWt1(accel_id);
+}
+
+
+
+
 //
 // This function is executed when annotated work items begin.  Depending on
 // what the user specified at the command line, the simulation may exit and/or

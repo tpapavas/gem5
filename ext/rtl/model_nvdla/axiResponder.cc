@@ -40,7 +40,24 @@ AXIResponder::AXIResponder(struct connections _dla,
         txn.rid = 0;
         txn.rlast = 0;
         for (int j = 0; j < AXI_WIDTH / 8; j++) {
-            txn.rdata[i] = 0xAA;
+            txn.rdata[j] = 0xAA; // txn.rdata[i] = 0xAA;
+        }
+
+        r0_fifo.push(txn);
+    }
+    // addLatency();
+}
+
+void AXIResponder::addLatency(){
+    for (int i = 0; i < AXI_R_LATENCY; i++) {
+        axi_r_txn txn;
+
+        txn.rvalid = 0;
+        txn.rvalid = 0;
+        txn.rid = 0;
+        txn.rlast = 0;
+        for (int j = 0; j < AXI_WIDTH / 8; j++) {
+            txn.rdata[j] = 0xAA;
         }
 
         r0_fifo.push(txn);
@@ -201,6 +218,7 @@ AXIResponder::eval_ram() {
         }
 
         r0_fifo.push(txn);
+        // addLatency();
     }
 
     *dla.r_rvalid = 0;
@@ -271,7 +289,7 @@ AXIResponder::eval_timing() {
     /* write data */
     if (*dla.w_wvalid) {
         axi_w_txn txn;
-#ifndef NV_SMALL_EN
+#ifndef NV_SMALL_EN  // where did NO_DATA go ???
         for (int i = 0; i < AXI_WIDTH / 32; i++) {
             txn.wdata[4 * i    ] = (dla.w_wdata[i]      ) & 0xFF;
             txn.wdata[4 * i + 1] = (dla.w_wdata[i] >>  8) & 0xFF;

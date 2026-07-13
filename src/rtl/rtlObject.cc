@@ -48,7 +48,7 @@ rtlObject::rtlObject(const rtlObjectParams &params) :
         params.name + " retryTranslate"),
     cyclesStat(0)
 {
-
+    std::cout << "Creating RTL Object " << params.name << std::endl;
 }
 
 

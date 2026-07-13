@@ -60,6 +60,8 @@ rtlNVDLA::rtlNVDLA(const rtlNVDLAParams &params) :
     use_fake_mem(params.use_fake_mem),
     print_path(params.print_path) {
 
+    std::cout <<" Create rtlNVDLA" << std::endl;
+
     switch (params.buffer_mode) {
         case 0:
             buffer_mode = BUF_MODE_ALL;
@@ -366,7 +368,7 @@ rtlNVDLA::tick() {
         // stats.nvdla_avgReqCVSRAM.sample(
         //     wr->axi_cvsram->getRequestsOnFlight());
         stats.nvdla_avgReqDBBIF.sample(wr->axi_dbb->getRequestsOnFlight());
-        stats.nvdla_cycles++;
+        stats.nvdla_cycles = wr->tickcount;
         cyclesNVDLA++;
         runIterationNVDLA();
         schedule(tickEvent, nextCycle() + (freq_ratio - 1) * clockPeriod());
@@ -731,6 +733,10 @@ rtlNVDLA::regStats() {
     stats.nvdla_cycles
         .name(name() + ".nvdla_cycles")
         .desc("Number of Cycles to run the trace");
+
+    stats.nvdla_idle_cycles
+        .name(name() + ".nvdla_idle_cycles")
+        .desc("Number of idle cycles");
 
     stats.nvdla_reads
         .name(name() + ".nvdla_reads")

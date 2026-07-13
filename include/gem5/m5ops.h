@@ -42,7 +42,7 @@ void m5_quiesce(void);
 void m5_quiesce_ns(uint64_t ns);
 void m5_quiesce_cycle(uint64_t cycles);
 uint64_t m5_quiesce_time(void);
-uint64_t m5_rpns();
+uint64_t m5_rpns(void);
 void m5_wake_cpu(uint64_t cpuid);
 
 void m5_exit(uint64_t ns_delay);
@@ -62,7 +62,7 @@ void m5_debug_break(void);
 void m5_switch_cpu(void);
 void m5_dist_toggle_sync(void);
 void m5_add_symbol(uint64_t addr, const char *symbol);
-void m5_load_symbol();
+void m5_load_symbol(void);
 void m5_panic(void);
 void m5_work_begin(uint64_t workid, uint64_t threadid);
 void m5_work_end(uint64_t workid, uint64_t threadid);
@@ -73,6 +73,44 @@ uint64_t m5_wait_accel(uint64_t addr, uint64_t elements);
 uint64_t m5_wait_accel_id(int accel_id);
 uint32_t m5_nvdla_read_reg(int accel_id, uint64_t addr);
 uint32_t m5_nvdla_write_reg(int accel_id, uint32_t data, uint64_t addr);
+
+void m5_nvdla_start_count_bdma_0(int accel_id);
+void m5_nvdla_end_count_bdma_0(int accel_id);
+void m5_nvdla_start_count_bdma_1(int accel_id);
+void m5_nvdla_end_count_bdma_1(int accel_id);
+void m5_nvdla_start_count_cdp_0(int accel_id);
+void m5_nvdla_end_count_cdp_0(int accel_id);
+void m5_nvdla_start_count_cdp_1(int accel_id);
+void m5_nvdla_end_count_cdp_1(int accel_id);
+void m5_nvdla_start_count_cmac_0(int accel_id);
+void m5_nvdla_end_count_cmac_0(int accel_id);
+void m5_nvdla_start_count_cmac_1(int accel_id);
+void m5_nvdla_end_count_cmac_1(int accel_id);
+void m5_nvdla_start_count_pdp_0(int accel_id);
+void m5_nvdla_end_count_pdp_0(int accel_id);
+void m5_nvdla_start_count_pdp_1(int accel_id);
+void m5_nvdla_end_count_pdp_1(int accel_id);
+void m5_nvdla_start_count_rubik_0(int accel_id);
+void m5_nvdla_end_count_rubik_0(int accel_id);
+void m5_nvdla_start_count_rubik_1(int accel_id);
+void m5_nvdla_end_count_rubik_1(int accel_id);
+void m5_nvdla_start_count_sdp_0(int accel_id);
+void m5_nvdla_end_count_sdp_0(int accel_id);
+void m5_nvdla_start_count_sdp_1(int accel_id);
+void m5_nvdla_end_count_sdp_1(int accel_id);
+void m5_nvdla_start_count_cacc_0(int accel_id);
+void m5_nvdla_end_count_cacc_0(int accel_id);
+void m5_nvdla_start_count_cacc_1(int accel_id);
+void m5_nvdla_end_count_cacc_1(int accel_id);
+void m5_nvdla_start_count_cdma_dat_0(int accel_id);
+void m5_nvdla_end_count_cdma_dat_0(int accel_id);
+void m5_nvdla_start_count_cdma_dat_1(int accel_id);
+void m5_nvdla_end_count_cdma_dat_1(int accel_id);
+void m5_nvdla_start_count_cdma_wt_0(int accel_id);
+void m5_nvdla_end_count_cdma_wt_0(int accel_id);
+void m5_nvdla_start_count_cdma_wt_1(int accel_id);
+void m5_nvdla_end_count_cdma_wt_1(int accel_id);
+
 bool m5_nvdla_got_response(void);
 uint32_t m5_nvdla_get_data(void);
 /*
@@ -81,7 +119,7 @@ uint32_t m5_nvdla_get_data(void);
  * such as what PC it came from, what register values are, or the context of
  * the workload itself (is this SE mode? which OS is running?).
  */
-void m5_workload();
+void m5_workload(void);
 
 /*
  * Create _addr and _semi versions all declarations, e.g. m5_exit_addr and
