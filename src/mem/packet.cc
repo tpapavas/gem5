@@ -532,4 +532,7 @@ Packet::getHtmTransactionUid() const
     return htmTransactionUid;
 }
 
+template uint32_t Packet::getLE<uint32_t>() const;
+
+
 } // namespace gem5
