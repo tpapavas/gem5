@@ -47,6 +47,9 @@
 
 #include "wrapper_nvdla.hh"
 #include <iostream>
+
+#define VM_TRACE 1
+
 uint64_t _tickcount = 0;
 
 double sc_time_stamp() {
@@ -56,6 +59,16 @@ double sc_time_stamp() {
 embeddedBuffer* Wrapper_nvdla::shared_spm = nullptr;
 uint64_t* Wrapper_nvdla::print_buffer = nullptr;
 uint32_t Wrapper_nvdla::buf_ptr = 0;
+uint64_t ticks = 0;
+
+#if VM_TRACE
+#include <verilated_vcd_c.h>
+VerilatedVcdC* tfp;
+
+void _close_trace() {
+	if (tfp) tfp->close();
+}
+#endif
 
 Wrapper_nvdla::Wrapper_nvdla(int id_nvdla, const unsigned int maxReq,
                              bool _dma_enable, int _spm_latency, int _spm_line_size, int _spm_line_num,
@@ -180,6 +193,14 @@ Wrapper_nvdla::Wrapper_nvdla(int id_nvdla, const unsigned int maxReq,
 #else
     axi_cvsram = nullptr;
 #endif
+
+#if VM_TRACE
+    Verilated::traceEverOn(true);
+	tfp = new VerilatedVcdC;
+	dla->trace(tfp, 99);
+	tfp->open("trace.vcd");
+	atexit(_close_trace);
+#endif
 }
 
 
@@ -229,10 +250,18 @@ void Wrapper_nvdla::init() {
         dla->dla_core_clk = 1;
         dla->dla_csb_clk = 1;
         dla->eval();
+        ticks++;
+#if VM_TRACE
+        tfp->dump(ticks);
+#endif
         
         dla->dla_core_clk = 0;
         dla->dla_csb_clk = 0;
         dla->eval();
+        ticks++;
+#if VM_TRACE
+        tfp->dump(ticks);
+#endif
     }
 
     dla->dla_reset_rstn = 0;
@@ -243,10 +272,18 @@ void Wrapper_nvdla::init() {
         dla->dla_core_clk = 1;
         dla->dla_csb_clk = 1;
         dla->eval();
+        ticks++;
+#if VM_TRACE
+        tfp->dump(ticks);
+#endif
         
         dla->dla_core_clk = 0;
         dla->dla_csb_clk = 0;
         dla->eval();
+        ticks++;
+#if VM_TRACE
+        tfp->dump(ticks);
+#endif
     }
     
     dla->dla_reset_rstn = 1;
@@ -257,10 +294,18 @@ void Wrapper_nvdla::init() {
         dla->dla_core_clk = 1;
         dla->dla_csb_clk = 1;
         dla->eval();
-        
+        ticks++;
+#if VM_TRACE
+        tfp->dump(ticks);
+#endif
+
         dla->dla_core_clk = 0;
         dla->dla_csb_clk = 0;
         dla->eval();
+        ticks++;
+#if VM_TRACE
+        tfp->dump(ticks);
+#endif
     }
 }
 
@@ -324,10 +369,18 @@ outputNVDLA& Wrapper_nvdla::tick() {
     dla->dla_core_clk = 1;
     dla->dla_csb_clk = 1;
     dla->eval();
+    ticks++;
+#if VM_TRACE
+        tfp->dump(ticks);
+#endif
 
     dla->dla_core_clk = 0;
     dla->dla_csb_clk = 0;
     dla->eval();
+    ticks++;
+#if VM_TRACE
+        tfp->dump(ticks);
+#endif
 
     tickcount++;    // align this tick advancement with stats.txt
 
