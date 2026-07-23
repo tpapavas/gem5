@@ -47,17 +47,14 @@
 
 #include "wrapper_nvdla.hh"
 #include <iostream>
-
-#define VM_TRACE 1
-
-#if VM_TRACE
 #include <verilated_vcd_c.h>
-VerilatedVcdC* tfp;
 
+#define VM_TRACE 0
+
+VerilatedVcdC* tfp;
 void _close_trace() {
 	if (tfp) tfp->close();
 }
-#endif
 
 uint64_t _tickcount = 0;
 
