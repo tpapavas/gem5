@@ -51,7 +51,7 @@
 // Add #define NV_SMALL_EN if compiling for nv_small
 // otherwise default is nv_full
 
-#define NV_SMALL_EN
+//#define NV_SMALL_EN
 
 #ifndef NV_SMALL_EN
 

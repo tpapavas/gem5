@@ -50,6 +50,15 @@
 
 #define VM_TRACE 1
 
+#if VM_TRACE
+#include <verilated_vcd_c.h>
+VerilatedVcdC* tfp;
+
+void _close_trace() {
+	if (tfp) tfp->close();
+}
+#endif
+
 uint64_t _tickcount = 0;
 
 double sc_time_stamp() {
@@ -60,15 +69,6 @@ embeddedBuffer* Wrapper_nvdla::shared_spm = nullptr;
 uint64_t* Wrapper_nvdla::print_buffer = nullptr;
 uint32_t Wrapper_nvdla::buf_ptr = 0;
 uint64_t ticks = 0;
-
-#if VM_TRACE
-#include <verilated_vcd_c.h>
-VerilatedVcdC* tfp;
-
-void _close_trace() {
-	if (tfp) tfp->close();
-}
-#endif
 
 Wrapper_nvdla::Wrapper_nvdla(int id_nvdla, const unsigned int maxReq,
                              bool _dma_enable, int _spm_latency, int _spm_line_size, int _spm_line_num,
@@ -201,6 +201,7 @@ Wrapper_nvdla::Wrapper_nvdla(int id_nvdla, const unsigned int maxReq,
 	tfp->open("trace.vcd");
 	atexit(_close_trace);
 #endif
+
 }
 
 
@@ -262,6 +263,7 @@ void Wrapper_nvdla::init() {
 #if VM_TRACE
         tfp->dump(ticks);
 #endif
+
     }
 
     dla->dla_reset_rstn = 0;
@@ -276,6 +278,7 @@ void Wrapper_nvdla::init() {
 #if VM_TRACE
         tfp->dump(ticks);
 #endif
+
         
         dla->dla_core_clk = 0;
         dla->dla_csb_clk = 0;

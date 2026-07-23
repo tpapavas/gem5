@@ -35,8 +35,10 @@ configs/dram/lowp_sweep.cfg
 
 .idea/
 *.o
+!verilated_vcd_c.o
 *.so
 *.a
+!libVNV_nvdla__ALL.a
 bsc-util/validation_nvdla
 ext/rtl/model_nvdla/**/verilator_nvdla/
 # ext/rtl/model_nvdla/gem5-nvdla-runtime/umd/external/**/src/*
