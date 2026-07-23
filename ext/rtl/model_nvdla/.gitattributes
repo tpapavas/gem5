@@ -1,0 +1,1 @@
+verilator_nvdla_full/libVNV_nvdla__ALL.a filter=lfs diff=lfs merge=lfs -text
