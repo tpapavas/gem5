@@ -29,10 +29,18 @@
  */
 
 #include "dev/arm/nvdla_device.hh"
+
+#include "../ext/rtl/model_nvdla/wrapper_nvdla.hh"
 #include "debug/NvDlaDevice.hh"
 #include "debug/NvDlaDeviceDebug.hh"
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
+
+#ifdef NV_SMALL_EN
+#define INTR_STATUS_ADDR (0xffff0403)
+#else
+#define INTR_STATUS_ADDR (0xffff0003)
+#endif
 
 namespace gem5
 {
@@ -1059,7 +1067,7 @@ NvDlaDevice::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
 
             owner->wr->csb->write(write_addr, pkt->getLE<uint32_t>());
 
-            if (write_addr == 0xFFFF0003) {
+            if (write_addr == INTR_STATUS_ADDR) {
                 owner->interrupt->clear();
             }
         } else {
@@ -1566,7 +1574,7 @@ NvDlaDevice::write(PacketPtr pkt)
 
     wr->csb->write(write_addr, pkt->getLE<uint32_t>());
 
-    if (write_addr == 0xFFFF0003) {
+    if (write_addr == INTR_STATUS_ADDR) {
         interrupt->clear();
     }
 
