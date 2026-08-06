@@ -428,6 +428,21 @@ NvDlaDevice::tick() {
     // schedule new iteration
     if (!wr->csb->done() || (quiesc_timer-- > 0)
             || waiting_for_gem5_mem || flushing_spm) {
+
+        bool cvsram_requests_zero = true;
+        if (wr->axi_cvsram) {
+            cvsram_requests_zero =
+                (wr->axi_cvsram->getRequestsOnFlight() == 0);
+        }
+
+        if (wr->axi_dbb->getRequestsOnFlight() == 0 &&
+            cvsram_requests_zero &&
+            !waiting_for_gem5_mem &&
+            !flushing_spm)
+        {
+            stats.nvdla_idle_cycles++;
+        }
+
         // Update stats
         // stats.nvdla_avgReqCVSRAM.sample(
         //     wr->axi_cvsram->getRequestsOnFlight());
@@ -1066,6 +1081,7 @@ NvDlaDevice::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
             write_addr, pkt->getLE<uint32_t>());
 
             owner->wr->csb->write(write_addr, pkt->getLE<uint32_t>());
+            owner->stats.nvdla_csb_writes++;
 
             if (write_addr == INTR_STATUS_ADDR) {
                 owner->interrupt->clear();
@@ -1092,6 +1108,7 @@ NvDlaDevice::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
             DPRINTF(NvDlaDevice, "read req: reg: 0x%08x\n", read_addr);
 
             owner->wr->csb->read(read_addr, 0xffffffff, 0);
+            owner->stats.nvdla_csb_reads++;
 
             // temp solution
             while (!owner->wr->csb->done()) {
@@ -1383,6 +1400,7 @@ NvDlaDevice::read(PacketPtr pkt)
     DPRINTF(NvDlaDevice, "read req: reg: 0x%08x\n", read_addr);
 
     wr->csb->read(read_addr, 0xffffffff, 0);
+    stats.nvdla_csb_reads++;
 
     // half solution
     // while (!wr->csb->done()) {
@@ -1573,6 +1591,7 @@ NvDlaDevice::write(PacketPtr pkt)
       write_addr, pkt->getLE<uint32_t>());
 
     wr->csb->write(write_addr, pkt->getLE<uint32_t>());
+    stats.nvdla_csb_writes++;
 
     if (write_addr == INTR_STATUS_ADDR) {
         interrupt->clear();

@@ -462,8 +462,14 @@ NvDlaDeviceSE::tick() {
     if (!wr->csb->done() || (quiesc_timer-- > 0)
             || waiting_for_gem5_mem || flushing_spm) {
 
+        bool cvsram_requests_zero = true;
+        if (wr->axi_cvsram) {
+            cvsram_requests_zero =
+                (wr->axi_cvsram->getRequestsOnFlight() == 0);
+        }
+
         if (wr->axi_dbb->getRequestsOnFlight() == 0 &&
-            //wr->axi_cvsram->getRequestsOnFlight() == 0 &&
+            cvsram_requests_zero &&
             !waiting_for_gem5_mem &&
             !flushing_spm)
         {
