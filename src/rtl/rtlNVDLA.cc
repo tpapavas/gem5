@@ -317,10 +317,15 @@ rtlNVDLA::runIterationNVDLA() {
     if (!waiting_for_gem5_mem) {
         if (!use_fake_mem) {
             wr->axi_dbb->eval_timing();
-            wr->axi_cvsram->eval_timing();
+            if (wr->axi_cvsram) { // if not nullptr
+                wr->axi_cvsram->eval_timing();
+            }
         } else {
             wr->axi_dbb->eval_ram();
-            wr->axi_cvsram->eval_ram();
+            if (wr->axi_cvsram) { // if not nullptr
+               wr->axi_cvsram->eval_ram();
+            }
+
         }
     }
 
