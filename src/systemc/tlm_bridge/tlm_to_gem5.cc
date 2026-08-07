@@ -161,6 +161,14 @@ payload2packet(RequestorID _id, tlm::tlm_generic_payload &trans)
         Request::Flags flags;
         req = std::make_shared<Request>(
             trans.get_address(), trans.get_data_length(), flags, _id);
+
+        std::vector<bool> byte_enabled_data_mask(trans.get_data_length(),
+                                                 true);
+        for (int i = 0; i < trans.get_data_length(); i++) {
+            byte_enabled_data_mask[i] =
+                (trans.get_byte_enable_ptr()[i] == TLM_BYTE_ENABLED);
+        }
+        req->setByteEnable(byte_enabled_data_mask);
     }
 
 
@@ -436,8 +444,14 @@ TlmToGem5Bridge<BITWIDTH>::nb_transport_fw(
 
     // check the transaction attributes for unsupported features ...
     if (byteEnable != 0) {
-        trans.set_response_status(tlm::TLM_BYTE_ENABLE_ERROR_RESPONSE);
-        return tlm::TLM_COMPLETED;
+        /**
+         * TODO: Let's try to allow this...
+         */
+        DPRINTF(TlmBridge, "%s: Byte-enabled transaction (t: %d)\n", __func__,
+            sc_core::sc_time_stamp().value()
+        );
+        // trans.set_response_status(tlm::TLM_BYTE_ENABLE_ERROR_RESPONSE);
+        // return tlm::TLM_COMPLETED;
     }
     if (width < len) { // is this a burst request?
         trans.set_response_status(tlm::TLM_BURST_ERROR_RESPONSE);
