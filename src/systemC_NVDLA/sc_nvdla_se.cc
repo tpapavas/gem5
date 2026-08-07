@@ -178,17 +178,17 @@ void ScNvDlaSE::b_transport_dbb(tlm::tlm_generic_payload &trans,
               << " bel=" << trans.get_byte_enable_length()
               << " time=" << std::dec << sc_time_stamp().value() << std::endl;
 
-    unsigned char *be = trans.get_byte_enable_ptr();
-    unsigned int bel = trans.get_byte_enable_length();
-    trans.set_byte_enable_ptr(nullptr);
-    trans.set_byte_enable_length(0);
+    // unsigned char *be = trans.get_byte_enable_ptr();
+    // unsigned int bel = trans.get_byte_enable_length();
+    // trans.set_byte_enable_ptr(nullptr);
+    // trans.set_byte_enable_length(0);
 
-    dbb_init->b_transport(trans, delay); // TO GEM5
     /**
      * TODO: Check the 2 following cmds if they are necessary
      */
-    trans.set_byte_enable_ptr(be);
-    trans.set_byte_enable_length(bel);
+    // trans.set_byte_enable_ptr(be);
+    // trans.set_byte_enable_length(bel);
+    dbb_init->b_transport(trans, delay); // TO GEM5
 
 
     std::cout << "[DBB RSP] addr=0x" << std::hex << trans.get_address()

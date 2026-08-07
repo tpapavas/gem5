@@ -1005,7 +1005,13 @@ Execute::commitInst(MinorDynInstPtr inst, bool early_memory_issue,
         /* Check to see if this instruction suspended the current thread. */
         if (!inst->isFault() &&
             thread->status() == ThreadContext::Suspended &&
-            branch.isBubble() && /* It didn't branch too */
+            /* It didn't branch too, or its branch does not change the
+             * stream (e.g. a syscall predicted taken to pc+4 that gives
+             * CorrectlyPredictedBranch). Otherwise the stream is never
+             * changed and younger insts of this thread would commit
+             * while it is Suspended. */
+            (branch.isBubble() ||
+             !BranchData::isStreamChange(branch.reason)) &&
             !isInterrupted(thread_id)) /* Don't suspend if we have
                 interrupts */
         {
