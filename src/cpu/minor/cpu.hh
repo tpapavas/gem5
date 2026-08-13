@@ -44,7 +44,15 @@
 #ifndef __CPU_MINOR_CPU_HH__
 #define __CPU_MINOR_CPU_HH__
 
+#include <cstdint>
+#include <deque>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <string>
+
 #include "base/compiler.hh"
+#include "base/output.hh"
 #include "base/random.hh"
 #include "cpu/base.hh"
 #include "cpu/minor/activity.hh"
@@ -52,6 +60,8 @@
 #include "cpu/simple_thread.hh"
 #include "enums/ThreadPolicy.hh"
 #include "params/BaseMinorCPU.hh"
+#include "sim/core.hh"
+#include "sim/full_system.hh"
 
 namespace gem5
 {
@@ -259,6 +269,47 @@ class MinorCPU : public BaseCPU
      *  enumeration Pipeline::StageId */
     void wakeupOnEvent(unsigned int stage_id);
     EventFunctionWrapper *fetchEventWrapper;
+
+  private:
+    struct NvDlaPendingRead
+    {
+        int accelId;
+        Addr addr;
+        bool interruptWait;
+
+        NvDlaPendingRead(
+            int id,
+            Addr address,
+            bool isInterruptWait)
+            : accelId(id),
+              addr(address),
+              interruptWait(isInterruptWait)
+        {
+        }
+    };
+
+    uint32_t NvDlaTxnCommandPrefix = 0xffff0000u;
+
+    std::deque<NvDlaPendingRead> nvdlaPendingReads;
+
+    OutputStream *nvdlaTraceFile = nullptr;
+
+    bool nvdlaInterruptWaitWritten = false;
+
+    void openNvDlaTrace();
+
+    uint16_t nvDlaTraceRegisterAddress(Addr addr) const;
+
+    void writeNvDlaInterruptTrace(uint32_t interruptValue);
+
+    void writeNvDlaReadTrace(
+        Addr addr,
+        uint32_t expectedData,
+        uint32_t mask = 0xffffffff);
+
+    void writeNvDlaWriteTrace(
+        Addr addr,
+        uint32_t data);
 };
 
 } // namespace gem5
