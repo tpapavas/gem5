@@ -513,6 +513,12 @@ def main():
     # Memory configuration
     system.mem_mode = "timing"
     system.mem_ranges = [AddrRange("1GB")]
+    NVDLA_SHARED_BASE = 0x20000000
+    NVDLA_SHARED_SIZE = 0x20000000
+    NVDLA_PIO_BASE = 0x40000000
+    NVDLA_PIO_STRIDE = 0x20040
+    cpu_cacheable_range = AddrRange(start=0x00000000, size=NVDLA_SHARED_BASE)
+    nvdla_shared_range = AddrRange(start=NVDLA_SHARED_BASE, size=NVDLA_SHARED_SIZE)
     # system.mem_ranges.append(AddrRange(start=0xC0000000, size="1GB"))
 
     # Create CPU
@@ -530,11 +536,13 @@ def main():
     # Create L1 caches
     system.cpu.icache = L1Cache()
     system.cpu.dcache = L1Cache()
-    system.cpu.dcache.addr_ranges = system.mem_ranges
+    system.cpu.dcache.addr_ranges = [cpu_cacheable_range]
 
     # Connect L1I cache to the CPU
     system.cpu.icache.cpu_side = system.cpu.icache_port
-    system.cpu.dcache.cpu_side = system.cpu.dcache_port
+    system.cpu_dmem_xbar = L2XBar()
+    system.cpu.dcache_port = system.cpu_dmem_xbar.cpu_side_ports
+    system.cpu.dcache.cpu_side = system.cpu_dmem_xbar.mem_side_ports
 
     # # Connect Gemmini device to the CPU and L1D to Gemmini device
     # # system.gemmini_dev.cpu_side = system.cpu.dcache_port
@@ -549,6 +557,7 @@ def main():
 
     # Create L2 cache
     system.l2cache = L2Cache()
+    system.l2cache.addr_ranges = [cpu_cacheable_range]
 
     # Link L2 cache with L1 to L2 interconnect
     system.l2cache.cpu_side = system.l2bus.mem_side_ports
@@ -558,6 +567,9 @@ def main():
 
     # Link L2 with interconnect
     system.l2cache.mem_side = system.membus.cpu_side_ports
+    system.nvdla_shared_bridge = Bridge(delay="1ns", ranges=[nvdla_shared_range])
+    system.nvdla_shared_bridge.cpu_side_port = system.cpu_dmem_xbar.mem_side_ports
+    system.nvdla_shared_bridge.mem_side_port = system.membus.cpu_side_ports
 
     # # For NO CACHE system
     # system.cpu.icache_port = system.membus.cpu_side_ports
@@ -567,7 +579,7 @@ def main():
     # system.gemmini_dev.dma_port = system.l2bus.cpu_side_ports
     system.iobus = IOXBar()
     system.iobridge = Bridge(delay="50ns")
-    system.iobridge.ranges = [AddrRange(start=0x40000000, size="1GB")]
+    system.iobridge.ranges = [AddrRange(start=NVDLA_PIO_BASE, size=NVDLA_PIO_STRIDE * options.dlas)]
 
     system.iobridge.mem_side_port = system.iobus.cpu_side_ports
     system.iobridge.cpu_side_port = system.membus.mem_side_ports
@@ -577,8 +589,8 @@ def main():
     system.nvdla = [
         NvDlaDeviceSE(
             id_nvdla=i,
-            pio_addr=0x40000000 + 0x20040 * i,
-            pio_size=0x20040,
+            pio_addr=NVDLA_PIO_BASE + NVDLA_PIO_STRIDE * i,
+            pio_size=NVDLA_PIO_STRIDE,
             dma_enable=True,  # options.dma_enable,
             spm_latency=options.embed_spm_lat,
             spm_line_size=1024,
@@ -676,9 +688,9 @@ def main():
     # Instantiate all of the objects we've created above
     m5.instantiate()
 
-    # Dedicate upper 1GB to Gemmini device
+    # Dedicate NVDLA shared DRAM
     system.cpu.workload[0].map(
-        0x2000_0000, 0x2000_0000, 0x6000_0000, cacheable=False
+        NVDLA_SHARED_BASE, NVDLA_SHARED_BASE, NVDLA_SHARED_SIZE, cacheable=False
     )
 
     print("========== Beginning simulation ==========")
