@@ -185,6 +185,7 @@ public:
     // callback methods, called by gem5 ports in rtlNVDLA when data is returned
     void inflight_resp(uint64_t addr, const uint8_t* data);
     void inflight_dma_resp(const uint8_t* data, uint32_t len);
+    void request_line_fill(uint64_t spm_line_addr);
 
     // prefetching-related
     void add_rd_var_log_entry(uint64_t addr, uint32_t size);

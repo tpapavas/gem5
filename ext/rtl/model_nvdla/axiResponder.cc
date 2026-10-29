@@ -13,6 +13,7 @@
 #define PRINT_DEBUG 1
 
 #include <assert.h>
+#include <map>       // [B_SPACING]
 #include "axiResponder.hh"
 
 AXIResponder::AXIResponder(struct connections _dla,
@@ -338,37 +339,47 @@ AXIResponder::eval_timing() {
         }
 
         bool cache_write = (wrapper->buf_mode == BUF_MODE_ALL);
-        if (dma_enable) {
-            // intermediate variables and outputs should be written to spm (actually, all writes belong to this type)
-            if (cache_write)
-                wrapper->spm->write_spm_axi_line_with_mask(awtxn.awaddr, wtxn.wdata, wtxn.wstrb, awtxn.awid);
-            else {  // todo: temporarily ignoring masks
-                wrapper->tryMergeDMAWriteReq(awtxn.awaddr, wtxn.wdata, AXI_WIDTH / 8);
+        uint64_t spm_line_addr = 0;
+        if (dma_enable && cache_write)
+            spm_line_addr = awtxn.awaddr & ~(uint64_t)(wrapper->spm->spm_line_size - 1);
+        if (dma_enable && cache_write && !wrapper->spm->check_has_line(spm_line_addr)) {
+            // write miss: the beat covers only part of the line, so fetch the whole line from memory
+            // first; otherwise the bytes this beat does not write would be garbage in the spm and be
+            // written back over memory. The beat stays in the FIFOs and is retried once the line is in.
+            request_line_fill(spm_line_addr);
+        } else {
+            if (dma_enable) {
+                // intermediate variables and outputs should be written to spm (actually, all writes belong to this type)
+                if (cache_write)
+                    wrapper->spm->write_spm_axi_line_with_mask(awtxn.awaddr, wtxn.wdata, wtxn.wstrb, awtxn.awid);
+                else {  // todo: temporarily ignoring masks
+                    wrapper->tryMergeDMAWriteReq(awtxn.awaddr, wtxn.wdata, AXI_WIDTH / 8);
+                }
+            } else {
+                wrapper->addLongWriteReq(sram, true, cache_write, awtxn.awaddr, AXI_WIDTH / 8, wtxn.wdata, wtxn.wstrb);
             }
-        } else {
-            wrapper->addLongWriteReq(sram, true, cache_write, awtxn.awaddr, AXI_WIDTH / 8, wtxn.wdata, wtxn.wstrb);
+
+
+            if (wtxn.wlast) {
+                #ifdef PRINT_DEBUG
+                    printf("(%lu) nvdla#%d %s: write, last tick\n", wrapper->tickcount, wrapper->id_nvdla, name);
+                #endif
+                aw_fifo.pop();
+
+                axi_b_txn btxn;
+                btxn.bid = awtxn.awid;
+                b_fifo.push(std::move(btxn));
+            } else {
+                #ifdef PRINT_DEBUG
+                    printf("(%lu) nvdla#%d %s: write, ticks remaining\n", wrapper->tickcount, wrapper->id_nvdla, name);
+                #endif
+
+                awtxn.awlen--;
+                awtxn.awaddr += AXI_WIDTH / 8;
+            }
+
+            w_fifo.pop();
         }
-
-
-        if (wtxn.wlast) {
-            #ifdef PRINT_DEBUG
-                printf("(%lu) nvdla#%d %s: write, last tick\n", wrapper->tickcount, wrapper->id_nvdla, name);
-            #endif
-            aw_fifo.pop();
-
-            axi_b_txn btxn;
-            btxn.bid = awtxn.awid;
-            b_fifo.push(std::move(btxn));
-        } else {
-            #ifdef PRINT_DEBUG
-                printf("(%lu) nvdla#%d %s: write, ticks remaining\n", wrapper->tickcount, wrapper->id_nvdla, name);
-            #endif
-
-            awtxn.awlen--;
-            awtxn.awaddr += AXI_WIDTH / 8;
-        }
-
-        w_fifo.pop();
     }
 
     /* read response */
@@ -423,14 +434,23 @@ AXIResponder::eval_timing() {
     }
 
     /* write response */
+    // [B_SPACING] at most one write ack (B) every other NVDLA tick: the spacing NVDLA always saw
+    // before the write-miss fix. Releasing held writes otherwise produced acks on consecutive ticks
+    // and NVDLA stopped writing (tasks/04_gem5_verilator_wrong_results/HANG_AFTER_FIX.md, approach A).
+    static std::map<const AXIResponder *, uint64_t> last_b_tick;
+    auto last_b = last_b_tick.find(this);
+    const bool b_spaced = last_b == last_b_tick.end() || wrapper->tickcount >= last_b->second + 2;
+
     *dla.b_bvalid = 0;
-    if (*dla.b_bready && !b_fifo.empty()) {
+    if (*dla.b_bready && !b_fifo.empty() && b_spaced) {
         *dla.b_bvalid = 1;
 
         axi_b_txn &txn = b_fifo.front();
         *dla.b_bid = txn.bid;
         b_fifo.pop();
+        last_b_tick[this] = wrapper->tickcount;
     }
+
 }
 
 
@@ -691,6 +711,25 @@ AXIResponder::inflight_dma_resp(const uint8_t* data, uint32_t len) {
     inflight_dma_attr.erase(addr_it);
     inflight_dma_addr_queue.pop();
     inflight_count_for_sets[(addr / wrapper->spm->spm_line_size) % wrapper->spm->num_sets]--;
+}
+
+// Fetch a whole spm line from memory for a write miss (same DMA path as a read miss, without a
+// waiting read). Nothing to do if a fetch of this line is already in flight.
+void
+AXIResponder::request_line_fill(uint64_t spm_line_addr) {
+    std::map<uint64_t, DMAAttr>::iterator map_it;
+    bool alloc_succ;
+    std::tie(map_it, alloc_succ) = inflight_dma_attr.emplace(spm_line_addr, DMAAttr());
+    if (!alloc_succ)
+        return;
+
+#ifndef AXI_RESP_FAST_IO
+    printf("(%lu) DMA read req issued for write miss, addr 0x%08lx\n", wrapper->tickcount, spm_line_addr);
+#endif
+    map_it->second.is_bypass = false;
+    inflight_dma_addr_queue.push(spm_line_addr);
+    wrapper->addDMAReadReq(spm_line_addr, wrapper->spm->spm_line_size);
+    inflight_count_for_sets[(spm_line_addr / wrapper->spm->spm_line_size) % wrapper->spm->num_sets]++;
 }
 
 void
