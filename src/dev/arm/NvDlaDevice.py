@@ -200,3 +200,15 @@ class NvDlaDeviceSE(BasicPioDevice):
     use_fake_mem = Param.Bool(False, "Whether to use fake memory to simulate")
 
     print_path = Param.String("", "The path to store output logs of NVDLA")
+
+    exit_on_first_access = Param.Bool(
+        False, "Exit the simulation loop on the first access to this NVDLA"
+    )
+
+    checkpoint_at_cycle = Param.UInt64(
+        0, "Exit the simulation loop at this NVDLA cycle, for a checkpoint"
+    )
+
+    checkpoint_each_layer = Param.Bool(
+        False, "Exit the simulation loop at every NVDLA interrupt (layer end)"
+    )

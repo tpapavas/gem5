@@ -33,6 +33,7 @@
 #include <unordered_set>
 
 #include <cpu/thread_context.hh>
+#include <sim/serialize.hh>
 
 namespace gem5
 {
@@ -103,6 +104,8 @@ class WaiterState
 
 typedef std::list<WaiterState> WaiterList;
 
+class System;
+
 /**
  * FutexMap class holds a map of all futexes used in the system
  */
@@ -137,6 +140,13 @@ class FutexMap : public std::unordered_map<FutexKey, WaiterList>
      * futex wait operation on any of the futexes tracked by this FutexMap.
      */
     bool is_waiting(ThreadContext *tc);
+
+    /** Saves the waiters as context ids, keeping their queue order */
+    void serializeWaiters(CheckpointOut &cp) const;
+
+    /** Rebuilds the waiters. The threads are already suspended by the
+     *  restored thread state, so they are not suspended again. */
+    void unserializeWaiters(CheckpointIn &cp, System *sys);
 
   private:
 

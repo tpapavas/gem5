@@ -319,3 +319,121 @@ uint32_t prefetchBuffer::num_valid(uint64_t try_addr) {
     uint32_t set_id = (try_addr / spm_line_size) % num_sets;
     return sets[set_id]->size();
 };
+
+
+static void
+saveAddrMap(StateOut &os, const std::unordered_map<uint64_t, uint32_t> &m)
+{
+    os.pod<uint64_t>(m.size());
+    for (auto &kv : m) {
+        os.pod(kv.first);
+        os.pod(kv.second);
+    }
+}
+
+static void
+loadAddrMap(StateIn &is, std::unordered_map<uint64_t, uint32_t> &m)
+{
+    // clear() keeps the buckets reserved in the constructor, so the
+    // iterators taken below are not invalidated by a rehash later on
+    m.clear();
+    for (uint64_t n = is.get<uint64_t>(); n > 0; n--) {
+        uint64_t addr = is.get<uint64_t>();
+        m.emplace(addr, is.get<uint32_t>());
+    }
+}
+
+
+void allBufferSet::save(StateOut &os) const {
+    os.tag(0x5e70);
+    saveAddrMap(os, addr_map);
+    os.pod<uint64_t>(lines.size());
+    for (auto &line : lines) {
+        os.podVec(line.spm_line);
+        os.pod(line.dirty);
+        os.pod(line.valid);
+    }
+    os.pod<uint64_t>(lru_order.size());
+    for (auto id : lru_order)
+        os.pod(id);
+}
+
+
+void allBufferSet::load(StateIn &is) {
+    is.tag(0x5e70);
+    loadAddrMap(is, addr_map);
+    is.expect(lines.size(), "spm set lines");
+    for (auto &line : lines) {
+        is.podVec(line.spm_line);
+        is.pod(line.dirty);
+        is.pod(line.valid);
+        line.map_it = addr_map.end();
+    }
+    for (auto it = addr_map.begin(); it != addr_map.end(); it++)
+        lines[it->second].map_it = it;
+
+    // Every line id is in lru_order exactly once
+    lru_order.clear();
+    is.expect(lines.size(), "spm lru entries");
+    for (uint64_t n = lines.size(); n > 0; n--) {
+        uint32_t id = is.get<uint32_t>();
+        lru_order.push_back(id);
+        lines[id].lru_it = std::prev(lru_order.end());
+    }
+}
+
+
+void prefetchThrottleSet::save(StateOut &os) const {
+    os.tag(0x5e71);
+    saveAddrMap(os, addr_map);
+    os.pod<uint64_t>(lines.size());
+    for (auto &line : lines) {
+        os.podVec(line.spm_line);
+        os.pod(line.valid);
+    }
+}
+
+
+void prefetchThrottleSet::load(StateIn &is) {
+    is.tag(0x5e71);
+    loadAddrMap(is, addr_map);
+    is.expect(lines.size(), "spm set lines");
+    for (auto &line : lines) {
+        is.podVec(line.spm_line);
+        is.pod(line.valid);
+    }
+}
+
+
+void embeddedBuffer::save(StateOut &os) const {
+    os.tag(0xeb00);
+    os.pod<uint64_t>(sets.size());
+    for (auto set : sets)
+        set->save(os);
+}
+
+
+void embeddedBuffer::load(StateIn &is) {
+    is.tag(0xeb00);
+    is.expect(sets.size(), "spm sets");
+    for (auto set : sets)
+        set->load(is);
+}
+
+
+void prefetchBuffer::save(StateOut &os) const {
+    embeddedBuffer::save(os);
+    for (auto &buf : read_buffers) {
+        os.pod(buf.first);
+        os.podVec(buf.second);
+    }
+}
+
+
+void prefetchBuffer::load(StateIn &is) {
+    embeddedBuffer::load(is);
+    for (auto &buf : read_buffers) {
+        is.pod(buf.first);
+        is.podVec(buf.second);
+    }
+}

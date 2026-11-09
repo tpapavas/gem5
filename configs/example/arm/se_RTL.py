@@ -32,10 +32,8 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 # This is an example configuration script for full system simulation of
 # a generic ARM bigLITTLE system.
-
 import argparse
 import os
 import sys
@@ -44,14 +42,12 @@ import m5.util
 from m5.objects import *
 
 m5.util.addToPath("../../")
-
 from caches import *
 from common import FSConfig
 from common import SysPaths
 from common import ObjectList
 from common import Options
 from common.cores.arm import ex5_LITTLE
-
 import devices
 from devices import AtomicCluster, KvmCluster, FastmodelCluster
 
@@ -60,10 +56,63 @@ default_mem_size = "1GB"
 
 def addOptions(parser):
     parser.add_argument(
+        "--loadable",
+        type=str,
+        required=True,
+        help="Path to the NVDLA loadable",
+    )
+    parser.add_argument(
+        "--image", type=str, required=True, help="Path to the input image"
+    )
+    parser.add_argument(
+        "--normalize",
+        type=float,
+        default=None,
+        help="Optional normalization value passed to runtime (e.g. 255 for FP16; omitted for INT8)",
+    )
+    parser.add_argument(
         "--restore-from",
         type=str,
         default=None,
         help="Restore from checkpoint",
+    )
+    parser.add_argument(
+        "--checkpoint-at",
+        type=int,
+        default=None,
+        help="Take a system checkpoint at this tick, in <outdir>/cpt.<tick>",
+    )
+    parser.add_argument(
+        "--checkpoint-exit",
+        action="store_true",
+        help="Stop the simulation after the --checkpoint-at checkpoint",
+    )
+    parser.add_argument(
+        "--checkpoint-every",
+        type=int,
+        default=None,
+        help="Take a checkpoint every this many ticks, in <outdir>/cpt.<tick>."
+        " Works while the NVDLA runs, needs gem5 built with NVDLA_SAVABLE=1",
+    )
+    parser.add_argument(
+        "--checkpoint-at-nvdla-cycle",
+        type=int,
+        default=0,
+        help="Take a checkpoint when nvdla#0 reaches this cycle, in"
+        " <outdir>/cpt.<tick>. Needs gem5 built with NVDLA_SAVABLE=1",
+    )
+    parser.add_argument(
+        "--checkpoint-each-layer",
+        action="store_true",
+        help="Take a checkpoint after every HW layer of nvdla#0 (at its"
+        " interrupt), in <outdir>/cpt.<tick>. Can be combined with"
+        " --checkpoint-at for one before the NVDLA starts. Needs gem5 built"
+        " with NVDLA_SAVABLE=1",
+    )
+    parser.add_argument(
+        "--exit-on-first-nvdla-access",
+        action="store_true",
+        help="Stop on the first NVDLA access, to find its tick",
     )
     parser.add_argument(
         "--dtb", type=str, default=None, help="DTB file to load"
@@ -199,7 +248,6 @@ def addOptions(parser):
         default=False,
         help="Enable Timing memory requests NVDLA",
     )
-
     # options.ddr_type
     parser.add_argument(
         "--ddr-type",
@@ -208,7 +256,6 @@ def addOptions(parser):
         help="specify system dram type",
     )
     # available: DDR4_2400_8x8
-
     # options.numNVDLA
     parser.add_argument(
         "--numNVDLA", type=int, default=1, help="number of NVDLAs"
@@ -220,7 +267,6 @@ def addOptions(parser):
         default=1,
         help="=(frequency of LITTLE CPU) / (frequency of NVDLA)",
     )
-
     # options.buffer_mode
     parser.add_argument(
         "--buffer-mode",
@@ -266,7 +312,6 @@ def addOptions(parser):
         default=12,
         help="specify embedded SPM latency",
     )
-
     # options.cvsram_enable
     parser.add_argument(
         "--cvsram-enable",
@@ -294,7 +339,6 @@ def addOptions(parser):
         help="Prefix of the name of remapper class",
         default="Identity",
     )
-
     # options.add_accel_private_cache
     parser.add_argument(
         "--add-accel-private-cache",
@@ -302,7 +346,6 @@ def addOptions(parser):
         default=False,
         help="Add private cache for NVDLA",
     )
-
     # options.accel_pr_cache_size
     parser.add_argument(
         "--accel-pr-cache-size",
@@ -366,7 +409,6 @@ def addOptions(parser):
         default="mostly_incl",
         help="specify private cache size cusivity for accelerators",
     )
-
     # options.add_accel_shared_cache
     parser.add_argument(
         "--add-accel-shared-cache",
@@ -374,7 +416,6 @@ def addOptions(parser):
         default=False,
         help="Add shared cache for numNVDLA * NVDLA",
     )
-
     # options.accel_sh_cache_size
     parser.add_argument(
         "--accel-sh-cache-size",
@@ -438,7 +479,6 @@ def addOptions(parser):
         default="mostly_excl",
         help="specify shared cache size cusivity for accelerators",
     )
-
     # options.pft_enable
     parser.add_argument(
         "--pft-enable",
@@ -453,7 +493,6 @@ def addOptions(parser):
         default=16,
         help="the threshold of current inflight memory requests to launch software prefetch",
     )
-
     # options.use_fake_mem
     parser.add_argument(
         "--use-fake-mem",
@@ -461,7 +500,6 @@ def addOptions(parser):
         default=False,
         help="whether to use fake memory to simulate",
     )
-
     parser.add_argument(
         "-P",
         "--param",
@@ -496,90 +534,81 @@ def main():
     )
     addOptions(parser)
     options = parser.parse_args()
-
     # Program to execute
     # binary = 'tests/test-progs/nvdla-se/nvdla-se'
-    binary = "<custom-path-to-runtime>/nvdla_runtime"
+    binary = "/data/ngiannopoulos/Phd/NVDLA/test_git_framework/sw/kumd/umd/out/apps/runtime/nvdla_runtime/nvdla_runtime"
     # Simulation system
     system = System(multi_thread=True)
-
     # Clock configuration
     system.clk_domain = SrcClockDomain()
     # system.clk_domain.clock = "3GHz"
     print("Little CPU clock:", options.little_cpu_clock)
     system.clk_domain.clock = options.little_cpu_clock
     system.clk_domain.voltage_domain = VoltageDomain()
-
     # Memory configuration
     system.mem_mode = "timing"
     system.mem_ranges = [AddrRange("1GB")]
-    # system.mem_ranges.append(AddrRange(start=0xC0000000, size="1GB"))
-
+    NVDLA_SHARED_BASE = 0x20000000
+    NVDLA_SHARED_SIZE = 0x20000000
+    NVDLA_PIO_BASE = 0x40000000
+    NVDLA_PIO_STRIDE = 0x20040
+    cpu_cacheable_range = AddrRange(start=0x00000000, size=NVDLA_SHARED_BASE)
+    nvdla_shared_range = AddrRange(
+        start=NVDLA_SHARED_BASE, size=NVDLA_SHARED_SIZE
+    )
     # Create CPU
     # system.cpu = X86MinorCPU()
     system.cpu = ArmMinorCPU(numThreads=2)
 
-    # Create Gemmini device
-    # system.gemmini_dev = GemminiDevA(
-    #     ndp_ctrl=("0x40000000", "0x40001000"),
-    #     ndp_data=("0x40001000", "0x80000000"),
-    #     max_rsze=0x40,
-    #     max_reqs=64,
-    # )
-
     # Create L1 caches
     system.cpu.icache = L1Cache()
     system.cpu.dcache = L1Cache()
-    system.cpu.dcache.addr_ranges = system.mem_ranges
-
+    system.cpu.dcache.addr_ranges = [cpu_cacheable_range]
     # Connect L1I cache to the CPU
     system.cpu.icache.cpu_side = system.cpu.icache_port
     system.cpu.dcache.cpu_side = system.cpu.dcache_port
 
-    # # Connect Gemmini device to the CPU and L1D to Gemmini device
-    # # system.gemmini_dev.cpu_side = system.cpu.dcache_port
-    # # system.cpu.dcache.cpu_side = system.gemmini_dev.mem_side
-
     # Create L1 to L2 interconnect
     system.l2bus = L2XBar()
-
     # Link L1 with interconnect
     system.cpu.icache.mem_side = system.l2bus.cpu_side_ports
     system.cpu.dcache.mem_side = system.l2bus.cpu_side_ports
-
     # Create L2 cache
     system.l2cache = L2Cache()
-
+    system.l2cache.addr_ranges = [cpu_cacheable_range]
     # Link L2 cache with L1 to L2 interconnect
     system.l2cache.cpu_side = system.l2bus.mem_side_ports
-
     # Create memory bus
     system.membus = SystemXBar()
-
     # Link L2 with interconnect
     system.l2cache.mem_side = system.membus.cpu_side_ports
-
+    # NVDLA shared range bypasses L2 through the existing l2bus.
+    # No extra cpu_dmem_xbar is used.
+    system.nvdla_shared_bridge = Bridge(
+        delay="1ns", ranges=[nvdla_shared_range]
+    )
+    system.nvdla_shared_bridge.cpu_side_port = system.l2bus.mem_side_ports
+    system.nvdla_shared_bridge.mem_side_port = system.membus.cpu_side_ports
     # # For NO CACHE system
     # system.cpu.icache_port = system.membus.cpu_side_ports
     # system.cpu.dcache_port = system.membus.cpu_side_ports
-
     # Connect Gemmini device to L2
     # system.gemmini_dev.dma_port = system.l2bus.cpu_side_ports
     system.iobus = IOXBar()
     system.iobridge = Bridge(delay="50ns")
-    system.iobridge.ranges = [AddrRange(start=0x40000000, size="1GB")]
-
+    system.iobridge.ranges = [
+        AddrRange(start=NVDLA_PIO_BASE, size=NVDLA_PIO_STRIDE * options.dlas)
+    ]
     system.iobridge.mem_side_port = system.iobus.cpu_side_ports
     system.iobridge.cpu_side_port = system.membus.mem_side_ports
-
     print("options.freq_ratio:", options.freq_ratio)
     # Create NVDLA Device
     system.nvdla = [
         NvDlaDeviceSE(
             id_nvdla=i,
-            pio_addr=0x40000000 + 0x20040 * i,
-            pio_size=0x20040,
-            dma_enable=True,  # options.dma_enable,
+            pio_addr=NVDLA_PIO_BASE + NVDLA_PIO_STRIDE * i,
+            pio_size=NVDLA_PIO_STRIDE,
+            dma_enable=options.dma_enable,
             spm_latency=options.embed_spm_lat,
             spm_line_size=1024,
             spm_size=options.embed_spm_size,
@@ -588,25 +617,37 @@ def main():
             assoc=options.embed_spm_assoc.lower(),
             base_addr_dram=0x40000000,
             base_addr_sram=0x0,
+            trace_mode=False,
             maxReq=options.maxReqNVDLA,
+            exit_on_first_access=options.exit_on_first_nvdla_access,
+            checkpoint_at_cycle=(
+                options.checkpoint_at_nvdla_cycle if i == 0 else 0
+            ),
+            checkpoint_each_layer=(options.checkpoint_each_layer and i == 0),
         )
         for i in range(options.dlas)
     ]
     for i in range(options.dlas):
         system.nvdla[i].pio = system.iobus.mem_side_ports
 
-    # for DMA
-    for i in range(options.dlas):
-        system.nvdla[i].dram_port = system.membus.cpu_side_ports
-        system.nvdla[i].dma_port = system.membus.cpu_side_ports
-
-    for i in range(options.dlas):
-        exec(
-            f"system.nvdla[{i}].cmd_cpu_side = system.cpu.nvdla_port_plus_{i}"
+    if options.dma_enable and options.add_accel_private_cache:
+        parser.error(
+            "--dma-enable and --add-accel-private-cache are mutually exclusive in this experiment"
         )
-        # system.nvdla[0].cmd_cpu_side = system.cpu.nvdla_port_plus_0
-        # system.nvdla[1].cmd_cpu_side = system.cpu.nvdla_port_plus_1
 
+    if options.add_accel_shared_cache:
+        parser.error(
+            "--add-accel-shared-cache is not implemented in this config; do not silently ignore it"
+        )
+
+    # for DMA
+    # for i in range(options.dlas):
+    #    system.nvdla[i].dram_port = system.membus.cpu_side_ports
+    #    system.nvdla[i].dma_port = system.membus.cpu_side_ports
+    # for i in range(options.dlas):
+    #    exec(
+    #        f"system.nvdla[{i}].cmd_cpu_side = system.cpu.nvdla_port_plus_{i}"
+    #    )
     # for caches
     # system.nvdla_pr_cache = Cache(
     #     tag_latency=options.accel_pr_cache_tag_lat,
@@ -622,24 +663,68 @@ def main():
     # system.nvdla.dram_port = system.nvdla_pr_cache.cpu_side
     # system.nvdla_pr_cache.mem_side = system.membus.cpu_side_ports
 
+    if options.add_accel_private_cache:
+        system.nvdla_pr_cache = [
+            Cache(
+                size=options.accel_pr_cache_size,
+                assoc=options.accel_pr_cache_assoc,
+                tag_latency=options.accel_pr_cache_tag_lat,
+                data_latency=options.accel_pr_cache_dat_lat,
+                response_latency=options.accel_pr_cache_resp_lat,
+                mshrs=options.accel_pr_cache_mshr,
+                tgts_per_mshr=options.accel_pr_cache_tgts_per_mshr,
+                write_buffers=options.accel_pr_cache_wr_buf,
+                clusivity=options.accel_pr_cache_clus,
+            )
+            for _ in range(options.dlas)
+        ]
+        for i in range(options.dlas):
+            system.nvdla[i].dram_port = system.nvdla_pr_cache[i].cpu_side
+            system.nvdla_pr_cache[i].mem_side = system.membus.cpu_side_ports
+            system.nvdla[i].dma_port = system.membus.cpu_side_ports
+        print(
+            "[MEM-HIERARCHY] NVDLA PRIVATE CACHE, size=%s, assoc=%d, tag/data/resp=%d/%d/%d cycles"
+            % (
+                options.accel_pr_cache_size,
+                options.accel_pr_cache_assoc,
+                options.accel_pr_cache_tag_lat,
+                options.accel_pr_cache_dat_lat,
+                options.accel_pr_cache_resp_lat,
+            )
+        )
+    else:
+        for i in range(options.dlas):
+            system.nvdla[i].dram_port = system.membus.cpu_side_ports
+            system.nvdla[i].dma_port = system.membus.cpu_side_ports
+        if options.dma_enable:
+            print(
+                "[MEM-HIERARCHY] DMA + EMBEDDED SPM, size=%s, latency=%d cycles"
+                % (options.embed_spm_size, options.embed_spm_lat)
+            )
+        else:
+            print(
+                "[MEM-HIERARCHY] DIRECT NVDLA -> MEMBUS (no accelerator cache, DMA disabled)"
+            )
+
+    for i in range(options.dlas):
+        exec(
+            f"system.nvdla[{i}].cmd_cpu_side = system.cpu.nvdla_port_plus_{i}"
+        )
+
     # Create interrupt controller
     system.cpu.createInterruptController()
-
     # Connect interruptions and IO with memory bus (required by X86)
     if m5.defines.buildEnv["USE_X86_ISA"]:
         system.cpu.interrupts[0].pio = system.membus.mem_side_ports
         system.cpu.interrupts[0].int_master = system.membus.cpu_side_ports
         system.cpu.interrupts[0].int_slave = system.membus.mem_side_ports
-
     # Connect special port to allow read/write memory
     system.system_port = system.membus.cpu_side_ports
-
     # Create a DDR3 memory controller
     # system.mem_ctrls = MemCtrl()
     # system.mem_ctrls.dram = DDR3_1600_8x8()
     # system.mem_ctrls.dram.range = system.mem_ranges[0]
     # system.mem_ctrls.port = system.membus.mem_side_ports
-
     system.mem_ctrls = [
         MemCtrl(
             dram=eval(options.ddr_type + "(range=r)"),
@@ -647,43 +732,101 @@ def main():
         )
         for r in system.mem_ranges
     ]
-
     system.workload = SEWorkload.init_compatible(binary)
-
     # Create a process for a the application
     process = Process()
-
     # Command is a list which begins with the executable (like argv)
     process.cmd = [
         binary,
         "--loadable",
-        "/data/tpapavasileiou/tools/GEM5-NVDLA/nvdla/gem5-plus/nonet.nvdla",
+        options.loadable,
         "--image",
-        "/data/tpapavasileiou/tools/GEM5-NVDLA/nvdla/gem5-plus/random_2x2_bin.pgm",
-        # "--normalize",
-        # "255",
+        options.image,
+    ]
+    if options.normalize is not None:
+        process.cmd += ["--normalize", str(options.normalize)]
+    process.cmd += [
         "--dlas",
-        options.dlas,
+        str(options.dlas),
     ]
 
     # Set the cpu to use the process as its workload and create thread contexts
     system.cpu.workload = [process, process]
     system.cpu.createThreads()
-
     # Set up the root SimObject and start the simulation
     root = Root(full_system=False, system=system)
-
     # Instantiate all of the objects we've created above
-    m5.instantiate()
-
-    # Dedicate upper 1GB to Gemmini device
-    system.cpu.workload[0].map(
-        0x2000_0000, 0x2000_0000, 0x6000_0000, cacheable=False
-    )
-
+    m5.instantiate(options.restore_from)
+    # Dedicate NVDLA shared DRAM, a restored page table already has it
+    if options.restore_from is None:
+        system.cpu.workload[0].map(
+            NVDLA_SHARED_BASE,
+            NVDLA_SHARED_BASE,
+            NVDLA_SHARED_SIZE,
+            cacheable=False,
+        )
     print("========== Beginning simulation ==========")
-    exit_event = m5.simulate()
-
+    if options.checkpoint_at is not None and options.checkpoint_every:
+        m5.util.fatal(
+            "--checkpoint-at and --checkpoint-every cannot be combined"
+        )
+    if options.checkpoint_each_layer and (
+        options.checkpoint_at_nvdla_cycle or options.checkpoint_every
+    ):
+        m5.util.fatal(
+            "--checkpoint-each-layer cannot be combined with"
+            " --checkpoint-at-nvdla-cycle or --checkpoint-every"
+        )
+    if options.checkpoint_at_nvdla_cycle and (
+        options.checkpoint_at is not None or options.checkpoint_every
+    ):
+        m5.util.fatal(
+            "--checkpoint-at-nvdla-cycle cannot be combined with"
+            " --checkpoint-at or --checkpoint-every"
+        )
+    if options.checkpoint_each_layer:
+        if options.checkpoint_at is not None:
+            exit_event = m5.simulate(options.checkpoint_at - m5.curTick())
+            if exit_event.getCause() == "simulate() limit reached":
+                cpt_dir = os.path.join(
+                    m5.options.outdir, f"cpt.{m5.curTick()}"
+                )
+                m5.checkpoint(cpt_dir)
+                print(f"Checkpoint written to {cpt_dir}", flush=True)
+        while True:
+            exit_event = m5.simulate()
+            if exit_event.getCause() != "nvdla layer done":
+                break
+            cpt_dir = os.path.join(m5.options.outdir, f"cpt.{m5.curTick()}")
+            m5.checkpoint(cpt_dir)
+            print(f"Checkpoint written to {cpt_dir}", flush=True)
+    elif options.checkpoint_at_nvdla_cycle:
+        exit_event = m5.simulate()
+        if exit_event.getCause() == "nvdla checkpoint cycle":
+            cpt_dir = os.path.join(m5.options.outdir, f"cpt.{m5.curTick()}")
+            m5.checkpoint(cpt_dir)
+            print(f"Checkpoint written to {cpt_dir}", flush=True)
+            if not options.checkpoint_exit:
+                exit_event = m5.simulate()
+    elif options.checkpoint_every:
+        period = options.checkpoint_every
+        while True:
+            exit_event = m5.simulate(period - m5.curTick() % period)
+            if exit_event.getCause() != "simulate() limit reached":
+                break
+            cpt_dir = os.path.join(m5.options.outdir, f"cpt.{m5.curTick()}")
+            m5.checkpoint(cpt_dir)
+            print(f"Checkpoint written to {cpt_dir}", flush=True)
+    elif options.checkpoint_at is None:
+        exit_event = m5.simulate()
+    else:
+        exit_event = m5.simulate(options.checkpoint_at - m5.curTick())
+        if exit_event.getCause() == "simulate() limit reached":
+            cpt_dir = os.path.join(m5.options.outdir, f"cpt.{m5.curTick()}")
+            m5.checkpoint(cpt_dir)
+            print(f"Checkpoint written to {cpt_dir}")
+            if not options.checkpoint_exit:
+                exit_event = m5.simulate()
     print(
         "Exiting @ tick {} because {}".format(
             m5.curTick(), exit_event.getCause()

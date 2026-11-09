@@ -12,6 +12,7 @@
 #define __CSB_MASTER__
 
 #include "wrapper_nvdla.hh"
+#include "state_stream.hh"
 
 class Wrapper_nvdla;
 
@@ -52,5 +53,8 @@ public:
     bool done();
 
     int test_passed(); 
+
+    void save(StateOut &os) const;
+    void load(StateIn &is);
 };
 #endif // __CSB_MASTER__

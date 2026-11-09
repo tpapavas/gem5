@@ -31,6 +31,8 @@ public:
     inline virtual void write_spm_axi_line_with_mask(uint64_t axi_addr, const uint8_t* data, uint64_t mask) { assert(false); }
     inline virtual void clear_and_write_back_dirty() { assert(false); }
     virtual void fill_spm_line(uint64_t aligned_addr, const uint8_t* data) = 0;
+    virtual void save(StateOut &os) const = 0;
+    virtual void load(StateIn &is) = 0;
 };
 
 
@@ -59,6 +61,8 @@ public:
     void clear_and_write_back_dirty() override;
     void fill_spm_line(uint64_t aligned_addr, const uint8_t* data) override;
     uint32_t erase_victim();
+    void save(StateOut &os) const override;
+    void load(StateIn &is) override;
 };
 
 
@@ -78,6 +82,8 @@ public:
     bool read_spm_line(uint64_t aligned_addr, std::vector<uint8_t>& data_out) override;
     void clear_and_write_back_dirty() override;
     void fill_spm_line(uint64_t aligned_addr, const uint8_t* data) override;
+    void save(StateOut &os) const override;
+    void load(StateIn &is) override;
 };
 
 
@@ -115,6 +121,9 @@ public:
         uint32_t set_id = (aligned_addr / spm_line_size) % num_sets;
         sets[set_id]->fill_spm_line(aligned_addr, data);
     }
+
+    virtual void save(StateOut &os) const;
+    virtual void load(StateIn &is);
 };
 
 
@@ -137,6 +146,8 @@ public:
     ~prefetchBuffer() override;
     bool read_spm_axi_line(uint64_t axi_addr, uint8_t* data_out, uint8_t stream_id) override;
     uint32_t num_valid(uint64_t try_addr);
+    void save(StateOut &os) const override;
+    void load(StateIn &is) override;
 };
 
 #endif //GEM5_NVDLA_EMBEDDEDBUFFER_HH

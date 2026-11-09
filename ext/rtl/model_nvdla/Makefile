@@ -37,13 +37,27 @@
 
 
 # here there is the code of nvdla
-DIR = verilator_nvdla
+#DIR = verilator_nvdla_full
+# SAVABLE=1 uses the model verilated with --savable, needed for checkpoints
+ifeq ($(SAVABLE), 1)
+DIR = verilator_nvdla_full_savable
+else
+DIR = verilator_nvdla_full
+endif
 CC = clang
 CXX = clang++
 
 PARAMS = -fPIC -I$(DIR) -I$(VERILATOR_ROOT)/include -std=c++14
+EXTRA_CXXFLAGS ?=
+PARAMS += $(EXTRA_CXXFLAGS)
+EXTRA_CXXFLAGS ?=
 INTERFACES = csbMaster axiResponder embeddedBuffer wrapper_nvdla
 VERILATOR_LIBS = verilated # verilated_vcd_c
+
+ifeq ($(SAVABLE), 1)
+    PARAMS += -DNVDLA_RTL_SAVABLE
+    VERILATOR_LIBS += verilated_save
+endif
 
 ifeq ($(OPT), 1)
     PARAMS += -DNDEBUG -O3 -Ofast

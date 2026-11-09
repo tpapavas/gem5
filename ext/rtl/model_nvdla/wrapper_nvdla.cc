@@ -47,6 +47,9 @@
 
 #include "wrapper_nvdla.hh"
 #include <iostream>
+#ifdef NVDLA_RTL_SAVABLE
+#include "verilated_save.h"
+#endif
 uint64_t _tickcount = 0;
 
 double sc_time_stamp() {
@@ -352,4 +355,147 @@ void Wrapper_nvdla::tryMergeDMAWriteReq(uint64_t addr, uint8_t* write_data, uint
 
 void Wrapper_nvdla::addDMAReadReq(uint64_t read_addr, uint32_t read_bytes) {
     output.dma_read_buffer.emplace(read_addr, read_bytes);
+}
+
+static const uint32_t WRAP_STATE_MAGIC = 0x4e56444c;
+static const uint32_t WRAP_STATE_VERSION = 1;
+
+void Wrapper_nvdla::save(const std::string &prefix) {
+#ifdef NVDLA_RTL_SAVABLE
+    VerilatedSave vs;
+    vs.open((prefix + ".rtl").c_str());
+    if (!vs.isOpen()) {
+        fprintf(stderr, "Wrapper_nvdla: cannot write %s.rtl\n",
+                prefix.c_str());
+        abort();
+    }
+    vs << *dla;
+    vs.close();
+#else
+    fprintf(stderr, "Wrapper_nvdla: the RTL model was not built with "
+            "--savable, cannot checkpoint it\n");
+    abort();
+#endif
+
+    StateOut os(prefix + ".wrap");
+    os.pod(WRAP_STATE_MAGIC);
+    os.pod(WRAP_STATE_VERSION);
+    os.pod(tickcount);
+    os.pod(_tickcount);
+    os.pod(rtl_pipeline_idle_cycles);
+
+    os.tag(0x0007);
+    os.pod(output.read_valid);
+    os.pod(output.write_valid);
+    std::queue<read_req_entry_t> rq = output.read_buffer;
+    os.pod<uint64_t>(rq.size());
+    for (; !rq.empty(); rq.pop())
+        os.pod(rq.front());
+    std::queue<write_req_entry_t> wq = output.write_buffer;
+    os.pod<uint64_t>(wq.size());
+    for (; !wq.empty(); wq.pop())
+        os.pod(wq.front());
+    std::queue<long_write_req_entry_t> lq = output.long_write_buffer;
+    os.pod<uint64_t>(lq.size());
+    for (; !lq.empty(); lq.pop()) {
+        long_write_req_entry_t e = lq.front();
+        uint8_t *data = e.write_data;
+        e.write_data = nullptr;
+        os.pod(e);
+        os.bytes(data, e.length);
+    }
+    std::queue<std::pair<uint64_t, uint32_t>> dq = output.dma_read_buffer;
+    os.pod<uint64_t>(dq.size());
+    for (; !dq.empty(); dq.pop()) {
+        os.pod(dq.front().first);
+        os.pod(dq.front().second);
+    }
+    os.pod<uint64_t>(output.dma_write_buffer.size());
+    for (auto &e : output.dma_write_buffer) {
+        os.pod(e.first);
+        os.podVec(e.second);
+    }
+
+    csb->save(os);
+    axi_dbb->save(os);
+    os.pod<uint8_t>(axi_cvsram != nullptr);
+    if (axi_cvsram)
+        axi_cvsram->save(os);
+    // A shared spm is written by every wrapper with the same content,
+    // so loading it more than once gives the same result
+    spm->save(os);
+    os.tag(0xe0d);
+}
+
+void Wrapper_nvdla::load(const std::string &prefix) {
+#ifdef NVDLA_RTL_SAVABLE
+    VerilatedRestore vr;
+    vr.open((prefix + ".rtl").c_str());
+    if (!vr.isOpen()) {
+        fprintf(stderr, "Wrapper_nvdla: cannot read %s.rtl\n",
+                prefix.c_str());
+        abort();
+    }
+    vr >> *dla;
+    vr.close();
+#else
+    fprintf(stderr, "Wrapper_nvdla: the RTL model was not built with "
+            "--savable, cannot restore it\n");
+    abort();
+#endif
+
+    StateIn is(prefix + ".wrap");
+    if (is.get<uint32_t>() != WRAP_STATE_MAGIC ||
+            is.get<uint32_t>() != WRAP_STATE_VERSION) {
+        fprintf(stderr, "Wrapper_nvdla: %s.wrap has a wrong magic or "
+                "version\n", prefix.c_str());
+        abort();
+    }
+    is.pod(tickcount);
+    is.pod(_tickcount);
+    is.pod(rtl_pipeline_idle_cycles);
+
+    is.tag(0x0007);
+    is.pod(output.read_valid);
+    is.pod(output.write_valid);
+    output.read_buffer = std::queue<read_req_entry_t>();
+    for (uint64_t n = is.get<uint64_t>(); n > 0; n--)
+        output.read_buffer.push(is.get<read_req_entry_t>());
+    output.write_buffer = std::queue<write_req_entry_t>();
+    for (uint64_t n = is.get<uint64_t>(); n > 0; n--)
+        output.write_buffer.push(is.get<write_req_entry_t>());
+    while (!output.long_write_buffer.empty()) {
+        delete[] output.long_write_buffer.front().write_data;
+        output.long_write_buffer.pop();
+    }
+    for (uint64_t n = is.get<uint64_t>(); n > 0; n--) {
+        long_write_req_entry_t e = is.get<long_write_req_entry_t>();
+        e.write_data = new uint8_t[e.length];
+        is.bytes(e.write_data, e.length);
+        output.long_write_buffer.push(e);
+    }
+    output.dma_read_buffer = std::queue<std::pair<uint64_t, uint32_t>>();
+    for (uint64_t n = is.get<uint64_t>(); n > 0; n--) {
+        uint64_t addr = is.get<uint64_t>();
+        output.dma_read_buffer.emplace(addr, is.get<uint32_t>());
+    }
+    output.dma_write_buffer.clear();
+    for (uint64_t n = is.get<uint64_t>(); n > 0; n--) {
+        uint64_t addr = is.get<uint64_t>();
+        output.dma_write_buffer.emplace_back(addr, std::vector<uint8_t>());
+        is.podVec(output.dma_write_buffer.back().second);
+    }
+
+    csb->load(is);
+    axi_dbb->load(is);
+    if (is.get<uint8_t>() != (axi_cvsram != nullptr)) {
+        fprintf(stderr, "Wrapper_nvdla: CVSRAM port mismatch in %s.wrap\n",
+                prefix.c_str());
+        abort();
+    }
+    if (axi_cvsram)
+        axi_cvsram->load(is);
+    spm->load(is);
+    is.tag(0xe0d);
+    is.expectEnd();
 }

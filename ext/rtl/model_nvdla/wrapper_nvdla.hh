@@ -51,7 +51,7 @@
 // Add #define NV_SMALL_EN if compiling for nv_small
 // otherwise default is nv_full
 
-#define NV_SMALL_EN
+//#define NV_SMALL_EN
 
 #ifndef NV_SMALL_EN
 
@@ -88,9 +88,12 @@
 #define NVDLA_SECONDARY_MEMIF_MAX_BURST_LENGTH 4
 #define NVDLA_SECONDARY_MEMIF_WIDTH 512
 #define NVDLA_MEM_ADDRESS_WIDTH 64
-
+#ifdef NVDLA_RTL_SAVABLE
+#include "verilator_nvdla_full_savable/VNV_nvdla.h"
 #else
-
+#include "verilator_nvdla_full/VNV_nvdla.h"
+#endif
+#else
 #define NVDLA_FEATURE_DATA_TYPE_INT8
 #define NVDLA_BPE 8
 #define NVDLA_WEIGHT_DATA_TYPE_INT8
@@ -142,7 +145,7 @@
 #define NVDLA_MAC_RESULT_WIDTH 19
 #define NVDLA_CC_ATOMC_DIV_ATOMK 1
 #define USE_DESIGNWARE 0
-
+#include "verilator_nvdla_small/VNV_nvdla.h"
 #endif
 
 
@@ -161,9 +164,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "VNV_nvdla.h"
 #include "verilated.h"
 #include "verilated_vcd_c.h"
+#include "state_stream.hh"
 #include "csbMaster.hh"
 #include "axiResponder.hh"
 #include "embeddedBuffer.hh"
@@ -207,6 +210,11 @@ public:
     void addDMAWriteReq(uint64_t addr, const std::vector<uint8_t>& write_data);
     void tryMergeDMAWriteReq(uint64_t addr, uint8_t* write_data, uint32_t len);
     void clearOutput();
+
+    // Checkpoint of the RTL model (<prefix>.rtl, needs a model built
+    // with verilator --savable) and of the wrapper state (<prefix>.wrap)
+    void save(const std::string &prefix);
+    void load(const std::string &prefix);
 
     VNV_nvdla* dla;
     uint64_t tickcount;

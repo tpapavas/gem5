@@ -327,6 +327,14 @@ class NvDlaDeviceSE : public BasicPioDevice
         // if we are blocked due to a req retry
         bool blockedRetry;
 
+        // Packets sent that still wait for their response
+        uint64_t outstanding = 0;
+
+        bool idle() const
+        {
+            return pending_req.empty() && !blockedRetry && outstanding == 0;
+        }
+
         /**
          * Send a packet across this port. This is called by the owner and
          * all of the flow control is hanled in this function.
@@ -639,6 +647,13 @@ public:
 
     uint64_t getTickfromWrapperNVDLA() const { return (wr->tickcount); }
 
+    // While draining, the RTL clock is frozen and only the memory packets
+    // already produced are completed, so the RTL and wrapper state can be
+    // saved at any cycle.
+    DrainState drain() override;
+    void serialize(CheckpointOut &cp) const override;
+    void unserialize(CheckpointIn &cp) override;
+
   protected:
     // ArmInterruptPin *const interrupt;
     bool interruptRaised;
@@ -648,6 +663,23 @@ public:
 
     bool traceMode;
     bool engineStarted;
+
+    void noteAccess();
+
+    bool memIdle() const { return dramPort.idle() && sramPort.idle(); }
+    void checkDrained();
+
+    bool accessed = false;
+    bool exitOnFirstAccess;
+
+    // NVDLA cycle that exits the loop for a checkpoint, 0 for none
+    uint64_t checkpointAtCycle;
+    bool checkpointCycleDone = false;
+
+    // Exit the loop at every interrupt, i.e. after every HW layer
+    bool checkpointEachLayer;
+    uint64_t layersDone = 0;
+    void noteLayerDone();
 };
 
 } //End namespace gem5

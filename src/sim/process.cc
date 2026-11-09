@@ -54,6 +54,7 @@
 #include "base/intmath.hh"
 #include "base/loader/object_file.hh"
 #include "base/loader/symtab.hh"
+#include "base/cprintf.hh"
 #include "base/statistics.hh"
 #include "cpu/thread_context.hh"
 #include "mem/page_table.hh"
@@ -370,6 +371,28 @@ Process::fixupFault(Addr vaddr)
 void
 Process::serialize(CheckpointOut &cp) const
 {
+    // A clone shares its state with the leader, which saves it
+    if (useForClone)
+        return;
+
+    // Scalars go first, they would land in the last subsection otherwise
+    paramOut(cp, "childClearTID", childClearTID);
+
+    int count = 0;
+    for (int i = 0; i < system->threads.size(); i++) {
+        ThreadContext *tc = system->threads[i];
+        Process *p = tc->getProcessPtr();
+        if (!p || p == this || p->tgid() != _tgid)
+            continue;
+
+        paramOut(cp, csprintf("cloneContext_%d", count), tc->contextId());
+        paramOut(cp, csprintf("clonePid_%d", count), p->pid());
+        paramOut(cp, csprintf("clonePpid_%d", count), p->ppid());
+        paramOut(cp, csprintf("cloneClearTID_%d", count), p->childClearTID);
+        count++;
+    }
+    paramOut(cp, "cloneThreads", count);
+
     memState->serialize(cp);
     pTable->serialize(cp);
     fds->serialize(cp);
@@ -398,6 +421,72 @@ Process::unserialize(CheckpointIn &cp)
     // find the param in the checkpoint if you wanted to, like set a default
     // but in this case we'll just stick with the instantiated value if not
     // found.
+
+    // Checkpoints from before these fields had no clone information
+    optParamIn(cp, "childClearTID", childClearTID, false);
+
+    // A Process listed twice in a workload vector is loaded twice
+    savedClones.clear();
+
+    int count = 0;
+    if (!optParamIn(cp, "cloneThreads", count, false))
+        return;
+
+    for (int i = 0; i < count; i++) {
+        SavedClone saved;
+        paramIn(cp, csprintf("cloneContext_%d", i), saved.contextId);
+        paramIn(cp, csprintf("clonePid_%d", i), saved.pid);
+        paramIn(cp, csprintf("clonePpid_%d", i), saved.ppid);
+        paramIn(cp, csprintf("cloneClearTID_%d", i), saved.childClearTID);
+        savedClones.push_back(saved);
+    }
+}
+
+void
+Process::startup()
+{
+    for (const auto &saved : savedClones)
+        restoreClone(saved);
+    savedClones.clear();
+}
+
+void
+Process::restoreClone(const SavedClone &saved)
+{
+    // Same steps as doClone() in syscall_emul.hh for CLONE_THREAD, without
+    // what the restored registers and memory already hold.
+    ProcessParams *pp = new ProcessParams();
+    pp->executable.assign(progName());
+    pp->cmd.push_back(progName());
+    pp->system = system;
+    pp->cwd.assign(tgtCwd);
+    pp->input.assign("stdin");
+    pp->output.assign("stdout");
+    pp->errout.assign("stderr");
+    pp->uid = uid();
+    pp->euid = euid();
+    pp->gid = gid();
+    pp->egid = egid();
+    pp->release = release;
+    pp->pid = saved.pid;
+    pp->ppid = saved.ppid;
+    pp->useArchPT = useArchPT;
+    pp->kvmInSE = kvmInSE;
+    Process *cp = pp->create();
+
+    ThreadContext *ctc = system->threads[saved.contextId];
+    Process *owner = ctc->getProcessPtr();
+    ctc->setProcessPtr(cp);
+    cp->assignThreadContext(ctc->contextId());
+    owner->revokeThreadContext(ctc->contextId());
+
+    cp->useForClone = true;
+    ctc->setUseForClone(true);
+    clone(ctc, ctc, cp, CLONE_VM | CLONE_FILES | CLONE_THREAD);
+
+    delete cp->sigchld;
+    cp->sigchld = sigchld;
+    cp->childClearTID = saved.childClearTID;
 }
 
 bool

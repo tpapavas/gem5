@@ -91,8 +91,6 @@ public:
                                    wrapper(tSocket, std::string(name) + ".tlm",
                                    InvalidPortID)
   {
-    //mem = (unsigned char *)malloc(16 * 1024 * 1024);
-
     std::cout << "TLM Initiator Online" << std::endl;
   }
 
@@ -115,21 +113,44 @@ public:
 
   uint32_t read_reg(uint32_t addr)
   {
-    tlm::tlm_generic_payload trans;
-    sc_time delay = SC_ZERO_TIME;
+      tlm::tlm_generic_payload trans;
+      sc_time delay = SC_ZERO_TIME;
 
-    uint32_t data = 0;
+      uint32_t data = 0;
 
-    trans.set_command(tlm::TLM_READ_COMMAND);
-    trans.set_address(addr);
-    trans.set_data_ptr(reinterpret_cast<unsigned char *>(&data));
-    trans.set_data_length(4);
-    trans.set_streaming_width(4);
+      trans.set_command(tlm::TLM_READ_COMMAND);
+      trans.set_address(addr);
+      trans.set_data_ptr(
+          reinterpret_cast<unsigned char *>(&data));
+      trans.set_data_length(4);
+      trans.set_streaming_width(4);
+      trans.set_response_status(
+          tlm::TLM_INCOMPLETE_RESPONSE);
 
-    tSocket->b_transport(trans, delay);
-    std::cout << "read_reg value are : " << std::hex << data << "\n";
+      std::cout
+          << "[Initiator::read_reg BEFORE]"
+          << " module=" << name()
+          << " this=" << this
+          << " addr=0x" << std::hex << addr
+          << " time=" << std::dec
+          << sc_time_stamp().value()
+          << std::endl;
 
-    return data;
+      tSocket->b_transport(trans, delay);
+
+      std::cout
+          << "[Initiator::read_reg AFTER]"
+          << " module=" << name()
+          << " this=" << this
+          << " addr=0x" << std::hex << addr
+          << " data=0x" << data
+          << " response="
+          << trans.get_response_string()
+          << " time=" << std::dec
+          << sc_time_stamp().value()
+          << std::endl;
+
+      return data;
   }
 
   /*

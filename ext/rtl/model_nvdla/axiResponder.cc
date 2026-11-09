@@ -184,11 +184,14 @@ AXIResponder::eval_ram() {
             #ifdef PRINT_DEBUG
                 printf("(%lu) %s: write, last tick\n", wrapper->tickcount, name);
             #endif
-            aw_fifo.pop();
-
+            //aw_fifo.pop();
+            //axi_b_txn btxn;
+            //btxn.bid = awtxn.awid;
+            //b_fifo.push(btxn);
             axi_b_txn btxn;
             btxn.bid = awtxn.awid;
             b_fifo.push(btxn);
+            aw_fifo.pop();
         } else {
             #ifdef PRINT_DEBUG
                 printf("(%lu) %s: write, ticks remaining\n",
@@ -354,11 +357,14 @@ AXIResponder::eval_timing() {
             #ifdef PRINT_DEBUG
                 printf("(%lu) nvdla#%d %s: write, last tick\n", wrapper->tickcount, wrapper->id_nvdla, name);
             #endif
-            aw_fifo.pop();
-
+            //aw_fifo.pop();
+            //axi_b_txn btxn;
+            //btxn.bid = awtxn.awid;
+            //b_fifo.push(std::move(btxn));
             axi_b_txn btxn;
             btxn.bid = awtxn.awid;
             b_fifo.push(std::move(btxn));
+            aw_fifo.pop();
         } else {
             #ifdef PRINT_DEBUG
                 printf("(%lu) nvdla#%d %s: write, ticks remaining\n", wrapper->tickcount, wrapper->id_nvdla, name);
@@ -898,4 +904,150 @@ AXIResponder::generate_prefetch_request() {
 
     if (log_entry_issued_len >= log_entry_length)       // this prefetch is the end of the variable
         read_var_log.pop_front();
+}
+
+template <typename T>
+static void
+saveQueue(StateOut &os, std::queue<T> q)
+{
+    os.pod<uint64_t>(q.size());
+    for (; !q.empty(); q.pop())
+        os.pod(q.front());
+}
+
+template <typename T>
+static void
+loadQueue(StateIn &is, std::queue<T> &q)
+{
+    q = std::queue<T>();
+    for (uint64_t n = is.get<uint64_t>(); n > 0; n--)
+        q.push(is.get<T>());
+}
+
+void
+AXIResponder::save(StateOut &os) const
+{
+    os.tag(0xa810);
+    saveQueue(os, r_fifo);
+    saveQueue(os, r0_fifo);
+    saveQueue(os, aw_fifo);
+    saveQueue(os, w_fifo);
+    saveQueue(os, b_fifo);
+
+    os.pod<uint64_t>(ram.size());
+    for (auto &kv : ram) {
+        os.pod(kv.first);
+        os.podVec(kv.second);
+    }
+
+    os.pod<uint64_t>(inflight_req.size());
+    for (auto &kv : inflight_req) {
+        os.pod(kv.first);
+        os.pod<uint64_t>(kv.second.size());
+        for (auto &txn : kv.second)
+            os.pod(txn);
+    }
+
+    os.pod<uint64_t>(inflight_req_order.size());
+    for (auto addr : inflight_req_order)
+        os.pod(addr);
+
+    os.pod<uint64_t>(inflight_dma_attr.size());
+    for (auto &kv : inflight_dma_attr) {
+        os.pod(kv.first);
+        os.pod(kv.second.is_bypass);
+        os.pod<uint64_t>(kv.second.deps.size());
+        for (auto &dep : kv.second.deps) {
+            auto list_it = inflight_req.find(dep.first);
+            uint64_t pos = 0;
+            bool found = false;
+            if (list_it != inflight_req.end()) {
+                for (auto it = list_it->second.begin();
+                        it != list_it->second.end(); it++, pos++) {
+                    if (it == dep.second) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (!found) {
+                fprintf(stderr, "AXIResponder %s: DMA dependency %#lx is "
+                        "not in the inflight txns\n", name, dep.first);
+                abort();
+            }
+            os.pod(dep.first);
+            os.pod(pos);
+        }
+    }
+
+    saveQueue(os, inflight_dma_addr_queue);
+    os.podVec(inflight_count_for_sets);
+
+    os.pod<uint64_t>(read_var_log.size());
+    for (auto &entry : read_var_log) {
+        os.pod(std::get<0>(entry));
+        os.pod(std::get<1>(entry));
+        os.pod(std::get<2>(entry));
+    }
+}
+
+void
+AXIResponder::load(StateIn &is)
+{
+    is.tag(0xa810);
+    loadQueue(is, r_fifo);
+    loadQueue(is, r0_fifo);
+    loadQueue(is, aw_fifo);
+    loadQueue(is, w_fifo);
+    loadQueue(is, b_fifo);
+
+    ram.clear();
+    for (uint64_t n = is.get<uint64_t>(); n > 0; n--) {
+        uint64_t key = is.get<uint64_t>();
+        is.podVec(ram[key]);
+    }
+
+    inflight_req.clear();
+    for (uint64_t n = is.get<uint64_t>(); n > 0; n--) {
+        std::list<axi_r_txn> &txns = inflight_req[is.get<uint64_t>()];
+        for (uint64_t m = is.get<uint64_t>(); m > 0; m--)
+            txns.push_back(is.get<axi_r_txn>());
+    }
+
+    inflight_req_order.clear();
+    for (uint64_t n = is.get<uint64_t>(); n > 0; n--)
+        inflight_req_order.push_back(is.get<uint64_t>());
+
+    inflight_dma_attr.clear();
+    for (uint64_t n = is.get<uint64_t>(); n > 0; n--) {
+        DMAAttr &attr = inflight_dma_attr[is.get<uint64_t>()];
+        is.pod(attr.is_bypass);
+        for (uint64_t m = is.get<uint64_t>(); m > 0; m--) {
+            uint64_t addr = is.get<uint64_t>();
+            uint64_t pos = is.get<uint64_t>();
+            auto list_it = inflight_req.find(addr);
+            if (list_it == inflight_req.end() ||
+                    pos >= list_it->second.size()) {
+                fprintf(stderr, "AXIResponder %s: DMA dependency %#lx/%lu "
+                        "has no inflight txn\n", name, addr, pos);
+                abort();
+            }
+            attr.deps.emplace_back(addr,
+                std::next(list_it->second.begin(), pos));
+        }
+    }
+
+    loadQueue(is, inflight_dma_addr_queue);
+
+    is.expect(inflight_count_for_sets.size(), "spm inflight counters");
+    is.bytes(inflight_count_for_sets.data(),
+             inflight_count_for_sets.size() * sizeof(uint32_t));
+
+    read_var_log.clear();
+    for (uint64_t n = is.get<uint64_t>(); n > 0; n--) {
+        uint64_t addr = is.get<uint64_t>();
+        uint32_t len = is.get<uint32_t>();
+        uint32_t issued = is.get<uint32_t>();
+        read_var_log.emplace_back(addr, len, issued);
+    }
 }

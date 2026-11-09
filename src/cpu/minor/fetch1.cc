@@ -733,13 +733,18 @@ Fetch1::isDrained()
     bool drained = numInFlightFetches() == 0 && (*out.inputWire).isBubble();
     for (ThreadID tid = 0; tid < cpu.numThreads; tid++) {
         Fetch1ThreadInfo &thread = fetchInfo[tid];
-        DPRINTF(Drain, "isDrained[tid:%d]: %s %s%s\n",
+        ThreadContext::Status status = cpu.getContext(tid)->status();
+        DPRINTF(Drain, "isDrained[tid:%d]: %s %s%s status %d\n",
                 tid,
                 thread.state == FetchHalted,
                 (numInFlightFetches() == 0 ? "" : "inFlightFetches "),
-                ((*out.inputWire).isBubble() ? "" : "outputtingLine"));
+                ((*out.inputWire).isBubble() ? "" : "outputtingLine"),
+                status);
 
-        drained = drained && (thread.state != FetchRunning);
+        // A thread that is not active never commits, so Execute never
+        // sends it the HaltFetch that would stop its fetch here
+        drained = drained && (thread.state != FetchRunning ||
+                              status != ThreadContext::Active);
     }
 
     return drained;

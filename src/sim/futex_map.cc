@@ -28,6 +28,9 @@
 
 #include <sim/futex_map.hh>
 
+#include "base/cprintf.hh"
+#include "sim/system.hh"
+
 namespace gem5
 {
 
@@ -179,6 +182,46 @@ FutexMap::requeue(Addr addr1, uint64_t tgid, int count, int count2, Addr addr2)
         erase(it1);
 
     return woken_up + requeued;
+}
+
+void
+FutexMap::serializeWaiters(CheckpointOut &cp) const
+{
+    int count = 0;
+    for (const auto &entry : *this) {
+        for (const auto &waiter : entry.second) {
+            paramOut(cp, csprintf("futexAddr_%d", count), entry.first.addr);
+            paramOut(cp, csprintf("futexTgid_%d", count), entry.first.tgid);
+            paramOut(cp, csprintf("futexContext_%d", count),
+                     waiter.tc->contextId());
+            paramOut(cp, csprintf("futexBitmask_%d", count), waiter.bitmask);
+            count++;
+        }
+    }
+    paramOut(cp, "futexWaiters", count);
+}
+
+void
+FutexMap::unserializeWaiters(CheckpointIn &cp, System *sys)
+{
+    // Checkpoints from before this field have no waiters to restore
+    int count = 0;
+    if (!optParamIn(cp, "futexWaiters", count, false))
+        return;
+
+    for (int i = 0; i < count; i++) {
+        uint64_t addr, tgid;
+        ContextID context;
+        int bitmask;
+        paramIn(cp, csprintf("futexAddr_%d", i), addr);
+        paramIn(cp, csprintf("futexTgid_%d", i), tgid);
+        paramIn(cp, csprintf("futexContext_%d", i), context);
+        paramIn(cp, csprintf("futexBitmask_%d", i), bitmask);
+
+        ThreadContext *tc = sys->threads[context];
+        (*this)[FutexKey(addr, tgid)].push_back(WaiterState(tc, bitmask));
+        waitingTcs.emplace(tc);
+    }
 }
 
 bool

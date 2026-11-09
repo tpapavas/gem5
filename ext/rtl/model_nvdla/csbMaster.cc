@@ -283,3 +283,20 @@ bool CSBMaster::done() {
 int CSBMaster::test_passed() {
     return _test_passed;
 }
+
+void CSBMaster::save(StateOut &os) const {
+    os.tag(0xc5b0);
+    std::queue<csb_op> q = opq;
+    os.pod<uint64_t>(q.size());
+    for (; !q.empty(); q.pop())
+        os.pod(q.front());
+    os.pod(_test_passed);
+}
+
+void CSBMaster::load(StateIn &is) {
+    is.tag(0xc5b0);
+    opq = std::queue<csb_op>();
+    for (uint64_t n = is.get<uint64_t>(); n > 0; n--)
+        opq.push(is.get<csb_op>());
+    is.pod(_test_passed);
+}

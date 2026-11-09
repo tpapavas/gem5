@@ -379,6 +379,8 @@ NvDlaDevice::runIterationNVDLA() {
     }
 
     outputNVDLA& output = wr->tick();
+    stats.nvdla_cycles = wr->tickcount;
+    stats.nvdla_rtl_cycles = wr->tickcount;
 
     if (dma_enable) {
         try_get_dma_read_data(spm_line_size);
@@ -424,7 +426,6 @@ NvDlaDevice::tick() {
         // stats.nvdla_avgReqCVSRAM.sample(
         //     wr->axi_cvsram->getRequestsOnFlight());
         stats.nvdla_avgReqDBBIF.sample(wr->axi_dbb->getRequestsOnFlight());
-        stats.nvdla_cycles++;
         cyclesNVDLA++;
         runIterationNVDLA();
         schedule(tickEvent, nextCycle() + (freq_ratio - 1) * clockPeriod());
@@ -1098,7 +1099,6 @@ NvDlaDevice::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
                     //     wr->axi_cvsram->getRequestsOnFlight());
                     owner->stats.nvdla_avgReqDBBIF.sample(
                         owner->wr->axi_dbb->getRequestsOnFlight());
-                    owner->stats.nvdla_cycles++;
                     owner->cyclesNVDLA++;
                     owner->wr->clearOutput();
 
@@ -1167,6 +1167,8 @@ NvDlaDevice::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
                     }
 
                     outputNVDLA& output = owner->wr->tick();
+                    owner->stats.nvdla_cycles = owner->wr->tickcount;
+                    owner->stats.nvdla_rtl_cycles = owner->wr->tickcount;
 
                     if (owner->dma_enable) {
                         owner->try_get_dma_read_data(owner->spm_line_size);
@@ -1401,7 +1403,6 @@ NvDlaDevice::read(PacketPtr pkt)
             // stats.nvdla_avgReqCVSRAM.sample(
             //     wr->axi_cvsram->getRequestsOnFlight());
             stats.nvdla_avgReqDBBIF.sample(wr->axi_dbb->getRequestsOnFlight());
-            stats.nvdla_cycles++;
             cyclesNVDLA++;
             wr->clearOutput();
 
@@ -1469,6 +1470,8 @@ NvDlaDevice::read(PacketPtr pkt)
             }
 
             outputNVDLA& output = wr->tick();
+            stats.nvdla_cycles = wr->tickcount;
+            stats.nvdla_rtl_cycles = wr->tickcount;
 
             if (dma_enable) {
                 try_get_dma_read_data(spm_line_size);

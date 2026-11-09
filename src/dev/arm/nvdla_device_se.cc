@@ -34,6 +34,10 @@
 #include "debug/NvDlaDeviceSEDebug.hh"
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
+#include "sim/sim_exit.hh"
+
+#include <chrono>
+#include <cstdio>
 
 namespace gem5
 {
@@ -82,6 +86,10 @@ NvDlaDeviceSE::NvDlaDeviceSE(const NvDlaDeviceSEParams &params) :
     trace(nullptr)
     {
     // fatal_if(!interrupt, "No NvDlaDeviceSE interrupt specified\n");
+
+    exitOnFirstAccess = params.exit_on_first_access;
+    checkpointAtCycle = params.checkpoint_at_cycle;
+    checkpointEachLayer = params.checkpoint_each_layer;
 
     cpu->setNvDlaDevice(id_nvdla, this);
     switch (params.buffer_mode) {
@@ -321,6 +329,16 @@ NvDlaDeviceSE::processOutput(outputNVDLA& out) {
 
 void
 NvDlaDeviceSE::runIterationNVDLA() {
+    // The NVDLA clock stops while it is idle, so a cycle has no fixed tick
+    if (checkpointAtCycle && !checkpointCycleDone &&
+            wr->tickcount >= checkpointAtCycle) {
+        checkpointCycleDone = true;
+        std::cout << "[NVDLA CHECKPOINT CYCLE] nvdla#" << std::dec
+                  << id_nvdla << " cycle=" << wr->tickcount
+                  << " tick=" << curTick() << std::endl;
+        exitSimLoop("nvdla checkpoint cycle");
+    }
+
     wr->clearOutput();
 
     if (interruptRaised && !wr->dla->dla_intr) {
@@ -369,6 +387,7 @@ NvDlaDeviceSE::runIterationNVDLA() {
 #endif
                 // interrupt->raise();
                 interruptRaised = true;
+                noteLayerDone();
             }
         }
     }
@@ -388,7 +407,8 @@ NvDlaDeviceSE::runIterationNVDLA() {
     }
 
     outputNVDLA& output = wr->tick();
-    getStats().nvdla_rtl_cycles = getTickfromWrapperNVDLA();
+    stats.nvdla_cycles = wr->tickcount;
+    stats.nvdla_rtl_cycles = wr->tickcount;
     //getStats().nvdla_rtl_cycles_idle =
         // (getStats().nvdla_rtl_cycles.value() -
         // getStats().nvdla_total_Bdma0.value() -
@@ -454,8 +474,151 @@ NvDlaDeviceSE::runIterationNVDLA() {
 }
 
 void
+NvDlaDeviceSE::noteLayerDone() {
+    // One interrupt per HW layer: its outputs are written when it is raised
+    layersDone++;
+    if (!checkpointEachLayer)
+        return;
+    std::cout << "[NVDLA LAYER DONE] nvdla#" << std::dec << id_nvdla
+              << " layer=" << layersDone << " cycle=" << wr->tickcount
+              << " tick=" << curTick() << std::endl;
+    exitSimLoop("nvdla layer done");
+}
+
+void
+NvDlaDeviceSE::noteAccess() {
+    if (accessed)
+        return;
+
+    accessed = true;
+    std::cout << "[NVDLA FIRST ACCESS] nvdla#" << std::dec << id_nvdla
+              << " tick=" << curTick() << std::endl;
+
+    if (exitOnFirstAccess)
+        exitSimLoop("nvdla first access");
+}
+
+DrainState
+NvDlaDeviceSE::drain() {
+    return memIdle() ? DrainState::Drained : DrainState::Draining;
+}
+
+void
+NvDlaDeviceSE::checkDrained() {
+    if (drainState() == DrainState::Draining && memIdle())
+        signalDrainDone();
+}
+
+// Start/end of each engine in NVDLA cycles, used by the per engine stats
+#define NVDLA_ENGINE_TICKS(X) \
+    X(Bdma0) X(Bdma1) X(Cdp0) X(Cdp1) X(Cmac0) X(Cmac1) X(Pdp0) X(Pdp1) \
+    X(Rubik0) X(Rubik1) X(Sdp0) X(Sdp1) X(Cacc0) X(Cacc1) \
+    X(CdmaDat0) X(CdmaDat1) X(CdmaWt0) X(CdmaWt1)
+
+void
+NvDlaDeviceSE::serialize(CheckpointOut &cp) const {
+    fatal_if(accessed && traceMode, "%s: checkpoint in trace mode is not "
+             "supported", name());
+    fatal_if(engineStarted && use_fake_mem, "%s: checkpoint with "
+             "use_fake_mem is not supported", name());
+    panic_if(!memIdle(), "%s: serialize with NVDLA memory packets in "
+             "flight, the device was not drained", name());
+    panic_if(dma_enable && (!dma_rd_engine->atEndOfBlock() ||
+             !dma_wr_engine->atEndOfBlock()), "%s: serialize in the middle "
+             "of a DMA block", name());
+
+    BasicPioDevice::serialize(cp);
+
+    // Scalars go first, they would land in the last subsection otherwise
+    SERIALIZE_SCALAR(accessed);
+    SERIALIZE_SCALAR(engineStarted);
+    SERIALIZE_SCALAR(interruptRaised);
+    SERIALIZE_SCALAR(netFinished);
+    SERIALIZE_SCALAR(readData);
+    SERIALIZE_SCALAR(quiesc_timer);
+    SERIALIZE_SCALAR(waiting);
+    SERIALIZE_SCALAR(waiting_for_gem5_mem);
+    SERIALIZE_SCALAR(flushing_spm);
+    SERIALIZE_SCALAR(cyclesNVDLA);
+    SERIALIZE_SCALAR(layersDone);
+    SERIALIZE_SCALAR(cyclesStat);
+#define SAVE_ENGINE_TICKS(e) \
+    SERIALIZE_SCALAR(nvdla_start_##e); SERIALIZE_SCALAR(nvdla_end_##e);
+    NVDLA_ENGINE_TICKS(SAVE_ENGINE_TICKS)
+#undef SAVE_ENGINE_TICKS
+
+    Tick tick_when = tickEvent.scheduled() ? tickEvent.when() : MaxTick;
+    SERIALIZE_SCALAR(tick_when);
+
+    if (engineStarted) {
+        // The RTL model and the wrapper are saved in files next to m5.cpt
+        std::string rtl_state = name() + ".nvdla";
+        wr->save(CheckpointIn::dir() + "/" + rtl_state);
+        SERIALIZE_SCALAR(rtl_state);
+    }
+
+    if (dma_enable) {
+        dma_rd_engine->serializeSection(cp, "dma_rd");
+        dma_wr_engine->serializeSection(cp, "dma_wr");
+    }
+}
+
+void
+NvDlaDeviceSE::unserialize(CheckpointIn &cp) {
+    BasicPioDevice::unserialize(cp);
+
+    // Checkpoints taken before the first access have none of these
+    UNSERIALIZE_OPT_SCALAR(accessed);
+    UNSERIALIZE_OPT_SCALAR(engineStarted);
+    if (!engineStarted)
+        return;
+
+    UNSERIALIZE_SCALAR(interruptRaised);
+    UNSERIALIZE_SCALAR(netFinished);
+    UNSERIALIZE_SCALAR(readData);
+    UNSERIALIZE_SCALAR(quiesc_timer);
+    UNSERIALIZE_SCALAR(waiting);
+    UNSERIALIZE_SCALAR(waiting_for_gem5_mem);
+    UNSERIALIZE_SCALAR(flushing_spm);
+    UNSERIALIZE_SCALAR(cyclesNVDLA);
+    UNSERIALIZE_OPT_SCALAR(layersDone);
+    UNSERIALIZE_SCALAR(cyclesStat);
+#define LOAD_ENGINE_TICKS(e) \
+    UNSERIALIZE_SCALAR(nvdla_start_##e); UNSERIALIZE_SCALAR(nvdla_end_##e);
+    NVDLA_ENGINE_TICKS(LOAD_ENGINE_TICKS)
+#undef LOAD_ENGINE_TICKS
+
+    std::string rtl_state;
+    UNSERIALIZE_SCALAR(rtl_state);
+    // Replaces the state left by the reset cycles of the constructor
+    wr->load(CheckpointIn::dir() + "/" + rtl_state);
+    checkpointCycleDone = wr->tickcount >= checkpointAtCycle;
+
+    Tick tick_when;
+    UNSERIALIZE_SCALAR(tick_when);
+    if (tick_when != MaxTick)
+        schedule(tickEvent, tick_when);
+
+    if (dma_enable) {
+        dma_rd_engine->unserializeSection(cp, "dma_rd");
+        dma_wr_engine->unserializeSection(cp, "dma_wr");
+    }
+}
+
+void
 NvDlaDeviceSE::tick() {
     DPRINTF(NvDlaDeviceSEDebug, "Tick NVDLA \n");
+    if (drainState() != DrainState::Running) {
+        // The RTL clock is frozen while draining. Only the packets already
+        // produced are sent, their responses wait in the wrapper queues.
+        dramPort.tick();
+        sramPort.tick();
+        schedule(tickEvent,
+            nextCycle() +
+            static_cast<Tick>(abs((freq_ratio-1.0))*clockPeriod()));
+        checkDrained();
+        return;
+    }
     // if we are still running trace
     // runIteration
     // schedule new iteration
@@ -474,7 +637,6 @@ NvDlaDeviceSE::tick() {
         // stats.nvdla_avgReqCVSRAM.sample(
         //     wr->axi_cvsram->getRequestsOnFlight());
         stats.nvdla_avgReqDBBIF.sample(wr->axi_dbb->getRequestsOnFlight());
-        stats.nvdla_cycles++;
         cyclesNVDLA++;
         runIterationNVDLA();
         //schedule(tickEvent, nextCycle() + (freq_ratio - 1) * clockPeriod());
@@ -684,7 +846,11 @@ NvDlaDeviceSE::MemNVDLAPort::recvRangeChange() {
 bool
 NvDlaDeviceSE::MemNVDLAPort::recvTimingResp(PacketPtr pkt) {
     DPRINTF(NvDlaDeviceSE, "Got response SRAM?: %d\n", sram);
-    return owner->handleResponseNVDLA(pkt, sram);
+    assert(outstanding > 0);
+    outstanding--;
+    bool handled = owner->handleResponseNVDLA(pkt, sram);
+    owner->checkDrained();
+    return handled;
 }
 
 void
@@ -693,11 +859,14 @@ NvDlaDeviceSE::MemNVDLAPort::recvReqRetry() {
     assert(blockedRetry);
     // Grab the blocked packet.
     PacketPtr pkt = pending_req.front();
+    bool needs_resp = pkt->needsResponse();
     bool sent = sendTimingReq(pkt);
     // if not sent put it in the queue
     if (sent) {
         pending_req.pop();
         blockedRetry = false;
+        if (needs_resp)
+            outstanding++;
     }
     // else
     // we do nothing
@@ -710,10 +879,13 @@ NvDlaDeviceSE::MemNVDLAPort::tick() {
     // we check we have pending packets
     if (!blockedRetry and !pending_req.empty()) {
         PacketPtr pkt = pending_req.front();
+        bool needs_resp = pkt->needsResponse();
         bool sent = sendTimingReq(pkt);
         // if not sent, put it in the queue
         if (sent) {
             pending_req.pop();
+            if (needs_resp)
+                outstanding++;
         } else {
             blockedRetry = true;
         }
@@ -1094,6 +1266,8 @@ NvDlaDeviceSE::CmdCPUSidePort::recvFunctional(PacketPtr pkt)
 bool
 NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
 {
+    owner->noteAccess();
+
     // Just forward to the memobj.
     if (pkt->req->hasPaddr()) {
         // DPRINTF(NvDlaDeviceSE, "[GEM5 LOG] got request\n");
@@ -1192,7 +1366,6 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
                     //     wr->axi_cvsram->getRequestsOnFlight());
                     owner->stats.nvdla_avgReqDBBIF.sample(
                         owner->wr->axi_dbb->getRequestsOnFlight());
-                    owner->stats.nvdla_cycles++;
                     owner->cyclesNVDLA++;
                     owner->wr->clearOutput();
 
@@ -1242,6 +1415,7 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
                 #endif
                                 // owner->interrupt->raise();
                                 owner->interruptRaised = true;
+                                owner->noteLayerDone();
                             }
                         }
                     }
@@ -1261,6 +1435,8 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
                     }
 
                     outputNVDLA& output = owner->wr->tick();
+                    owner->stats.nvdla_cycles = owner->wr->tickcount;
+                    owner->stats.nvdla_rtl_cycles = owner->wr->tickcount;
 
                     if (owner->dma_enable) {
                         owner->try_get_dma_read_data(owner->spm_line_size);
@@ -1449,6 +1625,7 @@ NvDlaDeviceSE::retryTranslate() {
 Tick
 NvDlaDeviceSE::read(PacketPtr pkt)
 {
+    noteAccess();
     onRead = true;
     if (!engineStarted) {
         engineStarted = true;
@@ -1511,7 +1688,6 @@ NvDlaDeviceSE::read(PacketPtr pkt)
             // stats.nvdla_avgReqCVSRAM.sample(
             //     wr->axi_cvsram->getRequestsOnFlight());
             stats.nvdla_avgReqDBBIF.sample(wr->axi_dbb->getRequestsOnFlight());
-            stats.nvdla_cycles++;
             cyclesNVDLA++;
             wr->clearOutput();
 
@@ -1559,6 +1735,7 @@ NvDlaDeviceSE::read(PacketPtr pkt)
         #endif
                         // interrupt->raise();
                         interruptRaised = true;
+                        noteLayerDone();
                     }
                 }
             }
@@ -1578,6 +1755,8 @@ NvDlaDeviceSE::read(PacketPtr pkt)
             }
 
             outputNVDLA& output = wr->tick();
+            stats.nvdla_cycles = wr->tickcount;
+            stats.nvdla_rtl_cycles = wr->tickcount;
 
             if (dma_enable) {
                 try_get_dma_read_data(spm_line_size);
@@ -1665,6 +1844,7 @@ NvDlaDeviceSE::read(PacketPtr pkt)
 Tick
 NvDlaDeviceSE::write(PacketPtr pkt)
 {
+    noteAccess();
     pkt->makeAtomicResponse();
 
     uint32_t write_addr =

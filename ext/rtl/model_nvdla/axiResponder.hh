@@ -155,8 +155,7 @@ public:
                  const char *_name,
                  bool sram,
                  const unsigned int maxReq,
-                 bool _dma_enable);
-
+                 bool _dma_enable);    
     void addLatency();
 
     uint32_t getRequestsOnFlight();
@@ -194,5 +193,10 @@ public:
     Wrapper_nvdla *wrapper;
 
     const bool sram;
+
+    // Checkpoint: the iterators in DMAAttr::deps are stored as the
+    // position in their inflight_req list and rebuilt on load
+    void save(StateOut &os) const;
+    void load(StateIn &is);
 };
 #endif

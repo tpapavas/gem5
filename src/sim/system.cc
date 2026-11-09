@@ -335,6 +335,8 @@ System::serialize(CheckpointOut &cp) const
         paramOut(cp, csprintf("quiesceEndTick_%d", id), when);
     }
 
+    futexMap.serializeWaiters(cp);
+
     // also serialize the memories in the system
     physmem.serializeSection(cp, "physmem");
 }
@@ -352,6 +354,8 @@ System::unserialize(CheckpointIn &cp)
         }
         t.context->getCpuPtr()->schedule(t.resumeEvent, when);
     }
+
+    futexMap.unserializeWaiters(cp, this);
 
     // also unserialize the memories in the system
     physmem.unserializeSection(cp, "physmem");

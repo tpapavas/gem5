@@ -75,6 +75,7 @@ class Process : public SimObject
 
     void init() override;
     void initState() override;
+    void startup() override;
     DrainState drain() override;
 
     virtual void syscall(ThreadContext *tc) { numSyscalls++; }
@@ -302,6 +303,24 @@ class Process : public SimObject
 
     // Track how many system calls are executed
     statistics::Scalar numSyscalls;
+
+  private:
+    /**
+     * A thread made by clone() has its own Process, which is created at run
+     * time and so is not a checkpointed SimObject. What identifies it is
+     * saved by the thread group leader so it can be rebuilt on restore.
+     */
+    struct SavedClone
+    {
+        ContextID contextId;
+        uint64_t pid;
+        uint64_t ppid;
+        uint64_t childClearTID;
+    };
+
+    std::vector<SavedClone> savedClones;
+
+    void restoreClone(const SavedClone &saved);
 };
 
 } // namespace gem5
