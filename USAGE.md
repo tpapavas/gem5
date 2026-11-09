@@ -13,11 +13,10 @@ The hw submodule (`src/systemC_NVDLA/model_nvdla/hw`) holds the Verilog of the p
 
 ## 1. Tools
 
-In `S1=/data/ngiannopoulos/Phd/tasks/task5_gem5_nvdla_checkpoint/release_steps/step1_checkpoint_minor`:
+In gem5-path
 
 | File | What it is |
 |---|---|
-| `pgo/lenet_int8.profdata` | PGO profile, only for rebuilding the model from scratch |
 | `scripts/system_ckpt.sh` | Ready-made flow: probe, create, at, every, at-cycle, layers, restore… |
 | `scripts/all_networks.sh` | The test on all networks (baseline, layers, 2 restores per config) |
 | `scripts/nvdla_timeline.sh` | Shows from a `simout` when the NVDLA is busy, to pick a cycle |
