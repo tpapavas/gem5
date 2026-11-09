@@ -1430,6 +1430,15 @@ Commit::getCommittingThread()
 ThreadID
 Commit::roundRobin()
 {
+    // deactivateThread() drops a thread from the list and nothing puts it
+    // back, so a thread woken up (e.g. from a futex wait) never commits
+    for (ThreadID tid : *activeThreads) {
+        if (std::find(priority_list.begin(), priority_list.end(), tid) ==
+                priority_list.end()) {
+            priority_list.push_back(tid);
+        }
+    }
+
     std::list<ThreadID>::iterator pri_iter = priority_list.begin();
     std::list<ThreadID>::iterator end      = priority_list.end();
 

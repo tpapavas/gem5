@@ -42,6 +42,7 @@
 #ifndef __CPU_BASE_HH__
 #define __CPU_BASE_HH__
 
+#include <deque>
 #include <memory>
 #include <vector>
 
@@ -70,6 +71,7 @@ class CheckerCPU;
 class ThreadContext;
 
 class NvDlaDeviceSE;
+class OutputStream;
 class NvDlaDevice;
 class rtlNVDLA;
 class ScNvDlaSE;
@@ -288,263 +290,60 @@ class BaseCPU : public ClockedObject
 
 
     // Method to use when instruction start accel is used
-    virtual void startAccel(Addr addr, int elements, Addr region_nvdla)  {};
+    virtual void startAccel(Addr addr, int elements, Addr region_nvdla);
 
     // Method to use when instruction start_accel_id is used
     virtual void startAccelID(Addr addr, int elements, Addr region_nvdla,
-      int accel_id)  {};
+      int accel_id);
 
-    virtual uint64_t waitAccel(Addr addr, int elements)  {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE WAIT ACCEL NOT IMPLMENTED" << std::endl;
-        return !finishedAccelerator0;
-    };
+    // wait Accel function
+    virtual uint64_t waitAccel(Addr addr, int elements);
 
-    virtual uint64_t waitAccelID(int accel_id)  {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE WAIT ACCEL ID NOT IMPLMENTED" << std::endl;
-        return !finishedAccelerator0;
-    };
+    // wait Accel ID function
+    virtual uint64_t waitAccelID(int accel_id);
 
-    virtual uint32_t NvDlaReadReg(int accel_id, Addr addr) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return UINT32_MAX;
-    }
+    virtual uint32_t NvDlaReadReg(int accel_id, Addr addr);
+    virtual void NvDlaWriteReg(int accel_id, uint32_t data, Addr addr);
 
-    virtual uint32_t NvDlaGetData() {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return UINT32_MAX;
-    }
+    virtual uint32_t NvDlaGetData();
+    virtual bool NvDlaRespReg();
 
-    virtual bool NvDlaRespReg() {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return UINT32_MAX;
-    }
-
-    virtual void NvDlaWriteReg(int accel_id, uint32_t data, Addr addr) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelStartCountBdma0(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelEndCountBdma0(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelStartCountBdma1(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelEndCountBdma1(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelStartCountCdp0(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelEndCountCdp0(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelStartCountCdp1(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelEndCountCdp1(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelStartCountCmac0(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelEndCountCmac0(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelStartCountCmac1(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelEndCountCmac1(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelStartCountPdp0(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelEndCountPdp0(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelStartCountPdp1(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelEndCountPdp1(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelStartCountRubik0(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelEndCountRubik0(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelStartCountRubik1(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelEndCountRubik1(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelStartCountSdp0(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelEndCountSdp0(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelStartCountSdp1(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelEndCountSdp1(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelStartCountCacc0(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelEndCountCacc0(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelStartCountCacc1(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelEndCountCacc1(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelStartCountCdmaDat0(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelEndCountCdmaDat0(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelStartCountCdmaDat1(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelEndCountCdmaDat1(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelStartCountCdmaWt0(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelEndCountCdmaWt0(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelStartCountCdmaWt1(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
-
-    virtual void accelEndCountCdmaWt1(int accel_id) {
-        std::cout << "THIS SHOULD NOT BE PRINTED, " <<
-        " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
-        return;
-    }
+    virtual void accelStartCountBdma0(int accel_id);
+    virtual void accelEndCountBdma0(int accel_id);
+    virtual void accelStartCountBdma1(int accel_id);
+    virtual void accelEndCountBdma1(int accel_id);
+    virtual void accelStartCountCdp0(int accel_id);
+    virtual void accelEndCountCdp0(int accel_id);
+    virtual void accelStartCountCdp1(int accel_id);
+    virtual void accelEndCountCdp1(int accel_id);
+    virtual void accelStartCountCmac0(int accel_id);
+    virtual void accelEndCountCmac0(int accel_id);
+    virtual void accelStartCountCmac1(int accel_id);
+    virtual void accelEndCountCmac1(int accel_id);
+    virtual void accelStartCountPdp0(int accel_id);
+    virtual void accelEndCountPdp0(int accel_id);
+    virtual void accelStartCountPdp1(int accel_id);
+    virtual void accelEndCountPdp1(int accel_id);
+    virtual void accelStartCountRubik0(int accel_id);
+    virtual void accelEndCountRubik0(int accel_id);
+    virtual void accelStartCountRubik1(int accel_id);
+    virtual void accelEndCountRubik1(int accel_id);
+    virtual void accelStartCountSdp0(int accel_id);
+    virtual void accelEndCountSdp0(int accel_id);
+    virtual void accelStartCountSdp1(int accel_id);
+    virtual void accelEndCountSdp1(int accel_id);
+    virtual void accelStartCountCacc0(int accel_id);
+    virtual void accelEndCountCacc0(int accel_id);
+    virtual void accelStartCountCacc1(int accel_id);
+    virtual void accelEndCountCacc1(int accel_id);
+    virtual void accelStartCountCdmaDat0(int accel_id);
+    virtual void accelEndCountCdmaDat0(int accel_id);
+    virtual void accelStartCountCdmaDat1(int accel_id);
+    virtual void accelEndCountCdmaDat1(int accel_id);
+    virtual void accelStartCountCdmaWt0(int accel_id);
+    virtual void accelEndCountCdmaWt0(int accel_id);
+    virtual void accelStartCountCdmaWt1(int accel_id);
+    virtual void accelEndCountCdmaWt1(int accel_id);
 
     bool finishedAccelerator0;
     bool finishedAccelerator1;
@@ -556,6 +355,49 @@ class BaseCPU : public ClockedObject
     uint32_t nvdlaReqData;
     bool nvdlaWaitingResp = false;
     PacketPtr blockedPkt;
+
+  protected:
+    struct NvDlaPendingRead
+    {
+        int accelId;
+        Addr addr;
+        bool interruptWait;
+
+        NvDlaPendingRead(
+            int id,
+            Addr address,
+            bool isInterruptWait)
+            : accelId(id),
+              addr(address),
+              interruptWait(isInterruptWait)
+        {
+        }
+    };
+
+    uint32_t NvDlaTxnCommandPrefix = 0xffff0000u;
+
+    std::deque<NvDlaPendingRead> nvdlaPendingReads;
+
+    OutputStream *nvdlaTraceFile = nullptr;
+
+    bool nvdlaInterruptWaitWritten = false;
+
+    void openNvDlaTrace();
+
+    uint16_t nvDlaTraceRegisterAddress(Addr addr) const;
+
+    void writeNvDlaInterruptTrace(uint32_t interruptValue);
+
+    void writeNvDlaReadTrace(
+        Addr addr,
+        uint32_t expectedData,
+        uint32_t mask = 0xffffffff);
+
+    void writeNvDlaWriteTrace(
+        Addr addr,
+        uint32_t data);
+
+  public:
 
     /**
      * method that returns a reference to the accelerator

@@ -633,14 +633,11 @@ CPU::removeThread(ThreadID tid)
     rename.clearStates(tid);
     iew.clearStates(tid);
 
-    // Flush out any old data from the time buffers.
-    for (int i = 0; i < timeBuffer.getSize(); ++i) {
-        timeBuffer.advance();
-        fetchQueue.advance();
-        decodeQueue.advance();
-        renameQueue.advance();
-        iewQueue.advance();
-    }
+    // The time buffers are not flushed here: they are shared by all threads,
+    // and advancing them drops the signals and instructions in flight of the
+    // threads that keep running (with SMT the rename of the other thread
+    // then stays blocked and decode overruns its skid buffer). The entries of
+    // this thread were squashed by the trap that halted it.
 
     // at this step, all instructions in the pipeline should be already
     // either committed successfully or squashed. All thread-specific

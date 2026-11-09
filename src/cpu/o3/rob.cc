@@ -157,7 +157,10 @@ ROB::resetEntries()
             ThreadID tid = *threads++;
 
             if (robPolicy == SMTQueuePolicy::Partitioned) {
-                maxEntries[tid] = numEntries / active_threads;
+                // Split over all threads, as the constructor does: called while
+                // only thread 0 runs, an active-thread split gives it every
+                // entry and the thread a later clone() starts overflows them
+                maxEntries[tid] = numEntries / numThreads;
             } else if (robPolicy == SMTQueuePolicy::Threshold &&
                        active_threads == 1) {
                 maxEntries[tid] = numEntries;

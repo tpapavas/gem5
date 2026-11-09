@@ -150,6 +150,12 @@ def addOptions(parser):
         help="CPU simulation mode. Default: %(default)s",
     )
     parser.add_argument(
+        "--cpu-model",
+        choices=["minor", "o3"],
+        default="minor",
+        help="CPU that runs the NVDLA runtime (2 hardware threads)",
+    )
+    parser.add_argument(
         "--kernel-init", type=str, default="/sbin/init", help="Override init"
     )
     parser.add_argument(
@@ -558,7 +564,18 @@ def main():
     )
     # Create CPU
     # system.cpu = X86MinorCPU()
-    system.cpu = ArmMinorCPU(numThreads=2)
+    if options.cpu_model == "o3":
+        system.cpu = ArmO3CPU(numThreads=2)
+        # The defaults are sized for one thread
+        system.cpu.numPhysVecPredRegs = 128
+        system.cpu.numPhysVecRegs = 512
+        system.cpu.numPhysIntRegs = 512
+        system.cpu.numPhysFloatRegs = 512
+        # Rename stalls when any class has no free register; the default
+        # 2 matrix registers are all taken by the 2 threads
+        system.cpu.numPhysMatRegs = 8
+    else:
+        system.cpu = ArmMinorCPU(numThreads=2)
 
     # Create L1 caches
     system.cpu.icache = L1Cache()

@@ -40,6 +40,8 @@
 
 #include "cpu/o3/decode.hh"
 
+#include <algorithm>
+
 #include "arch/generic/pcstate.hh"
 #include "base/trace.hh"
 #include "cpu/inst_seq.hh"
@@ -77,7 +79,10 @@ Decode::Decode(CPU *_cpu, const BaseO3CPUParams &params)
              decodeWidth, static_cast<int>(MaxWidth));
 
     // @todo: Make into a parameter
-    skidBufferMax = (fetchToDecodeDelay + 1) *  params.decodeWidth;
+    // Fetch sees the block of decode decodeToFetchDelay cycles late and
+    // keeps sending up to fetchWidth instructions per cycle until then
+    skidBufferMax = (fetchToDecodeDelay + params.decodeToFetchDelay + 1) *
+        std::max(params.fetchWidth, params.decodeWidth);
     for (int tid = 0; tid < MaxThreads; tid++) {
         stalls[tid] = {false};
         decodeStatus[tid] = Idle;

@@ -406,6 +406,11 @@ Fetch::isDrained() const
         if (!fetchQueue[i].empty())
             return false;
 
+        // A thread that is not active is never fetched from, and commit
+        // never sets its drain stall
+        if (cpu->getContext(i)->status() != gem5::ThreadContext::Active)
+            continue;
+
         // Return false if not idle or drain stalled
         if (fetchStatus[i] != Idle) {
             if (fetchStatus[i] == Blocked && stalls[i].drain)
@@ -1397,6 +1402,15 @@ Fetch::getFetchingThread()
 ThreadID
 Fetch::roundRobin()
 {
+    // deactivateThread() drops a thread from the list and nothing puts it
+    // back, so a thread woken up (e.g. from a futex wait) is never fetched
+    for (ThreadID tid : *activeThreads) {
+        if (std::find(priorityList.begin(), priorityList.end(), tid) ==
+                priorityList.end()) {
+            priorityList.push_back(tid);
+        }
+    }
+
     std::list<ThreadID>::iterator pri_iter = priorityList.begin();
     std::list<ThreadID>::iterator end      = priorityList.end();
 
@@ -1406,6 +1420,13 @@ Fetch::roundRobin()
         high_pri = *pri_iter;
 
         assert(high_pri <= numThreads);
+
+        // resetStage() lists every thread, also those never activated
+        if (std::find(activeThreads->begin(), activeThreads->end(),
+                      high_pri) == activeThreads->end()) {
+            pri_iter++;
+            continue;
+        }
 
         if (fetchStatus[high_pri] == Running ||
             fetchStatus[high_pri] == IcacheAccessComplete ||

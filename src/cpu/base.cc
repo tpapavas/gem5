@@ -43,6 +43,7 @@
 
 #include "cpu/base.hh"
 
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -58,8 +59,10 @@
 #include "cpu/checker/cpu.hh"
 #include "cpu/thread_context.hh"
 #include "debug/Mwait.hh"
+#include "debug/NvDlaDevice.hh"
 #include "debug/SyscallVerbose.hh"
 #include "debug/Thread.hh"
+#include "mem/packet_access.hh"
 #include "mem/page_table.hh"
 #include "params/BaseCPU.hh"
 #include "sim/clocked_object.hh"
@@ -72,6 +75,12 @@
 
 // Hack
 #include "sim/stat_control.hh"
+
+// The NVDLA register accesses below always use the Verilated model, as
+// MinorCPU did before they moved here
+#ifndef NVDLA_VERILATED
+#define NVDLA_VERILATED
+#endif
 
 namespace gem5
 {
@@ -1255,6 +1264,984 @@ void
 BaseCPU::NvDlaPort::recvTimingReq()
 {
     std::cout << "[BaseCPU::NvDlaPort::recvTimingReq] here \n";
+}
+
+// NVDLA support, shared by every CPU model (moved from MinorCPU)
+
+void
+BaseCPU::startAccel(Addr vaddr, int elements, Addr region_nvdla)
+{
+    if (num_accels>3) {
+        RequestPtr req = std::make_shared<Request>(vaddr, elements,
+                                  0, Request::funcRequestorId,0,0);
+        PacketPtr pkt = new Packet(req, MemCmd::ReadReq, elements);
+        nvdla_port_3.sendTimingReq(pkt);
+
+        finishedAccelerator3 = false;
+    }
+    if (num_accels>2) {
+        RequestPtr req = std::make_shared<Request>(vaddr, elements,
+                                  0, Request::funcRequestorId,0,0);
+        PacketPtr pkt = new Packet(req, MemCmd::ReadReq, elements);
+        nvdla_port_2.sendTimingReq(pkt);
+
+        finishedAccelerator2 = false;
+    }
+    if (num_accels>1) {
+        RequestPtr req = std::make_shared<Request>(vaddr, elements,
+                                  0, Request::funcRequestorId,0,0);
+        PacketPtr pkt = new Packet(req, MemCmd::ReadReq, elements);
+        nvdla_port_1.sendTimingReq(pkt);
+
+        finishedAccelerator1 = false;
+    }
+    if (num_accels>0) {
+        RequestPtr req = std::make_shared<Request>(vaddr, elements,
+                                  0, Request::funcRequestorId,0,0);
+        PacketPtr pkt = new Packet(req, MemCmd::ReadReq, elements);
+        nvdla_port_0.sendTimingReq(pkt);
+
+        finishedAccelerator0 = false;
+    }
+
+}
+
+void
+BaseCPU::startAccelID(Addr vaddr, int elements, Addr region_nvdla,
+    int accel_id)
+{
+    RequestPtr req = std::make_shared<Request>(vaddr, elements,
+                              0, Request::funcRequestorId,0,0);
+    PacketPtr pkt = new Packet(req, MemCmd::ReadReq, elements);
+    switch (accel_id) {
+        case 0:
+            nvdla_port_0.sendTimingReq(pkt);
+            finishedAccelerator0 = false;
+            break;
+        case 1:
+            nvdla_port_1.sendTimingReq(pkt);
+            finishedAccelerator1 = false;
+            break;
+        case 2:
+            nvdla_port_2.sendTimingReq(pkt);
+            finishedAccelerator2 = false;
+            break;
+        case 3:
+            nvdla_port_3.sendTimingReq(pkt);
+            finishedAccelerator3 = false;
+            break;
+        default:
+            break;
+    }
+}
+
+uint64_t
+BaseCPU::waitAccel(Addr vaddr, int elements)
+{
+
+    // DPRINTF(Accelerator, "Wait for Accelerator \n");
+    // std::cout << "Wait Accelerator " << std::endl;
+    if (num_accels == 1) {
+        return !finishedAccelerator0;
+    } else if (num_accels == 2) {
+        return !finishedAccelerator0 |
+               !finishedAccelerator1;
+    } else if (num_accels == 3) {
+        return !finishedAccelerator0 |
+               !finishedAccelerator1 |
+               !finishedAccelerator2;
+    } else {
+        return !finishedAccelerator0 |
+               !finishedAccelerator1 |
+               !finishedAccelerator2 |
+               !finishedAccelerator3;
+    }
+}
+
+
+uint64_t
+BaseCPU::waitAccelID(int accel_id)
+{
+    switch (accel_id) {
+        case 0:
+            return !finishedAccelerator0;
+        case 1:
+            return !finishedAccelerator1;
+        case 2:
+            return !finishedAccelerator2;
+        case 3:
+            return !finishedAccelerator3;
+        default:
+            fatal("waitAccelID: Unknown accel id.\n");
+    }
+}
+
+void
+BaseCPU::openNvDlaTrace()
+{
+    if (nvdlaTraceFile != nullptr) {
+        return;
+    }
+
+    nvdlaTraceFile = simout.create("nvdla_trace.txt");
+
+    if (nvdlaTraceFile == nullptr) {
+        panic("BaseCPU: Could not create nvdla_trace.txt\n");
+    }
+}
+
+void
+BaseCPU::writeNvDlaInterruptTrace(uint32_t interruptValue)
+{
+    if (interruptValue == 0) {
+        return;
+    }
+
+    openNvDlaTrace();
+
+    std::ostream &trace = *nvdlaTraceFile->stream();
+
+    trace << "wait\n"
+          << "read_reg 0xffff0003 0x"
+          << std::hex
+          << std::setw(8)
+          << std::setfill('0')
+          << interruptValue
+          << " 0x"
+          << std::setw(8)
+          << interruptValue
+          << std::dec
+          << std::setfill(' ')
+          << '\n'
+          << std::flush;
+}
+
+uint16_t
+BaseCPU::nvDlaTraceRegisterAddress(Addr addr) const
+{
+    if ((addr & 0x3) != 0) {
+        warn(
+            "NVDLA trace: unaligned register address 0x%llx\n",
+            static_cast<unsigned long long>(addr));
+    }
+
+    const Addr wordAddress = addr >> 2;
+
+    if (wordAddress > 0xffff) {
+        panic(
+            "NVDLA trace register word address does not fit in 16 bits: "
+            "original=0x%llx wordAddress=0x%llx\n",
+            static_cast<unsigned long long>(addr),
+            static_cast<unsigned long long>(wordAddress));
+    }
+
+    return static_cast<uint16_t>(wordAddress);
+}
+
+void
+BaseCPU::writeNvDlaWriteTrace(Addr addr, uint32_t data)
+{
+    openNvDlaTrace();
+
+    const uint16_t traceAddr =
+        nvDlaTraceRegisterAddress(addr);
+
+    const uint32_t command =
+        NvDlaTxnCommandPrefix |
+        static_cast<uint32_t>(traceAddr);
+
+    (*nvdlaTraceFile->stream())
+        << "write_reg 0x"
+        << std::hex
+        << std::setw(8)
+        << std::setfill('0')
+        << command
+        << " 0x"
+        << std::setw(8)
+        << data
+        << std::dec
+        << std::setfill(' ')
+        << '\n'
+        << std::flush;
+}
+
+void
+BaseCPU::writeNvDlaReadTrace(
+    Addr addr,
+    uint32_t expectedData,
+    uint32_t mask)
+{
+    openNvDlaTrace();
+
+    const uint16_t traceAddr =
+        nvDlaTraceRegisterAddress(addr);
+
+    const uint32_t command =
+        NvDlaTxnCommandPrefix |
+        static_cast<uint32_t>(traceAddr);
+
+    (*nvdlaTraceFile->stream())
+        << "read_reg 0x"
+        << std::hex
+        << std::setw(8)
+        << std::setfill('0')
+        << command
+        << " 0x"
+        << std::setw(8)
+        << mask
+        << " 0x"
+        << std::setw(8)
+        << expectedData
+        << std::dec
+        << std::setfill(' ')
+        << '\n'
+        << std::flush;
+}
+
+bool
+BaseCPU::NvDlaRespReg()
+{
+    std::cout
+        << "[BaseCPU::NvDlaRespReg()] nvdlaWaitingResp="
+        << nvdlaWaitingResp
+        << " tick=" << std::dec << curTick()
+        << '\n';
+
+    return nvdlaWaitingResp;
+}
+
+uint32_t
+BaseCPU::NvDlaGetData()
+{
+    std::cout
+        << "[BaseCPU::NvDlaGetData()] data=0x"
+        << std::hex << nvdlaReqData
+        << " tick=" << std::dec << curTick()
+        << '\n';
+
+    if (nvdlaPendingReads.empty()) {
+        warn(
+            "NvDlaGetData: Received NVDLA data 0x%08x "
+            "without a pending read\n",
+            nvdlaReqData);
+
+        return nvdlaReqData;
+    }
+
+    const NvDlaPendingRead pending =
+        nvdlaPendingReads.front();
+
+    nvdlaPendingReads.pop_front();
+
+    return nvdlaReqData;
+}
+
+#ifndef NVDLA_VERILATED
+//SystemC version
+uint32_t
+BaseCPU::NvDlaReadReg(int accel_id, Addr addr)
+{
+    DPRINTF(NvDlaDevice, "[GEM5 LOG] DLA #%d: Trying to read_reg(0x%016x)\n",
+        accel_id, addr);
+
+    const bool isInterruptWait = !FullSystem && addr == 0x20000;
+
+    // we send a null packet telling we have finished
+    RequestPtr req = std::make_shared<Request>(addr, 4,
+                                            Request::UNCACHEABLE, 0);
+    PacketPtr pkt = nullptr;
+    // we create the real packet, write request
+    pkt = Packet::createRead(req);
+    pkt->allocate();
+    nvdlaReqQ = pkt;
+    bool send;
+
+    nvdlaPendingReads.emplace_back(accel_id, addr,isInterruptWait);
+
+    if (addr == 0x20000) {
+        // check if interrupt are raised in this address
+        std::cout << "[GEM5 LOG] DLA #%" << accel_id
+                  << ": cpu wait for interrupt at @ "
+                  << ticksToCycles(curTick()) << " cycle\n";
+    }
+    if (isInterruptWait) {
+        std::cout
+            << "[GEM5 LOG] DLA #" << accel_id
+            << ": CPU polls interrupt at "
+            << ticksToCycles(curTick())
+            << " cycle\n";
+    }
+    switch(accel_id) {
+        case 0:
+            std::cout << "[NvDlaReadReg CPU SEND READ] addr=0x"
+                << std::hex << addr
+                << " tick=" << std::dec << curTick()
+                << std::endl;
+            send = nvdla_port_plus_0.sendTimingReq(pkt);
+            std::cout << "[NvDlaReadReg] sendTimingReq sent=" << send
+                      << " addr=0x" << std::hex << addr << "\n";
+            break;
+        case 1:
+            send = nvdla_port_plus_1.sendTimingReq(pkt);
+            break;
+        default:
+            assert(false);
+    }
+    nvdlaWaitingResp = true;
+
+    if (!send){
+        std::cout << "[NvDlaReadReg] Blocked - waiting for retry\n";
+        blockedPkt = nvdlaReqQ;
+    }
+
+    return 0;
+}
+
+#else
+// Verilated version
+uint32_t
+BaseCPU::NvDlaReadReg(int accel_id, Addr addr)
+{
+    DPRINTF(NvDlaDevice,
+        "[GEM5 LOG] DLA #%d: Trying to read_reg(0x%016x)\n",
+        accel_id, addr);
+
+    RequestPtr req = std::make_shared<Request>(addr, 4,
+                                            Request::UNCACHEABLE, 0);
+
+    PacketPtr pkt = Packet::createRead(req);
+
+    std::cout << "[NvDlaReadReg] "
+              << pkt->cmdString()
+              << " addr=0x" << std::hex << addr
+              << " size=" << std::dec << pkt->getSize()
+              << std::endl;
+
+    switch (accel_id) {
+        case 0:
+            nvdla_port_plus_0.sendTimingReq(pkt);
+            break;
+
+        case 1:
+            nvdla_port_plus_1.sendTimingReq(pkt);
+            break;
+
+        default:
+            assert(false);
+    }
+
+    uint32_t data = pkt->getLE<uint32_t>();
+
+    DPRINTF(NvDlaDevice,
+        "[GEM5 LOG] DLA #%d: Got response: 0x%08x\n",
+        accel_id,
+        data);
+
+    return data;
+}
+#endif
+
+
+
+void
+BaseCPU::NvDlaWriteReg(int accel_id, uint32_t data, Addr addr)
+{
+    DPRINTF(NvDlaDevice, "[GEM5 LOG] DLA #%d: Trying to write_reg(0x%016x), "
+        "data: 0x%08x\n",
+        accel_id, addr, data);
+#ifndef NVDLA_VERILATED
+    constexpr uint16_t NvDlaInterruptStatusWord = 0x0003;
+
+    const bool isInterruptClear = nvDlaTraceRegisterAddress(addr) == NvDlaInterruptStatusWord && data != 0;
+
+    if (isInterruptClear) {
+        writeNvDlaInterruptTrace(data);
+    }
+    writeNvDlaWriteTrace(addr, data);
+#endif
+    // we send a null packet telling we have finished
+    RequestPtr req = std::make_shared<Request>(addr, 4,
+                                            Request::UNCACHEABLE, 0);
+    PacketPtr pkt = nullptr;
+    // we create the real packet, write request
+    pkt = Packet::createWrite(req);
+    pkt->allocate();
+    pkt->setLE<uint32_t>(data);
+
+     std::cout << "[NvDlaWriteReg] " << pkt->cmdString()
+                  << " addr=0x" << std::hex << addr
+                  << " size=" << std::dec << pkt->getSize();
+
+    switch(accel_id) {
+        case 0:
+            nvdla_port_plus_0.sendTimingReq(pkt);
+            break;
+        case 1:
+            nvdla_port_plus_1.sendTimingReq(pkt);
+            break;
+        default:
+            assert(false);
+    }
+}
+
+void
+BaseCPU::accelStartCountBdma0(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto dev = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Bdma0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Bdma0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, dev);
+}
+
+void
+BaseCPU::accelEndCountBdma0(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Bdma0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Bdma0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Bdma0 +=
+            (nvdla_device->nvdla_end_Bdma0 -
+            nvdla_device->nvdla_start_Bdma0);
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelStartCountBdma1(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Bdma1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Bdma1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelEndCountBdma1(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Bdma1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Bdma1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Bdma1 +=
+            (nvdla_device->nvdla_end_Bdma1 -
+            nvdla_device->nvdla_start_Bdma1) ;
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelStartCountCdp0(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Cdp0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Cdp0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelEndCountCdp0(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Cdp0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Cdp0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Cdp0 +=
+            (nvdla_device->nvdla_end_Cdp0 -
+            nvdla_device->nvdla_start_Cdp0);
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelStartCountCdp1(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Cdp1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Cdp1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelEndCountCdp1(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Cdp1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Cdp1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Cdp1 +=
+            (nvdla_device->nvdla_end_Cdp1 -
+            nvdla_device->nvdla_start_Cdp1);
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelStartCountCmac0(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Cmac0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Cmac0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelEndCountCmac0(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Cmac0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Cmac0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Cmac0 +=
+            (nvdla_device->nvdla_end_Cmac0 -
+            nvdla_device->nvdla_start_Cmac0);
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelStartCountCmac1(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Cmac1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Cmac1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelEndCountCmac1(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Cmac1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Cmac1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Cmac1 +=
+            (nvdla_device->nvdla_end_Cmac1 -
+            nvdla_device->nvdla_start_Cmac1);
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelStartCountPdp0(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Pdp0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Pdp0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelEndCountPdp0(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Pdp0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Pdp0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Pdp0 +=
+            (nvdla_device->nvdla_end_Pdp0 -
+            nvdla_device->nvdla_start_Pdp0);
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelStartCountPdp1(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Pdp1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Pdp1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelEndCountPdp1(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Pdp1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Pdp1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Pdp1 +=
+            (nvdla_device->nvdla_end_Pdp1 -
+            nvdla_device->nvdla_start_Pdp1);
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelStartCountRubik0(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Rubik0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Rubik0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelEndCountRubik0(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Rubik0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Rubik0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Rubik0 +=
+            (nvdla_device->nvdla_end_Rubik0 -
+            nvdla_device->nvdla_start_Rubik0);
+    }, nvdla_device);
+
+}
+
+void
+BaseCPU::accelStartCountRubik1(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Rubik1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Rubik1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelEndCountRubik1(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Rubik1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Rubik1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Rubik1 +=
+            (nvdla_device->nvdla_end_Rubik1 -
+            nvdla_device->nvdla_start_Rubik1) ;
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelStartCountSdp0(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Sdp0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Sdp0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelEndCountSdp0(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Sdp0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Sdp0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Sdp0 +=
+            (nvdla_device->nvdla_end_Sdp0 -
+            nvdla_device->nvdla_start_Sdp0) ;
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelStartCountSdp1(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Sdp1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Sdp1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+}
+void
+BaseCPU::accelEndCountSdp1(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Sdp1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Sdp1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Sdp1 +=
+            (nvdla_device->nvdla_end_Sdp1 -
+            nvdla_device->nvdla_start_Sdp1) ;
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelStartCountCacc0(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Cacc0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Cacc0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+
+}
+
+void
+BaseCPU::accelEndCountCacc0(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Cacc0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Cacc0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Cacc0 +=
+            (nvdla_device->nvdla_end_Cacc0 -
+            nvdla_device->nvdla_start_Cacc0) ;
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelStartCountCacc1(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting Cacc1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_Cacc1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelEndCountCacc1(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting Cacc1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_Cacc1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_Cacc1 +=
+            (nvdla_device->nvdla_end_Cacc1 -
+            nvdla_device->nvdla_start_Cacc1);
+    }, nvdla_device);
+
+}
+
+void
+BaseCPU::accelStartCountCdmaDat0(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting CdmaDat0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_CdmaDat0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelEndCountCdmaDat0(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting CdmaDat0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_CdmaDat0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_CdmaDat0 +=
+            (nvdla_device->nvdla_end_CdmaDat0 -
+            nvdla_device->nvdla_start_CdmaDat0);
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelStartCountCdmaDat1(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting CdmaDat1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_CdmaDat1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelEndCountCdmaDat1(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting CdmaDat1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_CdmaDat1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_CdmaDat1 +=
+            (nvdla_device->nvdla_end_CdmaDat1 -
+            nvdla_device->nvdla_start_CdmaDat1);
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelStartCountCdmaWt0(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting CdmaWt0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_CdmaWt0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelEndCountCdmaWt0(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting CdmaWt0 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_CdmaWt0 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_CdmaWt0 +=
+            (nvdla_device->nvdla_end_CdmaWt0 -
+            nvdla_device->nvdla_start_CdmaWt0);
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelStartCountCdmaWt1(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "Start counting CdmaWt1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_start_CdmaWt1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+    }, nvdla_device);
+}
+
+void
+BaseCPU::accelEndCountCdmaWt1(int accel_id)
+{
+    assert(accel_id == 0 || accel_id == 1);
+    auto nvdla_device = ( (accel_id == 0) ? nvdla_device_0 : nvdla_device_1 );
+
+    std::visit([&](auto* nvdla_device) {
+        DPRINTF(NvDlaDevice, "End counting CdmaWt1 for DLA #%d @ %llu\n",
+            accel_id, nvdla_device->getTickfromWrapperNVDLA());
+        nvdla_device->nvdla_end_CdmaWt1 =
+            nvdla_device->getTickfromWrapperNVDLA();
+        nvdla_device->getStats().nvdla_total_CdmaWt1 +=
+            (nvdla_device->nvdla_end_CdmaWt1 -
+            nvdla_device->nvdla_start_CdmaWt1);
+    }, nvdla_device);
 }
 
 } // namespace gem5

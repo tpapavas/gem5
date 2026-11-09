@@ -13,11 +13,19 @@
 #   restore_layer_<L>   run to the end from the last layer
 # A config passes when the output.dimg of all four is identical.
 # GEM5=<absolute binary> picks another build (see system_ckpt.sh).
+# CPU_MODEL=o3 runs on the O3 CPU, in runs/<model>_<prec>_o3/ and
+# results/all_networks_o3.tsv (minor is the default).
 set -Eeuo pipefail
 
 SELF="$(readlink -f "$0")"
 TASK=/data/ngiannopoulos/Phd/tasks/task5_gem5_nvdla_checkpoint
 CKPT="$TASK/scripts/system_ckpt.sh"
+CPU_MODEL="${CPU_MODEL:-minor}"
+case "$CPU_MODEL" in
+    minor) SUFFIX="" ;;
+    o3)    SUFFIX="_o3" ;;
+    *)     echo "CPU_MODEL must be minor or o3" >&2; exit 2 ;;
+esac
 QUANT2=/data/ngiannopoulos/Phd/NVDLA/nvdla_quantization_2/out
 IMG_ROOT=/data/ngiannopoulos/Phd/NVDLA/nvdla_quantization/out_verified_after_fix_pdp_v2/run_20261102_124920_4ynwxp
 # Host hours of the Minor campaign, longest first, to start those first
@@ -31,7 +39,7 @@ CONFIGS=(
 )
 
 setup() { # <model> <dataset> <prec>: sets TAG, LOADABLE, IMAGE, SE_EXTRA
-    TAG="$1_$3"
+    TAG="$1_$3$SUFFIX"
     LOADABLE="$QUANT2/$1/$2/onnc_$3_out/$3_onnc.nvdla"
     if [[ "$1" == lenet5 ]]; then
         IMAGE="$IMG_ROOT/lenet5/mnist/vp_in_gray/vp_in_000.pgm"
@@ -41,6 +49,7 @@ setup() { # <model> <dataset> <prec>: sets TAG, LOADABLE, IMAGE, SE_EXTRA
     # FP16 gets --normalize 255, INT8 gets no --normalize at all
     SE_EXTRA=""
     [[ "$3" != fp16 ]] || SE_EXTRA="--normalize 255"
+    [[ "$CPU_MODEL" == minor ]] || SE_EXTRA="$SE_EXTRA --cpu-model $CPU_MODEL"
     [[ -f "$LOADABLE" && -f "$IMAGE" ]] || { echo "missing input for $TAG" >&2; exit 2; }
     export LOADABLE IMAGE SE_EXTRA
 }
@@ -84,12 +93,12 @@ case "${1:-}" in
         esac
         ;;
     report)
-        out="$TASK/results/all_networks_minor.tsv"
+        out="$TASK/results/all_networks_$CPU_MODEL.tsv"
         mkdir -p "$TASK/results"
         {
             printf 'run\tlayers\tmid\tbaseline_exit\tlayers_exit\tmid_exit\tlast_exit\tsha_baseline\tsha_layers\tsha_mid\tsha_last\tcyc_baseline\tcyc_layers\tcyc_mid\tcyc_last\thost_h_baseline\thost_h_layers\tverdict\n'
             for c in "${CONFIGS[@]}"; do
-                IFS=: read -r m d p <<< "$c"; TAG="${m}_$p"; R="$TASK/runs/$TAG"
+                IFS=: read -r m d p <<< "$c"; TAG="${m}_$p$SUFFIX"; R="$TASK/runs/$TAG"
                 [[ -d "$R" ]] || continue
                 n="-"; mid="-"
                 if [[ -f "$R/chain_layers.txt" ]]; then
