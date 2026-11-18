@@ -40,13 +40,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 #include "cpu/base.hh"
-
 #include <iostream>
 #include <sstream>
 #include <string>
-
 #include "arch/generic/decoder.hh"
 #include "arch/generic/isa.hh"
 #include "arch/generic/tlb.hh"
@@ -69,22 +66,16 @@
 #include "sim/sim_events.hh"
 #include "sim/sim_exit.hh"
 #include "sim/system.hh"
-
 // Hack
 #include "sim/stat_control.hh"
-
 namespace gem5
 {
-
 std::unique_ptr<BaseCPU::GlobalStats> BaseCPU::globalStats;
-
 std::vector<BaseCPU *> BaseCPU::cpuList;
-
 // This variable reflects the max number of threads in any CPU.  Be
 // careful to only use it once all the CPUs that you care about have
 // been initialized
 int maxThreadsPerCPU = 1;
-
 CPUProgressEvent::CPUProgressEvent(BaseCPU *_cpu, Tick ival)
     : Event(Event::Progress_Event_Pri), _interval(ival), lastNumInst(0),
       cpu(_cpu), _repeatEvent(true)
@@ -92,22 +83,17 @@ CPUProgressEvent::CPUProgressEvent(BaseCPU *_cpu, Tick ival)
     if (_interval)
         cpu->schedule(this, curTick() + _interval);
 }
-
 void
 CPUProgressEvent::process()
 {
     Counter temp = cpu->totalOps();
-
     if (_repeatEvent)
         cpu->schedule(this, curTick() + _interval);
-
     if (cpu->switchedOut()) {
         return;
     }
-
 #ifndef NDEBUG
     double ipc = double(temp - lastNumInst) / (_interval / cpu->clockPeriod());
-
     DPRINTFN("%s progress event, total committed:%i, progress insts committed: "
              "%lli, IPC: %0.8d\n", cpu->name(), temp, temp - lastNumInst,
              ipc);
@@ -119,13 +105,11 @@ CPUProgressEvent::process()
 #endif
     lastNumInst = temp;
 }
-
 const char *
 CPUProgressEvent::description() const
 {
     return "CPU Progress";
 }
-
 BaseCPU::BaseCPU(const Params &p, bool is_checker)
     : ClockedObject(p), instCnt(0), _cpuId(p.cpu_id), _socketId(p.socket_id),
       _instRequestorId(p.system->getRequestorId(this, "inst")),
@@ -136,8 +120,8 @@ BaseCPU::BaseCPU(const Params &p, bool is_checker)
       nvdla_port_1(this,"1"),
       nvdla_port_2(this,"2"),
       nvdla_port_3(this,"3"),
-      nvdla_port_plus_0(this, "0"),
-      nvdla_port_plus_1(this, "1"),
+      nvdla_port_plus_0(this, 0),
+      nvdla_port_plus_1(this, 1),
       num_accels(p.num_accels),
       modelResetPort(p.name + ".model_reset"),
       interrupts(p.interrupts), numThreads(p.numThreads), system(p.system),
@@ -155,29 +139,26 @@ BaseCPU::BaseCPU(const Params &p, bool is_checker)
     nvdla_1 = p.accel_1;
     nvdla_2 = p.accel_2;
     nvdla_3 = p.accel_3;
-
+    std::cout << "num_accels: " << num_accels << std::endl;
+    
+    std::cout << "[BaseCPU::BaseCPU] nvdla_0: " << nvdla_0 << " nvdla_1: " << nvdla_1
+              << " nvdla_2: " << nvdla_2 << " nvdla_3: " << nvdla_3 << std::endl;
     // if Python did not provide a valid ID, do it here
     if (_cpuId == -1 ) {
         _cpuId = cpuList.size();
     }
-
     // add self to global list of CPUs
     cpuList.push_back(this);
-
     DPRINTF(SyscallVerbose, "Constructing CPU with id %d, socket id %d\n",
             _cpuId, _socketId);
-
     if (numThreads > maxThreadsPerCPU)
         maxThreadsPerCPU = numThreads;
-
     functionTracingEnabled = false;
     if (p.function_trace) {
         const std::string fname = csprintf("ftrace.%s", name());
         functionTraceStream = simout.findOrCreate(fname)->stream();
-
         currentFunctionStart = currentFunctionEnd = 0;
         functionEntryTick = p.function_trace_start;
-
         if (p.function_trace_start == 0) {
             functionTracingEnabled = true;
         } else {
@@ -186,20 +167,16 @@ BaseCPU::BaseCPU(const Params &p, bool is_checker)
             schedule(event, p.function_trace_start);
         }
     }
-
     tracer = params().tracer;
-
     if (params().isa.size() != numThreads) {
         fatal("Number of ISAs (%i) assigned to the CPU does not equal number "
               "of threads (%i).\n", params().isa.size(), numThreads);
     }
-
     if (!FullSystem && params().workload.size() != numThreads) {
         fatal("Number of processes (cpu.workload) (%i) assigned to the CPU "
               "does not equal number of threads (%i).\n",
               params().workload.size(), numThreads);
     }
-
     modelResetPort.onChange([this](const bool &new_val) {
         setReset(new_val);
     });
@@ -214,13 +191,11 @@ BaseCPU::BaseCPU(const Params &p, bool is_checker)
         fetchStatptr->branchRate = fetchStatptr->numBranches /
             baseStats.numCycles;
         fetchStats.emplace_back(fetchStatptr);
-
         // create executeStat object for thread i and set rate formulas
         ExecuteCPUStats* executeStatptr = new ExecuteCPUStats(this, i);
         executeStatptr->instRate = executeStatptr->numInsts /
             baseStats.numCycles;
         executeStats.emplace_back(executeStatptr);
-
         // create commitStat object for thread i and set ipc, cpi formulas
         CommitCPUStats* commitStatptr = new CommitCPUStats(this, i);
         commitStatptr->ipc = commitStatptr->numInsts / baseStats.numCycles;
@@ -232,13 +207,11 @@ BaseCPU::BaseCPU(const Params &p, bool is_checker)
     finishedAccelerator2=true;
     finishedAccelerator3=true;
 }
-
 void
 BaseCPU::enableFunctionTrace()
 {
     functionTracingEnabled = true;
 }
-
 BaseCPU::~BaseCPU()
 {
     delete nvdla_0;
@@ -246,7 +219,6 @@ BaseCPU::~BaseCPU()
     delete nvdla_2;
     delete nvdla_3;
 }
-
 void
 BaseCPU::postInterrupt(ThreadID tid, int int_num, int index)
 {
@@ -257,33 +229,27 @@ BaseCPU::postInterrupt(ThreadID tid, int int_num, int index)
     if (FullSystem || !system->futexMap.is_waiting(threadContexts[tid]))
         wakeup(tid);
 }
-
 void
 BaseCPU::armMonitor(ThreadID tid, Addr address)
 {
     assert(tid < numThreads);
     AddressMonitor &monitor = addressMonitor[tid];
-
     monitor.armed = true;
     monitor.vAddr = address;
     monitor.pAddr = 0x0;
     DPRINTF(Mwait, "[tid:%d] Armed monitor (vAddr=0x%lx)\n", tid, address);
 }
-
 bool
 BaseCPU::mwait(ThreadID tid, PacketPtr pkt)
 {
     assert(tid < numThreads);
     AddressMonitor &monitor = addressMonitor[tid];
-
     if (!monitor.gotWakeup) {
         int block_size = cacheLineSize();
         uint64_t mask = ~((uint64_t)(block_size - 1));
-
         assert(pkt->req->hasPaddr());
         monitor.pAddr = pkt->getAddr() & mask;
         monitor.waiting = true;
-
         DPRINTF(Mwait, "[tid:%d] mwait called (vAddr=0x%lx, "
                 "line's paddr=0x%lx)\n", tid, monitor.vAddr, monitor.pAddr);
         return true;
@@ -292,40 +258,30 @@ BaseCPU::mwait(ThreadID tid, PacketPtr pkt)
         return false;
     }
 }
-
 void
 BaseCPU::mwaitAtomic(ThreadID tid, ThreadContext *tc, BaseMMU *mmu)
 {
     assert(tid < numThreads);
     AddressMonitor &monitor = addressMonitor[tid];
-
     RequestPtr req = std::make_shared<Request>();
-
     Addr addr = monitor.vAddr;
     int block_size = cacheLineSize();
     uint64_t mask = ~((uint64_t)(block_size - 1));
     int size = block_size;
-
     //The address of the next line if it crosses a cache line boundary.
     Addr secondAddr = roundDown(addr + size - 1, block_size);
-
     if (secondAddr > addr)
         size = secondAddr - addr;
-
     req->setVirt(addr, size, 0x0, dataRequestorId(),
             tc->pcState().instAddr());
-
     // translate to physical address
     Fault fault = mmu->translateAtomic(req, tc, BaseMMU::Read);
     assert(fault == NoFault);
-
     monitor.pAddr = req->getPaddr() & mask;
     monitor.waiting = true;
-
     DPRINTF(Mwait, "[tid:%d] mwait called (vAddr=0x%lx, line's paddr=0x%lx)\n",
             tid, monitor.vAddr, monitor.pAddr);
 }
-
 void
 BaseCPU::init()
 {
@@ -334,7 +290,6 @@ BaseCPU::init()
     if (params().max_insts_any_thread != 0) {
         scheduleInstStopAnyThread(params().max_insts_any_thread);
     }
-
     // Set up instruction-count-based termination events for SimPoints
     // Typically, there are more than one action points.
     // Simulation.py is responsible to take the necessary actions upon
@@ -342,10 +297,8 @@ BaseCPU::init()
     if (!params().simpoint_start_insts.empty()) {
         scheduleSimpointsInstStop(params().simpoint_start_insts);
     }
-
     if (params().max_insts_all_threads != 0) {
         std::string cause = "all threads reached the max instruction count";
-
         // allocate & initialize shared downcounter: each event will
         // decrement this when triggered; simulation will terminate
         // when counter reaches 0
@@ -357,55 +310,43 @@ BaseCPU::init()
                     event, params().max_insts_all_threads);
         }
     }
-
     if (!params().switched_out) {
         registerThreadContexts();
-
         verifyMemoryMode();
     }
 }
-
 void
 BaseCPU::startup()
 {
     if (params().progress_interval) {
         new CPUProgressEvent(this, params().progress_interval);
     }
-
     if (_switchedOut)
         powerState->set(enums::PwrState::OFF);
-
     // Assumption CPU start to operate instantaneously without any latency
     if (powerState->get() == enums::PwrState::UNDEFINED)
         powerState->set(enums::PwrState::ON);
-
 }
-
 probing::PMUUPtr
 BaseCPU::pmuProbePoint(const char *name)
 {
     probing::PMUUPtr ptr;
     ptr.reset(new probing::PMU(getProbeManager(), name));
-
     return ptr;
 }
-
 void
 BaseCPU::regProbePoints()
 {
     ppAllCycles = pmuProbePoint("Cycles");
     ppActiveCycles = pmuProbePoint("ActiveCycles");
-
     ppRetiredInsts = pmuProbePoint("RetiredInsts");
     ppRetiredInstsPC = pmuProbePoint("RetiredInstsPC");
     ppRetiredLoads = pmuProbePoint("RetiredLoads");
     ppRetiredStores = pmuProbePoint("RetiredStores");
     ppRetiredBranches = pmuProbePoint("RetiredBranches");
-
     ppSleeping = new ProbePointArg<bool>(this->getProbeManager(),
                                          "Sleeping");
 }
-
 void
 BaseCPU::probeInstCommit(const StaticInstPtr &inst, Addr pc)
 {
@@ -413,17 +354,13 @@ BaseCPU::probeInstCommit(const StaticInstPtr &inst, Addr pc)
         ppRetiredInsts->notify(1);
         ppRetiredInstsPC->notify(pc);
     }
-
     if (inst->isLoad())
         ppRetiredLoads->notify(1);
-
     if (inst->isStore() || inst->isAtomic())
         ppRetiredStores->notify(1);
-
     if (inst->isControl())
         ppRetiredBranches->notify(1);
 }
-
 BaseCPU::
 BaseCPUStats::BaseCPUStats(statistics::Group *parent)
     : statistics::Group(parent),
@@ -442,24 +379,19 @@ BaseCPUStats::BaseCPUStats(statistics::Group *parent)
 {
     cpi.precision(6);
     cpi = numCycles / numInsts;
-
     ipc.precision(6);
     ipc = numInsts / numCycles;
 }
-
 void
 BaseCPU::regStats()
 {
     ClockedObject::regStats();
-
     if (!globalStats) {
         /* We need to construct the global CPU stat structure here
          * since it needs a pointer to the Root object. */
         globalStats.reset(new GlobalStats(Root::root()));
     }
-
     using namespace statistics;
-
     int size = threadContexts.size();
     if (size > 1) {
         for (int i = 0; i < size; ++i) {
@@ -470,7 +402,6 @@ BaseCPU::regStats()
     } else if (size == 1)
         threadContexts[0]->regStats(name());
 }
-
 Port &
 BaseCPU::getPort(const std::string &if_name, PortID idx)
 {
@@ -499,7 +430,6 @@ BaseCPU::getPort(const std::string &if_name, PortID idx)
     else
         return ClockedObject::getPort(if_name, idx);
 }
-
 // (guillemlp) Function needed to return an accelerator port
 Port &
 BaseCPU::getAccelPort(int n)
@@ -517,9 +447,7 @@ BaseCPU::getAccelPort(int n)
     } else {
         return nvdla_port_3;
     }
-
 }
-
 Port &
 BaseCPU::getNvDlaPort(int n)
 {
@@ -529,30 +457,23 @@ BaseCPU::getNvDlaPort(int n)
         return nvdla_port_plus_1;
     }
 }
-
 void
 BaseCPU::registerThreadContexts()
 {
     assert(system->multiThread || numThreads == 1);
-
     fatal_if(interrupts.size() != numThreads,
              "CPU %s has %i interrupt controllers, but is expecting one "
              "per thread (%i)\n",
              name(), interrupts.size(), numThreads);
-
     for (ThreadID tid = 0; tid < threadContexts.size(); ++tid) {
         ThreadContext *tc = threadContexts[tid];
-
         system->registerThreadContext(tc);
-
         if (!FullSystem)
             tc->getProcessPtr()->assignThreadContext(tc->contextId());
-
         interrupts[tid]->setThreadContext(tc);
         tc->getIsaPtr()->setThreadContext(tc);
     }
 }
-
 void
 BaseCPU::deschedulePowerGatingEvent()
 {
@@ -560,7 +481,6 @@ BaseCPU::deschedulePowerGatingEvent()
         deschedule(enterPwrGatingEvent);
     }
 }
-
 void
 BaseCPU::schedulePowerGatingEvent()
 {
@@ -568,7 +488,6 @@ BaseCPU::schedulePowerGatingEvent()
         if (tc->status() == ThreadContext::Active)
             return;
     }
-
     if (powerState->get() == enums::PwrState::CLK_GATED &&
         powerGatingOnIdle) {
         assert(!enterPwrGatingEvent.scheduled());
@@ -577,7 +496,6 @@ BaseCPU::schedulePowerGatingEvent()
         schedule(enterPwrGatingEvent, clockEdge(pwrGatingLatency));
     }
 }
-
 int
 BaseCPU::findContext(ThreadContext *tc)
 {
@@ -588,7 +506,6 @@ BaseCPU::findContext(ThreadContext *tc)
     }
     return 0;
 }
-
 void
 BaseCPU::activateContext(ThreadID thread_num)
 {
@@ -597,7 +514,6 @@ BaseCPU::activateContext(ThreadID thread_num)
                 threadContexts[thread_num]->contextId());
         return;
     }
-
     DPRINTF(Thread, "activate contextId %d\n",
             threadContexts[thread_num]->contextId());
     // Squash enter power gating event while cpu gets activated
@@ -605,10 +521,8 @@ BaseCPU::activateContext(ThreadID thread_num)
         deschedule(enterPwrGatingEvent);
     // For any active thread running, update CPU power state to active (ON)
     powerState->set(enums::PwrState::ON);
-
     updateCycleCounters(CPU_STATE_WAKEUP);
 }
-
 void
 BaseCPU::suspendContext(ThreadID thread_num)
 {
@@ -620,13 +534,10 @@ BaseCPU::suspendContext(ThreadID thread_num)
             return;
         }
     }
-
     // All CPU thread are suspended, update cycle count
     updateCycleCounters(CPU_STATE_SLEEP);
-
     // All CPU threads suspended, enter lower power state for the CPU
     powerState->set(enums::PwrState::CLK_GATED);
-
     // If pwrGatingLatency is set to 0 then this mechanism is disabled
     if (powerGatingOnIdle) {
         // Schedule power gating event when clock gated for pwrGatingLatency
@@ -634,33 +545,27 @@ BaseCPU::suspendContext(ThreadID thread_num)
         schedule(enterPwrGatingEvent, clockEdge(pwrGatingLatency));
     }
 }
-
 void
 BaseCPU::haltContext(ThreadID thread_num)
 {
     updateCycleCounters(BaseCPU::CPU_STATE_SLEEP);
 }
-
 void
 BaseCPU::enterPwrGating(void)
 {
     powerState->set(enums::PwrState::OFF);
 }
-
 void
 BaseCPU::switchOut()
 {
     assert(!_switchedOut);
     _switchedOut = true;
-
     // Flush all TLBs in the CPU to avoid having stale translations if
     // it gets switched in later.
     flushTLBs();
-
     // Go to the power gating state
     powerState->set(enums::PwrState::OFF);
 }
-
 void
 BaseCPU::takeOverFrom(BaseCPU *oldCPU)
 {
@@ -672,34 +577,25 @@ BaseCPU::takeOverFrom(BaseCPU *oldCPU)
     _taskId = oldCPU->taskId();
     // Take over the power state of the switchedOut CPU
     powerState->set(oldCPU->powerState->get());
-
     previousState = oldCPU->previousState;
     previousCycle = oldCPU->previousCycle;
-
     _switchedOut = false;
-
     ThreadID size = threadContexts.size();
     for (ThreadID i = 0; i < size; ++i) {
         ThreadContext *newTC = threadContexts[i];
         ThreadContext *oldTC = oldCPU->threadContexts[i];
-
         newTC->getIsaPtr()->setThreadContext(newTC);
-
         newTC->takeOverFrom(oldTC);
-
         assert(newTC->contextId() == oldTC->contextId());
         assert(newTC->threadId() == oldTC->threadId());
         system->replaceThreadContext(newTC, newTC->contextId());
-
         /* This code no longer works since the zero register (e.g.,
          * r31 on Alpha) doesn't necessarily contain zero at this
          * point.
            if (debug::Context)
             ThreadContext::compare(oldTC, newTC);
         */
-
         newTC->getMMUPtr()->takeOverFrom(oldTC->getMMUPtr());
-
         // Checker whether or not we have to transfer CheckerCPU
         // objects over in the switch
         CheckerCPU *old_checker = oldTC->getCheckerCpuPtr();
@@ -708,25 +604,21 @@ BaseCPU::takeOverFrom(BaseCPU *oldCPU)
             new_checker->getMMUPtr()->takeOverFrom(old_checker->getMMUPtr());
         }
     }
-
     interrupts = oldCPU->interrupts;
     for (ThreadID tid = 0; tid < numThreads; tid++) {
         interrupts[tid]->setThreadContext(threadContexts[tid]);
     }
     oldCPU->interrupts.clear();
-
     // All CPUs have an instruction and a data port, and the new CPU's
     // ports are dangling while the old CPU has its ports connected
     // already. Unbind the old CPU and then bind the ports of the one
     // we are switching to.
     getInstPort().takeOverFrom(&oldCPU->getInstPort());
     getDataPort().takeOverFrom(&oldCPU->getDataPort());
-
     // Switch over the reset line as well, if necessary.
     if (oldCPU->modelResetPort.isConnected())
         modelResetPort.takeOverFrom(&oldCPU->modelResetPort);
 }
-
 void
 BaseCPU::setReset(bool state)
 {
@@ -748,33 +640,28 @@ BaseCPU::setReset(bool state)
         }
     }
 }
-
 void
 BaseCPU::flushTLBs()
 {
     for (ThreadID i = 0; i < threadContexts.size(); ++i) {
         ThreadContext &tc(*threadContexts[i]);
         CheckerCPU *checker(tc.getCheckerCpuPtr());
-
         tc.getMMUPtr()->flushAll();
         if (checker) {
             checker->getMMUPtr()->flushAll();
         }
     }
 }
-
 void
 BaseCPU::serialize(CheckpointOut &cp) const
 {
     SERIALIZE_SCALAR(instCnt);
-
     if (!_switchedOut) {
         /* Unlike _pid, _taskId is not serialized, as they are dynamically
          * assigned unique ids that are only meaningful for the duration of
          * a specific run. We will need to serialize the entire taskMap in
          * system. */
         SERIALIZE_SCALAR(_pid);
-
         // Serialize the threads, this is done by the CPU implementation.
         for (ThreadID i = 0; i < numThreads; ++i) {
             ScopedCheckpointSection sec(cp, csprintf("xc.%i", i));
@@ -783,15 +670,12 @@ BaseCPU::serialize(CheckpointOut &cp) const
         }
     }
 }
-
 void
 BaseCPU::unserialize(CheckpointIn &cp)
 {
     UNSERIALIZE_SCALAR(instCnt);
-
     if (!_switchedOut) {
         UNSERIALIZE_SCALAR(_pid);
-
         // Unserialize the threads, this is done by the CPU implementation.
         for (ThreadID i = 0; i < numThreads; ++i) {
             ScopedCheckpointSection sec(cp, csprintf("xc.%i", i));
@@ -800,29 +684,24 @@ BaseCPU::unserialize(CheckpointIn &cp)
         }
     }
 }
-
 void
 BaseCPU::scheduleInstStop(ThreadID tid, Counter insts, std::string cause)
 {
     const Tick now(getCurrentInstCount(tid));
     Event *event(new LocalSimLoopExitEvent(cause, 0));
-
     threadContexts[tid]->scheduleInstCountEvent(event, now + insts);
 }
-
 Tick
 BaseCPU::getCurrentInstCount(ThreadID tid)
 {
     return threadContexts[tid]->getCurrentInstCount();
 }
-
 AddressMonitor::AddressMonitor()
 {
     armed = false;
     waiting = false;
     gotWakeup = false;
 }
-
 bool
 AddressMonitor::doMonitor(PacketPtr pkt)
 {
@@ -837,20 +716,16 @@ AddressMonitor::doMonitor(PacketPtr pkt)
     }
     return false;
 }
-
-
 void
 BaseCPU::traceFunctionsInternal(Addr pc)
 {
     if (loader::debugSymbolTable.empty())
         return;
-
     // if pc enters different function, print new function symbol and
     // update saved range.  Otherwise do nothing.
     if (pc < currentFunctionStart || pc >= currentFunctionEnd) {
         auto it = loader::debugSymbolTable.findNearest(
                 pc, currentFunctionEnd);
-
         std::string sym_str;
         if (it == loader::debugSymbolTable.end()) {
             // no symbol found: use addr as label
@@ -861,13 +736,11 @@ BaseCPU::traceFunctionsInternal(Addr pc)
             sym_str = it->name;
             currentFunctionStart = it->address;
         }
-
         ccprintf(*functionTraceStream, " (%d)\n%d: %s",
                  curTick() - functionEntryTick, curTick(), sym_str);
         functionEntryTick = curTick();
     }
 }
-
 void
 BaseCPU::scheduleSimpointsInstStop(std::vector<Counter> inst_starts)
 {
@@ -876,7 +749,6 @@ BaseCPU::scheduleSimpointsInstStop(std::vector<Counter> inst_starts)
         scheduleInstStop(0, inst_starts[i], cause);
     }
 }
-
 void
 BaseCPU::scheduleInstStopAnyThread(Counter max_insts)
 {
@@ -885,7 +757,6 @@ BaseCPU::scheduleInstStopAnyThread(Counter max_insts)
         scheduleInstStop(tid, max_insts, cause);
     }
 }
-
 BaseCPU::GlobalStats::GlobalStats(statistics::Group *parent)
     : statistics::Group(parent),
     ADD_STAT(simInsts, statistics::units::Count::get(),
@@ -904,27 +775,22 @@ BaseCPU::GlobalStats::GlobalStats(statistics::Group *parent)
         .precision(0)
         .prereq(simInsts)
         ;
-
     simOps
         .functor(BaseCPU::numSimulatedOps)
         .precision(0)
         .prereq(simOps)
         ;
-
     hostInstRate
         .precision(0)
         .prereq(simInsts)
         ;
-
     hostOpRate
         .precision(0)
         .prereq(simOps)
         ;
-
     hostInstRate = simInsts / hostSeconds;
     hostOpRate = simOps / hostSeconds;
 }
-
 BaseCPU::
 FetchCPUStats::FetchCPUStats(statistics::Group *parent, int thread_id)
     : statistics::Group(parent, csprintf("fetchStats%i", thread_id).c_str()),
@@ -943,22 +809,16 @@ FetchCPUStats::FetchCPUStats(statistics::Group *parent, int thread_id)
              "ICache total stall cycles"),
     ADD_STAT(numFetchSuspends, statistics::units::Count::get(),
              "Number of times Execute suspended instruction fetching")
-
 {
     fetchRate
         .flags(statistics::total);
-
     numBranches
         .prereq(numBranches);
-
     branchRate
         .flags(statistics::total);
-
     icacheStallCycles
         .prereq(icacheStallCycles);
-
 }
-
 // means it is incremented in a vector indexing and not directly
 BaseCPU::
 ExecuteCPUStats::ExecuteCPUStats(statistics::Group *parent, int thread_id)
@@ -1015,7 +875,6 @@ ExecuteCPUStats::ExecuteCPUStats(statistics::Group *parent, int thread_id)
              "commit")
 {
     numStoreInsts = numMemRefs - numLoadInsts;
-
     dcacheStallCycles
         .prereq(dcacheStallCycles);
     numCCRegReads
@@ -1047,7 +906,6 @@ ExecuteCPUStats::ExecuteCPUStats(statistics::Group *parent, int thread_id)
     numVecRegWrites
         .prereq(numVecRegWrites);
 }
-
 BaseCPU::
 CommitCPUStats::CommitCPUStats(statistics::Group *parent, int thread_id)
     : statistics::Group(parent, csprintf("commitStats%i", thread_id).c_str()),
@@ -1084,28 +942,21 @@ CommitCPUStats::CommitCPUStats(statistics::Group *parent, int thread_id)
 {
     numInsts
         .prereq(numInsts);
-
     cpi.precision(6);
     ipc.precision(6);
-
     committedInstType
         .init(enums::Num_OpClass)
         .flags(statistics::total | statistics::pdf | statistics::dist);
-
     for (unsigned i = 0; i < Num_OpClasses; ++i) {
         committedInstType.subname(i, enums::OpClassStrings[i]);
     }
-
     committedControl
         .init(StaticInstFlags::Flags::Num_Flags)
         .flags(statistics::nozero);
-
     for (unsigned i = 0; i < StaticInstFlags::Flags::Num_Flags; i++) {
         committedControl.subname(i, StaticInstFlags::FlagsStrings[i]);
     }
 }
-
-
 void
 BaseCPU::
 CommitCPUStats::updateComCtrlStats(const StaticInstPtr staticInst)
@@ -1134,14 +985,12 @@ CommitCPUStats::updateComCtrlStats(const StaticInstPtr staticInst)
         committedControl[gem5::StaticInstFlags::Flags::IsControl]++;
     }
 }
-
 void
 BaseCPU::AccelPort::ITickEvent::process()
 {
     //cpu->completeIfetch(pkt);
     std::cout << "[BaseCPU::AccelPort::ITickEvent::process()] here\n";
 }
-
 bool
 BaseCPU::AccelPort::recvTimingResp(PacketPtr pkt)
 {
@@ -1149,26 +998,20 @@ BaseCPU::AccelPort::recvTimingResp(PacketPtr pkt)
     std::cout << "[BaseCPU::AccelPort::recvTimingResp] "
         "Received finished addr: "
         << pkt->getAddr() << std::endl;
-
     if (pkt->getAddr() == 0) {
         cpu->finishedAccelerator0=true;
     }
-
     else if (pkt->getAddr() == 1) {
         cpu->finishedAccelerator1=true;
     }
-
     else if (pkt->getAddr() == 2) {
         cpu->finishedAccelerator2=true;
     }
-
     else {
         cpu->finishedAccelerator3=true;
     }
-
     return true;
 }
-
 void
 BaseCPU::AccelPort::recvReqRetry()
 {
@@ -1183,29 +1026,28 @@ BaseCPU::AccelPort::recvReqRetry()
     //    cpu->ifetch_pkt = NULL;
     //}
 }
-
 void
 BaseCPU::NvDlaPort::ITickEvent::process()
 {
     std::cout << "[BaseCPU::NvDlaPort::ITickEvent::process()] here \n";
     //cpu->completeIfetch(pkt);
 }
-
 bool
 BaseCPU::NvDlaPort::recvTimingResp(PacketPtr pkt)
 {
-    std::cout << "[BaseCPU::NvDlaPort::recvTimingResp] addr=0x"
-          << std::hex << pkt->getAddr()
-          << " data=0x"
-          << pkt->getLE<uint32_t>()
-          << " tick=" << std::dec << curTick() << std::endl;
+    const int id = accelId;
+    assert(id >= 0 && id < MaxNvdlas);
 
-    uint32_t data = pkt->getLE<uint32_t>();
+    if (pkt->isRead()) {
+        std::cout << "[BaseCPU::NvDlaPort::recvTimingResp] "
+            "Received finished addr: "
+            << pkt->getAddr() << std::endl;
+        const uint32_t data = pkt->getLE<uint32_t>();
+        cpu->nvdlaReqData[id] = data;
+        cpu->nvdlaWaitingResp[id] = false;
+        cpu->nvdlaReqQ[id] = nullptr;
 
-    cpu->nvdlaReqData = data;
-    cpu->nvdlaWaitingResp = false;
-    std::cout << "[BaseCPU::NvDlaPort::recvTimingResp] nvdlaWaitingResp = "
-              << cpu->nvdlaWaitingResp << "\n";
+    }
 
     return true;
 }
@@ -1213,42 +1055,16 @@ BaseCPU::NvDlaPort::recvTimingResp(PacketPtr pkt)
 void
 BaseCPU::NvDlaPort::recvReqRetry()
 {
-    // we shouldn't get a retry unless we have a packet that we're
-    // waiting to transmit
-    //assert(cpu->ifetch_pkt != NULL);
-    //assert(cpu->_status == IcacheRetry);
-    //PacketPtr tmp = cpu->ifetch_pkt;
-    //if (sendTimingReq(tmp)) {
-    //    cpu->_status = IcacheWaitResponse;
-    //    cpu->ifetch_pkt = NULL;
-    //}
+    const int id = accelId;
+    assert(id >= 0 && id < MaxNvdlas);
 
-    std::cout << "[BaseCPU::NvDlaPort::recvReqRetry()] blockedPkt addr=0x"
-          << std::hex << cpu->blockedPkt->getAddr()
-          << " data=0x"
-          << cpu->blockedPkt->getLE<uint32_t>()
-          << " tick=" << std::dec << curTick() << std::endl;
-    std::cout << "[BaseCPU::NvDlaPort::recvReqRetry()]nvdlaReqQ addr=0x"
-          << std::hex << cpu->nvdlaReqQ->getAddr()
-          << " data=0x"
-          << cpu->nvdlaReqQ->getLE<uint32_t>()
-          << " tick=" << std::dec << curTick() << std::endl;
+    PacketPtr &pkt = cpu->blockedPkt[id];
 
-    if (!cpu->blockedPkt){
-        std::cout << "[NvDlaPort::recvReqRetry] No blocked packet!\n";
+    if (!pkt)
         return;
-    }
-    std::cout << "[NvDlaPort::recvReqRetry] Retrying blocked pkt addr=0x"
-              << std::hex << cpu->blockedPkt->getAddr() << "\n";
 
-    bool sent = sendTimingReq(cpu->blockedPkt);
-    if (sent) {
-        cpu->blockedPkt = nullptr;
-        std::cout << "[NvDlaPort::recvReqRetry] Retry success\n";
-    } else {
-        std::cout << "[NvDlaPort::recvReqRetry] Retry still blocked\n";
-    }
-
+    if (sendTimingReq(pkt))
+        pkt = nullptr;
 }
 
 void
@@ -1256,5 +1072,4 @@ BaseCPU::NvDlaPort::recvTimingReq()
 {
     std::cout << "[BaseCPU::NvDlaPort::recvTimingReq] here \n";
 }
-
 } // namespace gem5

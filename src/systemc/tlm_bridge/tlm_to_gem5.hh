@@ -135,7 +135,12 @@ class TlmToGem5Bridge : public TlmToGem5BridgeBase
     typedef std::list<gem5::PacketPtr> PktList;
     PktList pktRespList;
     typedef std::queue<gem5::PacketPtr> PktQueue;
-    PktList pktReqQueue;
+    // addresses of the requests in send order. Not the PacketPtr:
+    // when a cache supplies the data (e.g. a line dirty in the CPU caches,
+    // DBB -> membus without a private cache), the response is a new packet
+    // and the request packet is deleted by the xbar, so the stored pointer
+    // would dangle.
+    std::list<gem5::Addr> pktReqQueue;
 
     gem5::System *system;
 

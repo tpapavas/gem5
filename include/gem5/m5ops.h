@@ -67,8 +67,7 @@ void m5_panic(void);
 void m5_work_begin(uint64_t workid, uint64_t threadid);
 void m5_work_end(uint64_t workid, uint64_t threadid);
 void m5_start_accel(uint64_t addr, uint64_t elements, uint64_t region_mem);
-void m5_start_accel_id(uint64_t addr, uint64_t elements, uint64_t region_mem,
-    int accel_id);
+void m5_start_accel_id(uint64_t addr, uint64_t elements, uint64_t region_mem,int accel_id);
 uint64_t m5_wait_accel(uint64_t addr, uint64_t elements);
 uint64_t m5_wait_accel_id(int accel_id);
 uint32_t m5_nvdla_read_reg(int accel_id, uint64_t addr);
@@ -111,8 +110,8 @@ void m5_nvdla_end_count_cdma_wt_0(int accel_id);
 void m5_nvdla_start_count_cdma_wt_1(int accel_id);
 void m5_nvdla_end_count_cdma_wt_1(int accel_id);
 
-bool m5_nvdla_got_response(void);
-uint32_t m5_nvdla_get_data(void);
+bool m5_nvdla_got_response(int accel_id);
+uint32_t m5_nvdla_get_data(int accel_id);
 /*
  * Send a very generic poke to the workload so it can do something. It's up to
  * the workload to know what information to look for to interpret an event,

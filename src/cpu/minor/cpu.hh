@@ -34,17 +34,22 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 /**
  * @file
  *
  *  Top level definition of the Minor in-order CPU model
  */
-
 #ifndef __CPU_MINOR_CPU_HH__
 #define __CPU_MINOR_CPU_HH__
-
+#include <array>
+#include <cstdint>
+#include <deque>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <string>
 #include "base/compiler.hh"
+#include "base/output.hh"
 #include "base/random.hh"
 #include "cpu/base.hh"
 #include "cpu/minor/activity.hh"
@@ -52,22 +57,18 @@
 #include "cpu/simple_thread.hh"
 #include "enums/ThreadPolicy.hh"
 #include "params/BaseMinorCPU.hh"
-
+#include "sim/core.hh"
+#include "sim/full_system.hh"
 namespace gem5
 {
-
 namespace minor
 {
-
 /** Forward declared to break the cyclic inclusion dependencies between
  *  pipeline and cpu */
 class Pipeline;
-
 /** Minor will use the SimpleThread state for now */
 typedef SimpleThread MinorThread;
-
 } // namespace minor
-
 /**
  *  MinorCPU is an in-order CPU model with four fixed pipeline stages:
  *
@@ -87,18 +88,15 @@ class MinorCPU : public BaseCPU
     /** pipeline is a container for the clockable pipeline stage objects.
      *  Elements of pipeline call TheISA to implement the model. */
     minor::Pipeline *pipeline;
-
   public:
     /** Activity recording for pipeline.  This belongs to Pipeline but
      *  stages will access it through the CPU as the MinorCPU object
      *  actually mediates idling behaviour */
     minor::MinorActivityRecorder *activityRecorder;
-
     /** These are thread state-representing objects for this CPU.  If
      *  you need a ThreadContext for *any* reason, use
      *  threads[threadId]->getTC() */
     std::vector<minor::MinorThread *> threads;
-
   public:
     /** Provide a non-protected base class for Minor's Ports as derived
      *  classes are created by Fetch1 and Execute */
@@ -107,59 +105,43 @@ class MinorCPU : public BaseCPU
       public:
         /** The enclosing cpu */
         MinorCPU &cpu;
-
       public:
         MinorCPUPort(const std::string& name_, MinorCPU &cpu_)
             : RequestPort(name_), cpu(cpu_)
         { }
-
     };
-
     /** Thread Scheduling Policy (RoundRobin, Random, etc) */
     enums::ThreadPolicy threadPolicy;
   protected:
      /** Return a reference to the data port. */
     Port &getDataPort() override;
-
     /** Return a reference to the instruction port. */
     Port &getInstPort() override;
-
   public:
     MinorCPU(const BaseMinorCPUParams &params);
-
     ~MinorCPU();
-
   public:
     /** Starting, waking and initialisation */
     void init() override;
     void startup() override;
     void wakeup(ThreadID tid) override;
-
     /** Processor-specific statistics */
     minor::MinorStats stats;
-
     /** Stats interface from SimObject (by way of BaseCPU) */
     void regStats() override;
-
     // start Accel function
     void startAccel(Addr addr, int elements, Addr region_nvdla) override;
-
     // start a certain Accel function
     void startAccelID(Addr addr, int elements, Addr region_nvdla,
       int accel_id) override;
-
     // wait Accel function
     uint64_t waitAccel(Addr addr, int elements) override;
-
     // wait Accel ID function
     uint64_t waitAccelID(int accel_id) override;
-
     uint32_t NvDlaReadReg(int accel_id, Addr addr) override;
     void NvDlaWriteReg(int accel_id, uint32_t data, Addr addr) override;
-
-    uint32_t NvDlaGetData() override;
-    bool NvDlaRespReg() override;
-
+    uint32_t NvDlaGetData(int accel_id = 0) override;
+    bool NvDlaRespReg(int accel_id = 0) override;
     void accelStartCountBdma0(int accel_id) override;
     void accelEndCountBdma0(int accel_id) override;
     void accelStartCountBdma1(int accel_id) override;
@@ -196,18 +178,14 @@ class MinorCPU : public BaseCPU
     void accelEndCountCdmaWt0(int accel_id) override;
     void accelStartCountCdmaWt1(int accel_id) override;
     void accelEndCountCdmaWt1(int accel_id) override;
-
     /** Simple inst count interface from BaseCPU */
     Counter totalInsts() const override;
     Counter totalOps() const override;
-
     void serializeThread(CheckpointOut &cp, ThreadID tid) const override;
     void unserializeThread(CheckpointIn &cp, ThreadID tid) override;
-
     /** Serialize pipeline data */
     void serialize(CheckpointOut &cp) const override;
     void unserialize(CheckpointIn &cp) override;
-
     /** Drain interface */
     DrainState drain() override;
     void drainResume() override;
@@ -215,15 +193,12 @@ class MinorCPU : public BaseCPU
      *  is complete and set its drainState */
     void signalDrainDone();
     void memWriteback() override;
-
     /** Switching interface from BaseCPU */
     void switchOut() override;
     void takeOverFrom(BaseCPU *old_cpu) override;
-
     /** Thread activation interface from BaseCPU. */
     void activateContext(ThreadID thread_id) override;
     void suspendContext(ThreadID thread_id) override;
-
     /** Thread scheduling utility functions */
     std::vector<ThreadID> roundRobinPriority(ThreadID priority)
     {
@@ -233,34 +208,60 @@ class MinorCPU : public BaseCPU
         }
         return prio_list;
     }
-
     std::vector<ThreadID> randomPriority()
     {
         std::vector<ThreadID> prio_list;
         for (ThreadID i = 0; i < numThreads; i++) {
             prio_list.push_back(i);
         }
-
         std::shuffle(prio_list.begin(), prio_list.end(),
                      random_mt.gen);
-
         return prio_list;
     }
-
     /** The tick method in the MinorCPU is simply updating the cycle
      * counters as the ticking of the pipeline stages is already
      * handled by the Pipeline object.
      */
     void tick() { updateCycleCounters(BaseCPU::CPU_STATE_ON); }
-
     /** Interface for stages to signal that they have become active after
      *  a callback or eventq event where the pipeline itself may have
      *  already been idled.  The stage argument should be from the
      *  enumeration Pipeline::StageId */
     void wakeupOnEvent(unsigned int stage_id);
     EventFunctionWrapper *fetchEventWrapper;
+  private:
+    struct NvDlaPendingRead
+    {
+        int accelId;
+        Addr addr;
+        bool interruptWait;
+        NvDlaPendingRead(
+            int id,
+            Addr address,
+            bool isInterruptWait)
+            : accelId(id),
+              addr(address),
+              interruptWait(isInterruptWait)
+        {
+        }
+    };
+    uint32_t NvDlaTxnCommandPrefix = 0xffff0000u;
+    std::array<std::deque<NvDlaPendingRead>, MaxNvdlas>
+        nvdlaPendingReads;
+    OutputStream *nvdlaTraceFile = nullptr;
+    std::array<bool, MaxNvdlas> nvdlaInterruptWaitWritten{
+        false, false
+    };
+    void openNvDlaTrace();
+    uint16_t nvDlaTraceRegisterAddress(Addr addr) const;
+    void writeNvDlaInterruptTrace(uint32_t interruptValue);
+    void writeNvDlaReadTrace(
+        Addr addr,
+        uint32_t expectedData,
+        uint32_t mask = 0xffffffff);
+    void writeNvDlaWriteTrace(
+        Addr addr,
+        uint32_t data);
 };
-
 } // namespace gem5
-
 #endif /* __CPU_MINOR_CPU_HH__ */
