@@ -200,3 +200,13 @@ class NvDlaDeviceSE(BasicPioDevice):
     use_fake_mem = Param.Bool(False, "Whether to use fake memory to simulate")
 
     print_path = Param.String("", "The path to store output logs of NVDLA")
+
+    # [IDLE_SLEEP] stop evaluating the RTL while NVDLA is idle between submitted tasks
+    idle_sleep = Param.Bool(
+        True,
+        "Stop ticking the NVDLA RTL after the end of a task (0x20004 read) once it is quiet; "
+        "wake up on the next CSB access",
+    )
+    idle_sleep_threshold = Param.UInt32(
+        10000, "Consecutive quiet NVDLA cycles before the RTL stops ticking"
+    )

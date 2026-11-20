@@ -145,7 +145,7 @@ private:
     std::vector<uint32_t> inflight_count_for_sets;  // count inflight dma requests for each embedded buffer set
 
     // prefetch
-    const uint32_t pft_threshold;
+    uint32_t pft_threshold;      // [BUF_MODE] set from NvDlaDeviceSE pft_threshold (was fixed 16)
     const uint32_t dma_pft_threshold;
     std::list<std::tuple<uint64_t, uint32_t, uint32_t>> read_var_log;  // each tuple is (addr, length, issued_len) of a read-only variable
 
@@ -185,9 +185,11 @@ public:
     // callback methods, called by gem5 ports in rtlNVDLA when data is returned
     void inflight_resp(uint64_t addr, const uint8_t* data);
     void inflight_dma_resp(const uint8_t* data, uint32_t len);
+    void request_line_fill(uint64_t spm_line_addr);
 
     // prefetching-related
     void add_rd_var_log_entry(uint64_t addr, uint32_t size);
+    void set_pft_threshold(uint32_t t) { pft_threshold = t; }   // [BUF_MODE]
     bool log_req_issue(uint64_t addr);
     void generate_prefetch_request();
 
