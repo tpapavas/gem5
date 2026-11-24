@@ -48,6 +48,7 @@
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
 
+#define NVDLA_VERILATED
 namespace gem5
 {
 
@@ -443,28 +444,176 @@ MinorCPU::waitAccelID(int accel_id)
     }
 }
 
+void
+MinorCPU::openNvDlaTrace()
+{
+    if (nvdlaTraceFile != nullptr) {
+        return;
+    }
+
+    nvdlaTraceFile = simout.create("nvdla_trace.txt");
+
+    if (nvdlaTraceFile == nullptr) {
+        panic("MinorCPU: Could not create nvdla_trace.txt\n");
+    }
+}
+
+void
+MinorCPU::writeNvDlaInterruptTrace(uint32_t interruptValue)
+{
+    if (interruptValue == 0) {
+        return;
+    }
+
+    openNvDlaTrace();
+
+    std::ostream &trace = *nvdlaTraceFile->stream();
+
+    trace << "wait\n"
+          << "read_reg 0xffff0003 0x"
+          << std::hex
+          << std::setw(8)
+          << std::setfill('0')
+          << interruptValue
+          << " 0x"
+          << std::setw(8)
+          << interruptValue
+          << std::dec
+          << std::setfill(' ')
+          << '\n'
+          << std::flush;
+}
+
+uint16_t
+MinorCPU::nvDlaTraceRegisterAddress(Addr addr) const
+{
+    if ((addr & 0x3) != 0) {
+        warn(
+            "NVDLA trace: unaligned register address 0x%llx\n",
+            static_cast<unsigned long long>(addr));
+    }
+
+    const Addr wordAddress = addr >> 2;
+
+    if (wordAddress > 0xffff) {
+        panic(
+            "NVDLA trace register word address does not fit in 16 bits: "
+            "original=0x%llx wordAddress=0x%llx\n",
+            static_cast<unsigned long long>(addr),
+            static_cast<unsigned long long>(wordAddress));
+    }
+
+    return static_cast<uint16_t>(wordAddress);
+}
+
+void
+MinorCPU::writeNvDlaWriteTrace(Addr addr, uint32_t data)
+{
+    openNvDlaTrace();
+
+    const uint16_t traceAddr =
+        nvDlaTraceRegisterAddress(addr);
+
+    const uint32_t command =
+        NvDlaTxnCommandPrefix |
+        static_cast<uint32_t>(traceAddr);
+
+    (*nvdlaTraceFile->stream())
+        << "write_reg 0x"
+        << std::hex
+        << std::setw(8)
+        << std::setfill('0')
+        << command
+        << " 0x"
+        << std::setw(8)
+        << data
+        << std::dec
+        << std::setfill(' ')
+        << '\n'
+        << std::flush;
+}
+
+void
+MinorCPU::writeNvDlaReadTrace(
+    Addr addr,
+    uint32_t expectedData,
+    uint32_t mask)
+{
+    openNvDlaTrace();
+
+    const uint16_t traceAddr =
+        nvDlaTraceRegisterAddress(addr);
+
+    const uint32_t command =
+        NvDlaTxnCommandPrefix |
+        static_cast<uint32_t>(traceAddr);
+
+    (*nvdlaTraceFile->stream())
+        << "read_reg 0x"
+        << std::hex
+        << std::setw(8)
+        << std::setfill('0')
+        << command
+        << " 0x"
+        << std::setw(8)
+        << mask
+        << " 0x"
+        << std::setw(8)
+        << expectedData
+        << std::dec
+        << std::setfill(' ')
+        << '\n'
+        << std::flush;
+}
+
 bool
-MinorCPU::NvDlaRespReg(){
-    std::cout << "[MinorCPU::NvDlaRespReg()] nvdlaWaitingResp = "
-              << nvdlaWaitingResp
-              << " tick=" << std::dec << curTick() << "\n";
+MinorCPU::NvDlaRespReg()
+{
+    std::cout
+        << "[MinorCPU::NvDlaRespReg()] nvdlaWaitingResp="
+        << nvdlaWaitingResp
+        << " tick=" << std::dec << curTick()
+        << '\n';
+
     return nvdlaWaitingResp;
 }
 
 uint32_t
-MinorCPU::NvDlaGetData(){
-    std::cout << "[MinorCPU::NvDlaGetData()] Data are  0x: "
-              << std::hex << nvdlaReqData
-              << " tick=" << std::dec << curTick() << "\n";
+MinorCPU::NvDlaGetData()
+{
+    std::cout
+        << "[MinorCPU::NvDlaGetData()] data=0x"
+        << std::hex << nvdlaReqData
+        << " tick=" << std::dec << curTick()
+        << '\n';
+
+    if (nvdlaPendingReads.empty()) {
+        warn(
+            "NvDlaGetData: Received NVDLA data 0x%08x "
+            "without a pending read\n",
+            nvdlaReqData);
+
+        return nvdlaReqData;
+    }
+
+    const NvDlaPendingRead pending =
+        nvdlaPendingReads.front();
+
+    nvdlaPendingReads.pop_front();
+
     return nvdlaReqData;
 }
 
-// SystemC version
+#ifndef NVDLA_VERILATED
+//SystemC version
 uint32_t
 MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
 {
     DPRINTF(NvDlaDevice, "[GEM5 LOG] DLA #%d: Trying to read_reg(0x%016x)\n",
         accel_id, addr);
+
+     const bool isInterruptWait = !FullSystem && addr == 0x20000;
+
     // we send a null packet telling we have finished
     RequestPtr req = std::make_shared<Request>(addr, 4,
                                             Request::UNCACHEABLE, 0);
@@ -473,7 +622,9 @@ MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
     pkt = Packet::createRead(req);
     pkt->allocate();
     nvdlaReqQ = pkt;
-    bool sent;
+    bool send;
+
+    nvdlaPendingReads.emplace_back(accel_id, addr,isInterruptWait);
 
     if (addr == 0x20000) {
         // check if interrupt are raised in this address
@@ -481,29 +632,32 @@ MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
                   << ": cpu wait for interrupt at @ %"
                   << ticksToCycles(curTick()) << " cycle\n";
     }
+    if (isInterruptWait) {
+        std::cout
+            << "[GEM5 LOG] DLA #" << accel_id
+            << ": CPU polls interrupt at "
+            << ticksToCycles(curTick())
+            << " cycle\n";
+    }
     switch(accel_id) {
         case 0:
             std::cout << "[NvDlaReadReg CPU SEND READ] addr=0x"
                 << std::hex << addr
                 << " tick=" << std::dec << curTick()
                 << std::endl;
-            sent = nvdla_port_plus_0.sendTimingReq(pkt);
-            std::cout << "[NvDlaReadReg] sendTimingReq sent=" << sent
+            send = nvdla_port_plus_0.sendTimingReq(pkt);
+            std::cout << "[NvDlaReadReg] sendTimingReq sent=" << send
                       << " addr=0x" << std::hex << addr << "\n";
             break;
         case 1:
-            nvdla_port_plus_1.sendTimingReq(pkt);
+            send = nvdla_port_plus_1.sendTimingReq(pkt);
             break;
         default:
             assert(false);
     }
-    //std::cout << "[NvDlaReadReg Not return in DLA! CPU SEND RESULT] sent="
-    //          << sent
-    //            << " tick=" << curTick()
-    //            << std::endl;
     nvdlaWaitingResp = true;
 
-    if (!sent){
+    if (!send){
         std::cout << "[NvDlaReadReg] Blocked - waiting for retry\n";
         blockedPkt = nvdlaReqQ;
     }
@@ -511,45 +665,51 @@ MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
     return 0;
 }
 
-/*
+#else
 // Verilated version
 uint32_t
 MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
 {
-    DPRINTF(NvDlaDevice, "[GEM5 LOG] DLA #%d: Trying to read_reg(0x%016x)\n",
+    DPRINTF(NvDlaDevice,
+        "[GEM5 LOG] DLA #%d: Trying to read_reg(0x%016x)\n",
         accel_id, addr);
-    // we send a null packet telling we have finished
+
     RequestPtr req = std::make_shared<Request>(addr, 4,
                                             Request::UNCACHEABLE, 0);
-    PacketPtr pkt = nullptr;
-    // we create the real packet, write request
-    pkt = Packet::createRead(req);
-    // pkt->allocate();
 
-    std::cout << "[NvDlaReadReg] " << pkt->cmdString()
-                  << " addr=0x" << std::hex << addr
-                  << " size=" << std::dec << pkt->getSize();
+    PacketPtr pkt = Packet::createRead(req);
 
+    std::cout << "[NvDlaReadReg] "
+              << pkt->cmdString()
+              << " addr=0x" << std::hex << addr
+              << " size=" << std::dec << pkt->getSize()
+              << std::endl;
 
-    switch(accel_id) {
+    switch (accel_id) {
         case 0:
             nvdla_port_plus_0.sendTimingReq(pkt);
             break;
+
         case 1:
             nvdla_port_plus_1.sendTimingReq(pkt);
             break;
+
         default:
             assert(false);
     }
 
-    DPRINTF(NvDlaDevice, "[GEM5 LOG] DLA #%d: Trying to get response...\n",
-        accel_id);
-    DPRINTF(NvDlaDevice, "[GEM5 LOG] DLA #%d: Got response: %u\n",
-        accel_id, pkt->getLE<uint32_t>());
+    uint32_t data = pkt->getLE<uint32_t>();
 
-    return pkt->getLE<uint32_t>();
+    DPRINTF(NvDlaDevice,
+        "[GEM5 LOG] DLA #%d: Got response: 0x%08x\n",
+        accel_id,
+        data);
+
+    return data;
 }
-*/
+#endif
+
+
 
 void
 MinorCPU::NvDlaWriteReg(int accel_id, uint32_t data, Addr addr)
@@ -557,6 +717,18 @@ MinorCPU::NvDlaWriteReg(int accel_id, uint32_t data, Addr addr)
     DPRINTF(NvDlaDevice, "[GEM5 LOG] DLA #%d: Trying to write_reg(0x%016x), "
         "data: 0x%08x\n",
         accel_id, addr, data);
+
+    constexpr uint16_t NvDlaInterruptStatusWord = 0x0003;
+
+    const bool isInterruptClear =
+        nvDlaTraceRegisterAddress(addr) == NvDlaInterruptStatusWord &&
+        data != 0;
+
+    if (isInterruptClear) {
+        writeNvDlaInterruptTrace(data);
+    }
+    writeNvDlaWriteTrace(addr, data);
+
     // we send a null packet telling we have finished
     RequestPtr req = std::make_shared<Request>(addr, 4,
                                             Request::UNCACHEABLE, 0);
