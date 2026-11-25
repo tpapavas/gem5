@@ -1,0 +1,73 @@
+Import('*')
+
+import os
+
+SimObject('UCIeLink.py', sim_objects=['UCIeLink'])
+Source('ucie_link.cc')
+
+# ============================================================
+# UCIe dependencies
+# ============================================================
+
+torch_root = os.environ.get('TORCH_ROOT')
+yaml_root = os.environ.get('YAML_CPP_ROOT')
+
+if not torch_root or not yaml_root:
+    print('ERROR: TORCH_ROOT and YAML_CPP_ROOT are required.')
+    Exit(1)
+
+torch_root = os.path.abspath(torch_root)
+yaml_root = os.path.abspath(yaml_root)
+
+torch_lib = os.path.join(torch_root, 'lib')
+yaml_lib = os.path.join(yaml_root, 'lib', 'libyaml-cpp.a')
+ucie_lib = os.path.abspath(
+    os.path.join(torch_root, '..', 'build', 'libucie_delay.a')
+)
+
+for path in (ucie_lib, yaml_lib):
+    if not os.path.isfile(path):
+        print('ERROR: Missing library:', path)
+        Exit(1)
+
+# ============================================================
+# Include paths
+# ============================================================
+
+env.AppendUnique(CPPPATH=[
+    os.path.join(torch_root, 'include'),
+    os.path.join(torch_root, 'include', 'torch/csrc/api/include'),
+    os.path.join(yaml_root, 'include'),
+])
+
+# ============================================================
+# Library search paths
+# ============================================================
+
+env.AppendUnique(LIBPATH=[
+    torch_lib,
+])
+
+# ============================================================
+# Libraries - ORDER MATTERS
+# ============================================================
+
+env.Append(LIBS=[
+    File(ucie_lib),
+    File(yaml_lib),
+    'torch',
+    'torch_cpu',
+    'c10',
+])
+
+# ============================================================
+# Runtime shared library loading
+# ============================================================
+
+env.AppendUnique(LINKFLAGS=[
+    '-Wl,-rpath,' + torch_lib,
+])
+
+print('[UCIe] Delay static library:', ucie_lib)
+print('[UCIe] yaml-cpp static library:', yaml_lib)
+print('[UCIe] LibTorch directory:', torch_lib)

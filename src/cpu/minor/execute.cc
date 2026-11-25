@@ -1005,13 +1005,20 @@ Execute::commitInst(MinorDynInstPtr inst, bool early_memory_issue,
         /* Check to see if this instruction suspended the current thread. */
         if (!inst->isFault() &&
             thread->status() == ThreadContext::Suspended &&
-            /* It didn't branch too, or its branch does not change the
-             * stream (e.g. a syscall predicted taken to pc+4 that gives
-             * CorrectlyPredictedBranch). Otherwise the stream is never
-             * changed and younger insts of this thread would commit
-             * while it is Suspended. */
-            (branch.isBubble() ||
-             !BranchData::isStreamChange(branch.reason)) &&
+            (branch.isBubble() || /* It didn't branch too */
+             /* task13: an M5Op (CSB access stalled via quiesceTick)
+              * suspended its thread in a cycle whose branch slot only
+              * holds a non-redirecting CorrectlyPredictedBranch of an
+              * older inst, or its own prediction correction: issue the
+              * suspend anyway (resume_pc is the correct next PC). Only
+              * reachable when a thread has just suspended. */
+             /* task22/task27 (0003): also any branch that does not change
+              * the stream (e.g. a syscall/futex wait predicted taken to
+              * pc+4); otherwise younger insts of this thread would commit
+              * while it is Suspended. Superset of CorrectlyPredictedBranch. */
+             !BranchData::isStreamChange(branch.reason) ||
+             branch.reason == BranchData::BadlyPredictedBranch ||
+             branch.reason == BranchData::BadlyPredictedBranchTarget) &&
             !isInterrupted(thread_id)) /* Don't suspend if we have
                 interrupts */
         {

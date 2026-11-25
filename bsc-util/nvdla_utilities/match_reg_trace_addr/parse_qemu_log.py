@@ -92,21 +92,14 @@ class Workload:
     def __init__(
         self,
         in_dir,
-        target_hw,
         in_compilation=False,
         use_real_data=False,
         dump_results=False,
+        axi_width=0x40,
     ):
-        # target NVDLA info
-        self.target_hw = target_hw
-        self.axi_width = 0x40  # in bytes
-        self.intr_status_reg = 0x000C
-        if self.target_hw == "nv_small":
-            self.axi_width = 0x8
-            self.intr_status_reg = 0x100C
-
         self.in_dir = (
             in_dir  # each workload corresponds to a directory of log files
+            # "/home/georgrizos/nvdla/traces/tp-lenet-caffe"  # each workload corresponds to a directory of log files
         )
         self.tb = {}  # tensor buffers = {tb_name: TensorBuffer}
         self.ts = {}  # tensor surfaces = {ts_name: TensorSurface}
@@ -118,6 +111,8 @@ class Workload:
         self.w_tb = []  # weight tensor buffers
 
         self.rd_only_tbs = []  # = [tb_name]
+
+        self.axi_width = axi_width  # in bytes
 
         self.addr_base_map = (
             {}
@@ -141,8 +136,7 @@ class Workload:
         """sanity check"""
         if self.dump_results:
             assert self.use_real_data
-        assert self.target_hw in {"nv_small", "nv_full"}
-        assert self.axi_width == 0x40 or self.axi_width == 0x8
+        assert self.axi_width == 0x40 or self.axi_width == 0x20
 
         with open(os.path.join(self.in_dir, "qemu_log")) as fp:
             qemu_log_lines = fp.readlines()
@@ -192,10 +186,23 @@ class Workload:
                         "../../../ext/rtl/model_nvdla",
                     )
                 ).replace(usr_pfx, "/home")
-                trace_in_docker = os.path.abspath(
-                    os.path.join(self.in_dir, "trace.bin").replace(
-                        usr_pfx, "/home"
+                trace_path = os.path.join(self.in_dir, "trace.bin")
+                if not os.path.exists(trace_path):
+                    # rtl_mem_rd_wr using VNV_nvdla requires a trace.bin, so call the perl script to convert it.
+                    script_path = os.path.join(
+                        os.path.dirname(os.path.abspath(__file__)),
+                        "../input_txn_to_verilator.pl",
                     )
+                    os.system(
+                        "perl "
+                        + script_path
+                        + " "
+                        + os.path.join(self.in_dir, "input.txn")
+                        + " "
+                        + os.path.join(self.in_dir, "trace.bin")
+                    )
+                trace_in_docker = os.path.abspath(
+                    trace_path.replace(usr_pfx, "/home")
                 )
                 nvdla_cpp_log_in_docker = nvdla_cpp_log.replace(
                     usr_pfx, "/home"
@@ -203,12 +210,13 @@ class Workload:
                 cmd = (
                     "cat /root/.bashrc | grep export | grep verilator > /root/envs && source /root/envs && cd "
                     + bin_dir_in_docker
-                    + " && make VNV_nvdla OPT=1 && ./VNV_nvdla "
+                    + " && make VNV_nvdla OPT=1 && echo 'running VNV_nvdla...' && ./VNV_nvdla "
                     + trace_in_docker
                     + " > "
                     + nvdla_cpp_log_in_docker
                     + " && exit"
                 )
+                print("[parse_qemu_log.py/Workload/] cmd: ", cmd)
                 found_gem5_nvdla_env = False
                 for line in os.popen("docker images").readlines():
                     words = line.split()
@@ -393,10 +401,7 @@ class Workload:
             )
 
         if self.in_compilation:
-            if (
-                self.target_hw == "nv_full"
-            ):  # temporarily untested for nv_small. skip if first
-                self.txn_lines = fix_txn_lines_discontinuity(self.txn_lines)
+            self.txn_lines = fix_txn_lines_discontinuity(self.txn_lines)
             with open(os.path.join(self.in_dir, "input.txn"), "w") as fp:
                 fp.writelines(self.txn_lines)
         else:
@@ -546,12 +551,11 @@ class Workload:
                     csb_exp_data = int(exp.group(2), 16)
                     csb_inputting = False
                     out_addr = 0xFFFF0000 + (0x0000FFFF & ((csb_reg - 0) >> 2))
-                    if csb_reg == self.intr_status_reg and csb_exp_data != 0:
-                        # ignore those lines that obtained a reading result of 0 of intr_status_reg
+                    if csb_reg == 0x000C and csb_exp_data != 0:
                         txn_lines.append(
-                            "until 0x%08x 0x%08x\n" % (out_addr, csb_exp_data)
+                            "until 0xffff0003 0x%08x\n" % csb_exp_data
                         )
-                    elif csb_reg == 0xA004 and self.target_hw == "nv_full":
+                    elif csb_reg == 0xA004:
                         txn_lines.append(
                             "read_reg 0x%08x 0x00000000 0x%08x\t#0x%04x\n"
                             % (out_addr, csb_exp_data, csb_reg)
@@ -588,10 +592,6 @@ class Workload:
             fp.writelines(rd_lines)
         with open(os.path.join(self.in_dir, "VP_mem_wr"), "w") as fp:
             fp.writelines(wr_lines)
-
-        if self.target_hw == "nv_small":  # todo: only for testing purpose
-            with open(os.path.join(self.in_dir, "input.txn"), "w") as fp:
-                fp.writelines(self.txn_lines)
 
     # based on combining compilation info and runtime info
     def get_various_tensor_buffers(self):

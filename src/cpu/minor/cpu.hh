@@ -50,7 +50,6 @@
 #include <string>
 #include "base/compiler.hh"
 #include "base/output.hh"
-#include "base/output.hh"
 #include "base/random.hh"
 #include "cpu/base.hh"
 #include "cpu/minor/activity.hh"
@@ -141,8 +140,14 @@ class MinorCPU : public BaseCPU
     uint64_t waitAccelID(int accel_id) override;
     uint32_t NvDlaReadReg(int accel_id, Addr addr) override;
     void NvDlaWriteReg(int accel_id, uint32_t data, Addr addr) override;
+    // task13: pending CSB stall (pkt->headerDelay from a UCIe csb link)
+    Tick nvdlaCsbStall = 0;
+    Tick NvDlaTakeCsbStall() override
+    { Tick d = nvdlaCsbStall; nvdlaCsbStall = 0; return d; }
+
     uint32_t NvDlaGetData(int accel_id = 0) override;
     bool NvDlaRespReg(int accel_id = 0) override;
+
     void accelStartCountBdma0(int accel_id) override;
     void accelEndCountBdma0(int accel_id) override;
     void accelStartCountBdma1(int accel_id) override;

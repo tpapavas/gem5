@@ -379,7 +379,7 @@ class AccelPrCacheSizeParam(BaseParam):
 
     @classmethod
     def default_value(cls):
-        return ["1MB"]
+        return ["2MB"]
 
 
 class AccelPrCacheAssocParam(BaseParam):

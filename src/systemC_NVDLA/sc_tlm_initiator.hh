@@ -91,8 +91,6 @@ public:
                                    wrapper(tSocket, std::string(name) + ".tlm",
                                    InvalidPortID)
   {
-    //mem = (unsigned char *)malloc(16 * 1024 * 1024);
-
     std::cout << "TLM Initiator Online" << std::endl;
   }
 

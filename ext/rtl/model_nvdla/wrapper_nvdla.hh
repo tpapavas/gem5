@@ -51,7 +51,7 @@
 // Add #define NV_SMALL_EN if compiling for nv_small
 // otherwise default is nv_full
 
-#define NV_SMALL_EN
+//#define NV_SMALL_EN
 
 #ifndef NV_SMALL_EN
 
@@ -88,9 +88,8 @@
 #define NVDLA_SECONDARY_MEMIF_MAX_BURST_LENGTH 4
 #define NVDLA_SECONDARY_MEMIF_WIDTH 512
 #define NVDLA_MEM_ADDRESS_WIDTH 64
-
+#include "verilator_nvdla_full/VNV_nvdla.h"
 #else
-
 #define NVDLA_FEATURE_DATA_TYPE_INT8
 #define NVDLA_BPE 8
 #define NVDLA_WEIGHT_DATA_TYPE_INT8
@@ -143,6 +142,7 @@
 #define NVDLA_CC_ATOMC_DIV_ATOMK 1
 #define USE_DESIGNWARE 0
 
+#include "verilator_nvdla_small/VNV_nvdla.h"
 #endif
 
 
@@ -161,7 +161,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "VNV_nvdla.h"
 #include "verilated.h"
 #include "verilated_vcd_c.h"
 #include "csbMaster.hh"
@@ -220,6 +219,12 @@ public:
 
     //! RTL Packet
     outputNVDLA output;
+
+    //! Statistics of idle cycles in RTL simulation
+    uint64_t rtl_pipeline_idle_cycles = 0;
+
+    // No enabled/pending engine operation at the sampled clock boundary.
+    bool enginesBusy() const;
 
 // #ifdef AXI_RESP_FAST_IO
     static uint64_t* print_buffer;

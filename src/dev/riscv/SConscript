@@ -40,9 +40,14 @@ SimObject('RTC.py', sim_objects=['RiscvRTC'], tags='riscv isa')
 SimObject('RiscvVirtIOMMIO.py', sim_objects=['RiscvMmioVirtIO'],
     tags='riscv isa')
 
+
 DebugFlag('Clint', tags='riscv isa')
 DebugFlag('Plic', tags='riscv isa')
 DebugFlag('VirtIOMMIO', tags='riscv isa')
+
+
+
+
 
 Source('pci_host.cc', tags='riscv isa')
 
@@ -53,3 +58,15 @@ Source('plic_device.cc', tags='riscv isa')
 Source('plic.cc', tags='riscv isa')
 Source('rtc.cc', tags='riscv isa')
 Source('vio_mmio.cc', tags='riscv isa')
+
+# NVDLA: register only for the selected ISA
+if env['CONF']['USE_RISCV_ISA']:
+    SimObject('NvDlaDevice.py',
+        sim_objects=['NvDlaDevice', 'NvDlaDeviceSE'],
+        tags='riscv isa')
+    Source('nvdla_device.cc', tags='riscv isa')
+    Source('nvdla_device_se.cc', tags='riscv isa')
+    DebugFlag('NvDlaDevice', tags='riscv isa')
+    DebugFlag('NvDlaDeviceDebug', tags='riscv isa')
+    DebugFlag('NvDlaDeviceSE', tags='riscv isa')
+    DebugFlag('NvDlaDeviceSEDebug', tags='riscv isa')

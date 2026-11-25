@@ -48,8 +48,8 @@
 #include "arch/generic/interrupts.hh"
 #include "base/statistics.hh"
 #include "debug/Mwait.hh"
-#include "dev/arm/nvdla_device.hh"
-#include "dev/arm/nvdla_device_se.hh"
+#include "dev/riscv/nvdla_device.hh"
+#include "dev/riscv/nvdla_device_se.hh"
 #include "mem/htm.hh"
 #include "mem/port_proxy.hh"
 #include "sim/clocked_object.hh"
@@ -270,6 +270,12 @@ class BaseCPU : public ClockedObject
         " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;
         return false;
     }
+
+    // task13: CSB access latency (from a csb_sync UCIeLink, via
+    // pkt->headerDelay) that the issuing thread must stall for. Returns
+    // and clears the pending value; 0 = no stall (baseline).
+    virtual Tick NvDlaTakeCsbStall() { return 0; }
+
     virtual void NvDlaWriteReg(int accel_id, uint32_t data, Addr addr) {
         std::cout << "THIS SHOULD NOT BE PRINTED, " <<
         " HENCE NVDLA READ REG NOT IMPLMENTED" << std::endl;

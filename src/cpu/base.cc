@@ -1032,6 +1032,28 @@ BaseCPU::NvDlaPort::ITickEvent::process()
     std::cout << "[BaseCPU::NvDlaPort::ITickEvent::process()] here \n";
     //cpu->completeIfetch(pkt);
 }
+/*
+bool
+BaseCPU::NvDlaPort::recvTimingResp(PacketPtr pkt)
+{
+    const int id = accelId;
+    assert(id >= 0 && id < MaxNvdlas);
+
+    if (pkt->isRead()) {
+        std::cout << "[BaseCPU::NvDlaPort::recvTimingResp] "
+            "Received finished addr: "
+            << pkt->getAddr() << std::endl;
+        const uint32_t data = pkt->getLE<uint32_t>();
+        cpu->nvdlaReqData[id] = data;
+        cpu->nvdlaWaitingResp[id] = false;
+        cpu->nvdlaReqQ[id] = nullptr;
+
+    }
+
+    return true;
+}
+*/
+
 bool
 BaseCPU::NvDlaPort::recvTimingResp(PacketPtr pkt)
 {
@@ -1052,6 +1074,7 @@ BaseCPU::NvDlaPort::recvTimingResp(PacketPtr pkt)
     return true;
 }
 
+/*
 void
 BaseCPU::NvDlaPort::recvReqRetry()
 {
@@ -1066,7 +1089,21 @@ BaseCPU::NvDlaPort::recvReqRetry()
     if (sendTimingReq(pkt))
         pkt = nullptr;
 }
+*/
+void
+BaseCPU::NvDlaPort::recvReqRetry()
+{
+    const int id = accelId;
+    assert(id >= 0 && id < MaxNvdlas);
 
+    PacketPtr &pkt = cpu->blockedPkt[id];
+
+    if (!pkt)
+        return;
+
+    if (sendTimingReq(pkt))
+        pkt = nullptr;
+}
 void
 BaseCPU::NvDlaPort::recvTimingReq()
 {

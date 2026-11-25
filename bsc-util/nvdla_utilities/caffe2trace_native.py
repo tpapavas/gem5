@@ -9,7 +9,7 @@ import matplotlib.ticker as ticker
 sys.path.append(os.path.dirname(__file__))
 from match_reg_trace_addr.parse_qemu_log import *
 
-NVDLA_VP_BIN_PATH = "/home/tpapavasileiou/tools/GEM5-NVDLA/vp-bin/"
+NVDLA_VP_BIN_PATH = "/data/ngiannopoulos/Phd/NVDLA/test_git_framework/vp_big_g/vp-bin"
 
 
 def parse_args():
@@ -26,29 +26,29 @@ def parse_args():
     )
     parser.add_argument(
         "--nvdla-compiler",
-        default="/home/tpapavasileiou/tools/GEM5-NVDLA/vp-bin/nvdla_compiler",
+        default="/data/ngiannopoulos/Phd/NVDLA/test_git_framework/vp_big_g/vp-bin/nvdla_compiler",
         help="Path to NVDLA compiler",
     )
     parser.add_argument(
         "--qemu-bin",
-        default="/home/tpapavasileiou/tools/GEM5-NVDLA/vp-bin/aarch64_toplevel",
+        default="/data/ngiannopoulos/Phd/NVDLA/test_git_framework/vp_big_g/vp-bin/aarch64_toplevel",
         help="Path to qemu binary. By default it is pointing to the self-built qemu binary. Set to "
         "/usr/local/nvdla/aarch64_toplevel if one wants to use the one provided in docker image",
     )
     parser.add_argument(
         "--qemu-lua",
-        default="/home/tpapavasileiou/tools/GEM5-NVDLA/vp-bin/conf/aarch64_nvdla.lua",
+        default="/data/ngiannopoulos/Phd/NVDLA/test_git_framework/vp_big_g/vp-bin/conf/aarch64_nvdla.lua",
         help="Path to configuration file of running qemu. Using the one in docker image is ok.",
     )
     parser.add_argument(
         "--out-dir",
-        default="/home/tpapavasileiou/tools/GEM5-NVDLA/nvdla/traces/tp-lenet-caffe/",
+        default="/data/ngiannopoulos/Phd/NVDLA/test_git_framework/m5out_nvdla/traces/lenet-caffe/",
         help="directory to put the generated sc.log, register txn and mem traces",
     )
     parser.add_argument(
         "--image",
-        # default="/home/georgrizos/gem5-original/bsc-util/nvdla_utilities/example_usage/caffe_models/lenet/eight_invert.pgm",
-        default="/home/tpapavasileiou/tools/MNIST-Dataset/t10k-imgs/5/image5223.pgm",
+        default="/data/ngiannopoulos/Phd/NVDLA/test_git_framework/gem5/bsc-util/nvdla_utilities/example_usage/caffe_models/lenet/eight_invert.pgm",
+        # default="/home/tpapavasileiou/tools/MNIST-Dataset/t10k-imgs/5/image5223.pgm",
         help="Path to the image for nvdla_runtime to perform inference.",
     )
     parser.add_argument(
@@ -111,7 +111,7 @@ def get_loadable(options):
         + compiler_name
         + " -o "
         + options.model_name
-        + " --cprecision fp16 --configtarget nv_full --informat nchw --prototxt "
+        + " --cprecision fp16 --configtarget nv_small --informat nchw --prototxt "
         + os.path.abspath(options.prototxt)
         + " --caffemodel "
         + os.path.abspath(options.caffemodel)
@@ -155,7 +155,7 @@ def run_qemu(options):
         os.system(
             "cp "
             + os.path.abspath(options.image)
-            + " /home/tpapavasileiou/tools/GEM5-NVDLA/vp-bin/usr/local/nvdla/"
+            + " /data/ngiannopoulos/Phd/NVDLA/test_git_framework/vp_big_g/vp-bin/usr/local/nvdla/"
         )
 
     # if not os.path.exists("/usr/bin/expect"):
@@ -187,7 +187,7 @@ send "mount -t 9p -o trans=virtio r /mnt && cd /mnt\\r"
 expect "# "
 send "insmod images/linux-4.13.3/drm.ko && insmod images/linux-4.13.3/opendla_1.ko\\r"
 expect "# "
-send "./nvdla_runtime --loadable usr/local/nvdla/%(loadable)s %(image)s\\r"
+send "./nvdla_runtime --loadable usr/local/nvdla/%(loadable)s %(image)s --normalize 255\\r"
 
 # poweroff the Guest VM
 expect "# "
@@ -201,14 +201,14 @@ send "shutdown -h now\\r"
     }
     qemu_run_template.format(options.qemu_bin, options.qemu_lua)
     with open(
-        "/home/tpapavasileiou/tools/GEM5-NVDLA/vp-bin/images/linux-4.13.3/qemu_run.exp",
+        "/data/ngiannopoulos/Phd/NVDLA/test_git_framework/vp_big_g/vp-bin/images/linux-4.13.3/qemu_run.exp",
         "w",
     ) as f:
         f.write(qemu_run_template)
-    cmd = "cd /home/tpapavasileiou/tools/GEM5-NVDLA/vp-bin/ && ./images/linux-4.13.3/qemu_run.exp"
-    if os.path.exists("/home/tpapavasileiou/tools/GEM5-NVDLA/vp-bin/qemu_log"):
+    cmd = "cd /data/ngiannopoulos/Phd/NVDLA/test_git_framework/vp_big_g/vp-bin/ && ./images/linux-4.13.3/qemu_run.exp"
+    if os.path.exists("/data/ngiannopoulos/Phd/NVDLA/test_git_framework/vp_big_g/vp-bin/qemu_log"):
         os.system(
-            "mv /home/tpapavasileiou/tools/GEM5-NVDLA/vp-bin/qemu_log /home/tpapavasileiou/tools/GEM5-NVDLA/vp-bin/qemu_log_bkp"
+            "mv /data/ngiannopoulos/Phd/NVDLA/test_git_framework/vp_big_g/vp-bin/qemu_log /data/ngiannopoulos/Phd/NVDLA/test_git_framework/vp_big_g/vp-bin/qemu_log_bkp"
         )
     qemu_proc = subprocess.Popen(cmd, shell=True)
     qemu_proc.wait()
@@ -265,11 +265,11 @@ def parse_mixed_type_trace(rd_wr_trace_file):
 def process_log(options):
     if not options.convert_only:
         os.system(
-            "cd /home/tpapavasileiou/tools/GEM5-NVDLA/vp-bin/ && mv sc.log "
+            "cd /data/ngiannopoulos/Phd/NVDLA/test_git_framework/vp_big_g/vp-bin/ && mv sc.log "
             + options.out_dir
         )
         os.system(
-            "cd /home/tpapavasileiou/tools/GEM5-NVDLA/vp-bin/ && mv qemu_log "
+            "cd /data/ngiannopoulos/Phd/NVDLA/test_git_framework/vp_big_g/vp-bin/ && mv qemu_log "
             + options.out_dir
         )
 

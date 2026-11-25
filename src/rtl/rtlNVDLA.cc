@@ -30,6 +30,9 @@
 
 #include "rtl/rtlNVDLA.hh"
 
+#include "debug/rtlNVDLA.hh"
+#include "debug/rtlNVDLADebug.hh"
+
 namespace gem5
 {
 
@@ -60,7 +63,7 @@ rtlNVDLA::rtlNVDLA(const rtlNVDLAParams &params) :
     use_fake_mem(params.use_fake_mem),
     print_path(params.print_path) {
 
-    std::cout <<" Create rtlNVDLA" << std::endl;
+    DPRINTF(rtlNVDLADebug, "%s: Create rtlNVDLA\n", __func__);
 
     switch (params.buffer_mode) {
         case 0:
@@ -84,9 +87,10 @@ rtlNVDLA::rtlNVDLA(const rtlNVDLAParams &params) :
 
     initNVDLA(params.use_shared_spm);
     cyclesNVDLA = 0;
-    std::cout << std::hex << "NVDLA " << id_nvdla
-              << " Base Addr DRAM: " << baseAddrDRAM
-              << " Base Addr SRAM: " << baseAddrSRAM << std::endl;
+    DPRINTF(rtlNVDLADebug, "%s: NVDLA %x Base Addr DRAM: %llx Base Addr SRAM: %llx\n",
+        __func__, static_cast<unsigned>(id_nvdla),
+        static_cast<unsigned long long>(baseAddrDRAM),
+        static_cast<unsigned long long>(baseAddrSRAM));
     // Clear input
     memset(&input, 0, sizeof(inputNVDLA));
 
@@ -144,7 +148,7 @@ rtlNVDLA::handleRequest(PacketPtr pkt) {
 
     blocked = true;
 
-    DPRINTF(rtlNVDLA, "Got request for size: %d, addr: %#x\n",
+    DPRINTF(rtlNVDLADebug, "%s: Got request for size: %d, addr: %#x\n", __func__,
                         pkt->getSize(),
                         pkt->req->getVaddr());
 
@@ -188,8 +192,8 @@ rtlNVDLA::loadTraceNVDLA(char *ptr) {
 
     startBaseTrace = trace->getBaseAddr();
 
-    DPRINTF(rtlNVDLA,
-            "Base Addr: %#x \n",
+    DPRINTF(rtlNVDLADebug,
+            "%s: Base Addr: %#x \n", __func__,
             trace->getBaseAddr());
     // reset NVDLA
     wr->init();
@@ -251,8 +255,8 @@ rtlNVDLA::processOutput(outputNVDLA& out) {
         if (dma_rd_engine->atEndOfBlock()) {
             dma_rd_engine->startFill(real_addr, aux.second);
 #ifndef AXI_RESP_FAST_IO
-            printf("(%lu) nvdla#%d DMA read req is issued: "
-                   "addr 0x%08lx, len %d\n",
+            DPRINTF(rtlNVDLADebug, "%s: (%lu) nvdla#%d DMA read req is issued: "
+                   "addr 0x%08lx, len %d\n", __func__,
                    wr->tickcount, id_nvdla, aux.first, aux.second);
 #endif
             // stats.num_dma_rd++;
@@ -272,8 +276,8 @@ rtlNVDLA::processOutput(outputNVDLA& out) {
             dma_wr_engine->startFill(real_addr, aux.second.size(),
                                      aux.second.data());
 #ifndef AXI_RESP_FAST_IO
-            printf("(%lu) nvdla#%d DMA write req is issued: "
-                   "addr 0x%08lx, len %ld\n",
+            DPRINTF(rtlNVDLADebug, "%s: (%lu) nvdla#%d DMA write req is issued: "
+                   "addr 0x%08lx, len %ld\n", __func__,
                    wr->tickcount, id_nvdla, aux.first, aux.second.size());
 #endif
             // stats.num_dma_wr++;
@@ -298,18 +302,18 @@ rtlNVDLA::runIterationNVDLA() {
     } else if (extevent == TraceLoaderGem5::TRACE_WFI) {
         waiting = 1;
 #ifndef AXI_RESP_FAST_IO
-        printf("(%lu) waiting for interrupt...\n", wr->tickcount);
+        DPRINTF(rtlNVDLADebug, "%s: (%lu) waiting for interrupt...\n", __func__, wr->tickcount);
 #endif
     } else if (extevent == TraceLoaderGem5::TRACE_RESET) {
         wr->init();
 #ifndef AXI_RESP_FAST_IO
-        printf("nvdla#%d reset\n", id_nvdla);
+        DPRINTF(rtlNVDLADebug, "%s: nvdla#%d reset\n", __func__, id_nvdla);
 #endif
     }
 
     if (waiting && wr->dla->dla_intr) {
 #ifndef AXI_RESP_FAST_IO
-        printf("(%lu) nvdla#%d interrupt!\n", wr->tickcount, id_nvdla);
+        DPRINTF(rtlNVDLADebug, "%s: (%lu) nvdla#%d interrupt!\n", __func__, wr->tickcount, id_nvdla);
 #endif
         waiting = 0;
     }
@@ -363,7 +367,7 @@ rtlNVDLA::runIterationNVDLA() {
 
 void
 rtlNVDLA::tick() {
-    DPRINTF(rtlNVDLADebug, "Tick NVDLA \n");
+    DPRINTF(rtlNVDLADebug, "%s: Tick NVDLA \n", __func__);
     // if we are still running trace
     // runIteration
     // schedule new iteration
@@ -379,16 +383,16 @@ rtlNVDLA::tick() {
         schedule(tickEvent, nextCycle() + (freq_ratio - 1) * clockPeriod());
     } else {
         // we have finished running the trace
-        printf("done at %lu ticks\n", wr->tickcount);
-        printf("simulation time: %lu seconds\n", time(nullptr) - sim_time);
+        DPRINTF(rtlNVDLADebug, "%s: done at %lu ticks\n", __func__, wr->tickcount);
+        DPRINTF(rtlNVDLADebug, "%s: simulation time: %lu seconds\n", __func__, time(nullptr) - sim_time);
 
         if (!trace->test_passed()) {
-            printf("*** FAIL: test failed due to output mismatch\n");
+            DPRINTF(rtlNVDLADebug, "%s: *** FAIL: test failed due to output mismatch\n", __func__);
 
         } else if (!wr->csb->test_passed()) {
-            printf("*** FAIL: test failed due to CSB read mismatch\n");
+            DPRINTF(rtlNVDLADebug, "%s: *** FAIL: test failed due to CSB read mismatch\n", __func__);
         } else {
-            printf("NVDLA %d *** PASS\n", id_nvdla);
+            DPRINTF(rtlNVDLADebug, "%s: NVDLA %d *** PASS\n", __func__, id_nvdla);
         }
 
 #ifdef AXI_RESP_FAST_IO
@@ -445,7 +449,7 @@ rtlNVDLA::handleResponse(PacketPtr pkt) {
     }
     else {
         // Strange situation, report!
-        DPRINTF(rtlNVDLA, "Got response for addr %#x no data\n",
+        DPRINTF(rtlNVDLADebug, "%s: Got response for addr %#x no data\n", __func__,
                             pkt->getAddr());
     }
 
@@ -466,7 +470,7 @@ rtlNVDLA::handleResponseNVDLA(PacketPtr pkt, bool sram) {
             // Get data from gem5 memory system
             // and set it to AXI
             DPRINTF(rtlNVDLADebug,
-                    "Handling response for data read Timing\n");
+                    "%s: Handling response for data read Timing\n", __func__);
             // Get the data ptr and sent it
             const uint8_t* dataPtr = pkt->getConstPtr<uint8_t>();
             uint64_t addr_nvdla = getAddrNVDLA(pkt->getAddr(), sram);
@@ -479,11 +483,11 @@ rtlNVDLA::handleResponseNVDLA(PacketPtr pkt, bool sram) {
             }
         } else {
             // this is somehow odd, report!
-            DPRINTF(rtlNVDLA, "Got response for addr %#x no read\n",
+            DPRINTF(rtlNVDLADebug, "%s: Got response for addr %#x no read\n", __func__,
                     pkt->getAddr());
         }
     } else {
-         DPRINTF(rtlNVDLA, "Got response for addr %#x no data\n",
+         DPRINTF(rtlNVDLADebug, "%s: Got response for addr %#x no data\n", __func__,
          pkt->getAddr());
     }
 
@@ -498,7 +502,7 @@ rtlNVDLA::handleFunctional(PacketPtr pkt) {
 
 AddrRangeList
 rtlNVDLA::getAddrRanges() const {
-    DPRINTF(rtlNVDLA, "Sending new ranges\n");
+    DPRINTF(rtlNVDLADebug, "%s: Sending new ranges\n", __func__);
     // Just use the same ranges as whatever is on the memory side.
     return memPort.getAddrRanges();
 }
@@ -510,13 +514,13 @@ rtlNVDLA::sendRangeChange() {
 
 void
 rtlNVDLA::finishTranslation(WholeTranslationState *state) {
-    DPRINTF(rtlNVDLA, "Finishing translation\n");
+    DPRINTF(rtlNVDLADebug, "%s: Finishing translation\n", __func__);
 
     RequestPtr req = state->mainReq;
 
     if (req->hasPaddr()) {
-        DPRINTF(rtlNVDLA,
-                "Finished translation step: Got request for addr %#x %#x\n",
+        DPRINTF(rtlNVDLADebug,
+                "%s: Finished translation step: Got request for addr %#x %#x\n", __func__,
         state->mainReq->getVaddr(),state->mainReq->getPaddr());
 
     } else {
@@ -528,7 +532,7 @@ rtlNVDLA::finishTranslation(WholeTranslationState *state) {
     PacketPtr new_pkt = new Packet(req, MemCmd::ReadReq, 64);
 
     if (memPort.blockedPacket != nullptr) {
-        DPRINTF(rtlNVDLA, "Packet lost\n");
+        DPRINTF(rtlNVDLADebug, "%s: Packet lost\n", __func__);
     } else {
         new_pkt->allocate();
         memPort.sendPacket(new_pkt);
@@ -539,12 +543,12 @@ rtlNVDLA::finishTranslation(WholeTranslationState *state) {
 void
 rtlNVDLA::MemNVDLAPort::sendPacket(PacketPtr pkt, bool timing) {
     if (timing) {
-        DPRINTF(rtlNVDLA, "Add Mem Req pending %#x size: %d timing s: %d\n",
+        DPRINTF(rtlNVDLADebug, "%s: Add Mem Req pending %#x size: %d timing s: %d\n", __func__,
             pkt->getAddr(), pkt->getSize(), pending_req.size());
         // we add as a pending request, we deal later
         pending_req.push(pkt);
     } else {
-        DPRINTF(rtlNVDLA, "Send Mem Req to DRAM %#x size: %d functional\n",
+        DPRINTF(rtlNVDLADebug, "%s: Send Mem Req to DRAM %#x size: %d functional\n", __func__,
             pkt->getAddr(), pkt->getSize());
         // send Atomic
         sendAtomic(pkt);
@@ -562,7 +566,7 @@ rtlNVDLA::MemNVDLAPort::recvRangeChange() {
 
 bool
 rtlNVDLA::MemNVDLAPort::recvTimingResp(PacketPtr pkt) {
-    DPRINTF(rtlNVDLA, "Got response SRAM?: %d\n", sram);
+    DPRINTF(rtlNVDLADebug, "%s: Got response SRAM?: %d\n", __func__, sram);
     return owner->handleResponseNVDLA(pkt, sram);
 }
 
@@ -633,8 +637,8 @@ rtlNVDLA::readAXIVariable(uint64_t addr, bool sram, bool timing,
 
     uint64_t real_addr = getRealAddr(addr, sram);
 
-    DPRINTF(rtlNVDLA,
-            "Read AXI Variable addr: %#x, real_addr %#x, size %d\n",
+    DPRINTF(rtlNVDLADebug,
+            "%s: Read AXI Variable addr: %#x, real_addr %#x, size %d\n", __func__,
             addr, real_addr, size);
 
     RequestPtr req = std::make_shared<Request>(real_addr, size,
@@ -661,8 +665,8 @@ rtlNVDLA::writeAXI(uint64_t addr, uint8_t data, bool sram, bool timing) {
 
     uint64_t real_addr = getRealAddr(addr, sram);
 
-    DPRINTF(rtlNVDLA,
-        "Write AXI Variable addr: %#x, real_addr %#x, data_to_write 0x%02x\n",
+    DPRINTF(rtlNVDLADebug,
+        "%s: Write AXI Variable addr: %#x, real_addr %#x, data_to_write 0x%02x\n", __func__,
         addr, real_addr, data);
     //Request(Addr paddr, unsigned size, Flags flags, MasterID mid)
     // addr is the physical addr

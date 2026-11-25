@@ -55,13 +55,13 @@ import devices
 from devices import AtomicCluster, KvmCluster, FastmodelCluster
 
 default_kernel = (
-    "/home/tpapavasileiou/tools/GEM5-NVDLA/nvdla/gem5/binaries/vmlinux_4_13_3"
+    "/data/ngiannopoulos/Phd/NVDLA/test_git_framework/binaries/vmlinux_4_13_3"
 )
 
 # default_disk = (
 #    "/home/georgrizos/gem5_linux_images/ubuntu-18.04-arm64-docker.img"
 # )
-default_disk = "/home/tpapavasileiou/tools/GEM5-NVDLA/gem5_linux_images/ubuntu-18.04-arm64-docker.img"
+default_disk = "/data/ngiannopoulos/Phd/gem5_linux_images/im2.img"
 
 default_mem_size = "1GB"
 

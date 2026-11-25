@@ -41,7 +41,7 @@ def main():
     )
     parser.add_argument(
         "--disk-image",
-        default="~/tools/GEM5-NVDLA/gem5_linux_images/ubuntu-18.04-arm64-docker.img",
+        default="/data/ngiannopoulos/Phd/gem5_linux_images/im2.img",
         help="path to the disk image for full system simulation",
     )
     parser.add_argument("--gem5-binary", help="Path to the gem5 binary.")
@@ -129,7 +129,7 @@ def main():
         else:
             opt_path = os.path.abspath(
                 os.path.join(
-                    os.path.dirname(__file__), "../../../build/ARM/gem5.opt"
+                    os.path.dirname(__file__), "../../../build/ARM/gem5.fast"
                 )
             )
             assert os.path.exists(

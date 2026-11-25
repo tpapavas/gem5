@@ -365,7 +365,43 @@ void Wrapper_nvdla::clearOutput() {
     // dma_engine cannot be issued with multiple tasks at once
 }
 
+// Operation-level idle: no enabled/pending engine operation.
+// Stalled operations remain busy. External wrapper DMA is not included.
+bool
+Wrapper_nvdla::enginesBusy() const
+{
+#define GROUP_BUSY(prefix) (dla->prefix##__DOT__reg2dp_d0_op_en || \
+                            dla->prefix##__DOT__reg2dp_d1_op_en)
+    const bool common_busy =
+        GROUP_BUSY(NV_nvdla__DOT__u_partition_c__DOT__u_NV_NVDLA_cdma__DOT__u_regfile) ||
+        GROUP_BUSY(NV_nvdla__DOT__u_partition_c__DOT__u_NV_NVDLA_csc__DOT__u_regfile) ||
+        GROUP_BUSY(NV_nvdla__DOT__u_partition_ma__DOT__u_NV_NVDLA_cmac__DOT__u_reg) ||
+        GROUP_BUSY(NV_nvdla__DOT__u_partition_mb__DOT__u_NV_NVDLA_cmac__DOT__u_reg) ||
+        GROUP_BUSY(NV_nvdla__DOT__u_partition_a__DOT__u_NV_NVDLA_cacc__DOT__u_regfile) ||
+        GROUP_BUSY(NV_nvdla__DOT__u_partition_p__DOT__u_NV_NVDLA_sdp__DOT__u_rdma__DOT__u_reg) ||
+        GROUP_BUSY(NV_nvdla__DOT__u_partition_p__DOT__u_NV_NVDLA_sdp__DOT__u_reg) ||
+        GROUP_BUSY(NV_nvdla__DOT__u_partition_o__DOT__u_NV_NVDLA_pdp__DOT__u_rdma__DOT__u_reg) ||
+        GROUP_BUSY(NV_nvdla__DOT__u_partition_o__DOT__u_NV_NVDLA_pdp__DOT__u_reg) ||
+        GROUP_BUSY(NV_nvdla__DOT__u_partition_o__DOT__u_NV_NVDLA_cdp__DOT__u_rdma__DOT__u_reg) ||
+        GROUP_BUSY(NV_nvdla__DOT__u_partition_o__DOT__u_NV_NVDLA_cdp__DOT__u_reg);
+#ifdef NV_SMALL_EN
+    const bool extra_busy = false;
+#else
+    const bool extra_busy =
+        GROUP_BUSY(NV_nvdla__DOT__u_partition_o__DOT__u_NV_NVDLA_rubik__DOT__u_regfile) ||
+        dla->NV_nvdla__DOT__u_partition_o__DOT__u_NV_NVDLA_bdma__DOT__u_csb__DOT__status_grp0_busy ||
+        dla->NV_nvdla__DOT__u_partition_o__DOT__u_NV_NVDLA_bdma__DOT__u_csb__DOT__status_grp1_busy ||
+        dla->NV_nvdla__DOT__u_partition_o__DOT__u_NV_NVDLA_bdma__DOT__u_csb__DOT__cmd_launch_vld ||
+        dla->NV_nvdla__DOT__u_partition_o__DOT__u_NV_NVDLA_bdma__DOT__u_csb__DOT__launch_vld ||
+        !dla->NV_nvdla__DOT__u_partition_o__DOT__u_NV_NVDLA_bdma__DOT__u_load__DOT__ld_idle ||
+        !dla->NV_nvdla__DOT__u_partition_o__DOT__u_NV_NVDLA_bdma__DOT__u_store__DOT__st_idle;
+#endif
+#undef GROUP_BUSY
+    return common_busy || extra_busy;
+}
+
 outputNVDLA& Wrapper_nvdla::tick() {
+    const bool pipeline_idle = !enginesBusy();
     dla->dla_core_clk = 1;
     dla->dla_csb_clk = 1;
     dla->eval();
@@ -383,6 +419,8 @@ outputNVDLA& Wrapper_nvdla::tick() {
 #endif
 
     tickcount++;    // align this tick advancement with stats.txt
+    if (pipeline_idle)
+        ++rtl_pipeline_idle_cycles;
 
     _tickcount++;
     return output;

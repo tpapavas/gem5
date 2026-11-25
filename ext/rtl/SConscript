@@ -84,4 +84,4 @@ env.Append(LIBPATH=['#ext/rtl/model_nvdla'])
 env.Append(CPPDEFINES=['VM_SC=0', 'VM_TRACE=0', 'VL_THREADED=0'])
 
 env.Append(LIBS=['VNV_nvdla__ALL'])
-env.Append(LIBPATH=['#ext/rtl/model_nvdla/verilator_nvdla'])
+env.Append(LIBPATH=['#ext/rtl/model_nvdla/verilator_nvdla_full'])

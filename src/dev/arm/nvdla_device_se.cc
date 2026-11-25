@@ -121,7 +121,7 @@ NvDlaDeviceSE::NvDlaDeviceSE(const NvDlaDeviceSEParams &params) :
         dma_wr_engine = new DmaNvdla(dmaPort, true,
                                     spm_line_size * spm_line_num,
                                     spm_line_size, spm_line_num,
-                                    Request::UNCACHEABLE);
+                                    0);// Request::UNCACHEABLE);
     } else {
         dma_rd_engine = nullptr;
         dma_wr_engine = nullptr;
@@ -884,7 +884,17 @@ NvDlaDeviceSE::readAXIVariable(uint64_t addr, bool sram, bool timing,
     stats.nvdla_reads++;
 
     uint64_t real_addr = getRealAddr(addr, sram);
-
+    if (real_addr >= 0x200b0000 &&
+        real_addr <  0x200c0000) {
+        std::cout
+            << "[WATCH readAXI] addr=0x"
+            << std::hex << real_addr
+            << " size=" << std::dec << size
+            << " cacheable=" << cacheable
+            << " timing=" << timing
+            << " tick=" << curTick()
+            << std::endl;
+    }
     DPRINTF(NvDlaDeviceSE,
             "Read AXI Variable addr: %#x, real_addr %#x, size %d\n",
             addr, real_addr, size);
@@ -943,7 +953,7 @@ void
 NvDlaDeviceSE::writeAXILong(uint64_t addr, uint32_t length, uint8_t* data,
         uint64_t mask, bool sram, bool timing, bool cacheable) {
     stats.nvdla_writes++;
-
+    
     uint64_t real_addr = getRealAddr(addr, sram);
     RequestPtr req = std::make_shared<Request>(real_addr, length,
         cacheable ? 0: Request::UNCACHEABLE, 0);

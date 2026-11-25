@@ -890,7 +890,11 @@ uint32_t readregaccel(ThreadContext *tc, int accel_id, Addr addr)
     DPRINTF(PseudoInst,
             "PseudoInst::readregaccel(0x%08x)\n", addr);
 
-    return tc->getCpuPtr()->NvDlaReadReg(accel_id, addr);
+    const uint32_t v = tc->getCpuPtr()->NvDlaReadReg(accel_id, addr);
+    // task13: stall the issuing thread for the CSB link round trip
+    if (const Tick d = tc->getCpuPtr()->NvDlaTakeCsbStall())
+        tc->quiesceTick(curTick() + d);
+    return v;
 }
 
 bool respaccel(ThreadContext *tc, int accel_id)
@@ -915,6 +919,9 @@ void writeregaccel(ThreadContext *tc, int accel_id, uint32_t data, Addr addr)
             "PseudoInst::writeregaccel(0x%08x, 0x%08x)\n", data, addr);
 
     tc->getCpuPtr()->NvDlaWriteReg(accel_id, data, addr);
+    // task13: stall the issuing thread for the CSB link round trip
+    if (const Tick d = tc->getCpuPtr()->NvDlaTakeCsbStall())
+        tc->quiesceTick(curTick() + d);
 }
 
 } // namespace pseudo_inst

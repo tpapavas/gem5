@@ -576,8 +576,6 @@ MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
 {
     DPRINTF(NvDlaDevice,
         "[GEM5 LOG] DLA #%d: Trying to read_reg(0x%016x)\n",
-    DPRINTF(NvDlaDevice,
-        "[GEM5 LOG] DLA #%d: Trying to read_reg(0x%016x)\n",
         accel_id, addr);
     RequestPtr req = std::make_shared<Request>(addr, 4,
                                             Request::UNCACHEABLE, 0);
@@ -599,6 +597,8 @@ MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
         default:
             assert(false);
     }
+    // task13: CSB over a csb_sync UCIe link -> stall for the round trip
+    nvdlaCsbStall += pkt->headerDelay;
     uint32_t data = pkt->getLE<uint32_t>();
     DPRINTF(NvDlaDevice,
         "[GEM5 LOG] DLA #%d: Got response: 0x%08x\n",
@@ -659,6 +659,8 @@ MinorCPU::NvDlaWriteReg(int accel_id, uint32_t data, Addr addr)
                   accel_id);
         blockedPkt[accel_id] = pkt;
     }
+    // task13: CSB over a csb_sync UCIe link -> stall for the round trip
+    nvdlaCsbStall += pkt->headerDelay;
 }
 void
 MinorCPU::accelStartCountBdma0(int accel_id)

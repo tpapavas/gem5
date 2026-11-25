@@ -1,0 +1,23 @@
+Models:
+  latency_model_filename: "model_traced.pt"
+
+General:
+  digital_period: 1250
+
+Technology:
+  voltage: 0.9
+  node: 7.0
+
+Wire:
+  wire_width: 2.5
+  wire_space: 2.64
+  wire_length: 2961
+  wire_gnd_width: 3.7
+  wire_unshield_length: 577
+  wire_via_thickness: 1.02
+  wire_metal_thickness: 1.4
+  wire_vin: 0.95
+  wire_vrise: 61.75
+  wire_period: 527.25
+  wire_txres: 47
+

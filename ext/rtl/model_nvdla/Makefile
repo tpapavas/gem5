@@ -37,11 +37,14 @@
 
 
 # here there is the code of nvdla
-DIR = verilator_nvdla
+DIR = verilator_nvdla_full
 CC = clang
 CXX = clang++
 
 PARAMS = -fPIC -I$(DIR) -I$(VERILATOR_ROOT)/include -std=c++14
+EXTRA_CXXFLAGS ?=
+PARAMS += $(EXTRA_CXXFLAGS)
+EXTRA_CXXFLAGS ?=
 INTERFACES = csbMaster axiResponder embeddedBuffer wrapper_nvdla
 VERILATOR_LIBS = verilated # verilated_vcd_c
 
