@@ -54,6 +54,15 @@ single link: a CPU access crosses `ucie_cpu_link`, and an NVDLA access crosses
 
 ## 2. One-time setup
 
+### 2.0 Clone with the hw submodule
+
+The SystemC sources build from the `hw` submodule, so it must be checked out:
+
+```bash
+git clone -b nvdla-dev-uci-riscv <gem5 repo url> gem5 && cd gem5
+git submodule update --init      # src/systemC_NVDLA/model_nvdla/hw
+```
+
 ### 2.1 Toolchain and environment
 
 Use the clang build recipe from the main README / `NVDLA_NOTES_SYSTEMC.md`, plus the
@@ -82,9 +91,18 @@ so they are not in git. Install them under `ext/ucie/`:
 ./install_ucie_dependencies.sh
 ```
 
-Symlinks to an existing install work as well. The script also adds
-`ext/ucie/{torch,yaml-cpp}` to `.git/info/exclude`. Do the same by hand for
-`ext/ucie/build/` and the Verilator output directories.
+Symlinks to an existing install work as well. In a fresh clone `ext/ucie/` does not exist,
+so create it first:
+
+```bash
+mkdir -p ext/ucie
+ln -s <existing>/ext/ucie/torch    ext/ucie/torch
+ln -s <existing>/ext/ucie/yaml-cpp ext/ucie/yaml-cpp
+```
+
+The script also adds `ext/ucie/{torch,yaml-cpp}` to `.git/info/exclude`. Do the same by
+hand for `ext/ucie/build/`, for the Verilator output directories and, if you use them, for
+the symlinks.
 
 ### 2.3 Verilated nv_full model
 
@@ -151,7 +169,9 @@ What the run produces:
 - The network output is written to `output.dimg` in the current directory. Run gem5 from
   a directory you can write to.
 - On this branch the run above gives `simTicks = 65732436000`, and top-1 = 8 for both
-  batches.
+  batches. It takes about 1 hour of host time.
+- Because of `-e -r`, gem5's stdout and stderr go to `simout` and `simerr` in the output
+  directory. Set `LD_LIBRARY_PATH` (2.1) in the shell that runs gem5.
 
 ### 4.2 Main options
 
