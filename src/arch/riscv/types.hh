@@ -146,7 +146,7 @@ BitUnion64(ExtMachInst)
     Bitfield< 6,  5>    cimm2;
     Bitfield<12>        cimm1;
     // Pseudo instructions
-    Bitfield<31, 25>    m5func;
+    Bitfield<31, 24>    m5func;
     // vector
     Bitfield<31, 26>    vfunct6;
     Bitfield<31, 27>    vfunct5;
