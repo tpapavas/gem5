@@ -122,9 +122,10 @@ void allBufferSet::write_spm_axi_line_with_mask(uint64_t axi_addr, const uint8_t
 // so bytes this NVDLA never wrote (stale copies of what another NVDLA wrote meanwhile into the
 // same line) overwrote memory. With 2 DLAs and batch 2 the two outputs share one line
 // (e.g. 0x2001d800 / 0x2001d820), and the later flush erased the other batch.
-void allBufferSet::write_back_dirty_bytes(allBufferLineWithTag& entry, Wrapper_nvdla* req, bool keep_in_overlay) {
+uint64_t allBufferSet::write_back_dirty_bytes(allBufferLineWithTag& entry, Wrapper_nvdla* req, bool keep_in_overlay) {
     const uint64_t base = entry.map_it->first;
     Wrapper_nvdla* const out = requester(req);   // [SHARED_SPM]
+    uint64_t bytes = 0;   // [SPM_STATS]
     if (keep_in_overlay) {
         auto& ov = wb_overlay[base];
         if (ov.data.empty()) {
@@ -149,16 +150,19 @@ void allBufferSet::write_back_dirty_bytes(allBufferLineWithTag& entry, Wrapper_n
             i++;
         out->addDMAWriteReq(base + start,
             std::vector<uint8_t>(entry.spm_line.begin() + start, entry.spm_line.begin() + i));
+        bytes += i - start;
     }
     std::fill(entry.dirty_mask.begin(), entry.dirty_mask.end(), 0);
     entry.dirty = 0;
+    return bytes;
 }
 
 
 void allBufferSet::clear_and_write_back_dirty(Wrapper_nvdla* req) {
     for (auto& line: lines) {
         if (line.dirty) {
-            write_back_dirty_bytes(line, req, false);   // [DIRTY_MASK] was: addDMAWriteReq(addr, whole line)
+            requester(req)->spm_stats.flush_writeback_bytes +=   // [SPM_STATS]
+                write_back_dirty_bytes(line, req, false);   // [DIRTY_MASK] was: addDMAWriteReq(addr, whole line)
         }
         line.map_it = addr_map.end();
         line.valid = 0;
@@ -196,6 +200,7 @@ void allBufferSet::fill_spm_line(uint64_t aligned_addr, const uint8_t* data, Wra
         entry.map_it = addr_map_it;
         entry.valid = 1;
         entry.dirty = 0;
+        requester(req)->spm_stats.line_fills++;   // [SPM_STATS]
         std::fill(entry.dirty_mask.begin(), entry.dirty_mask.end(), 0);  // [DIRTY_MASK]
 #ifndef NO_DATA
         entry.spm_line.assign(data, data + spm_line_size);
@@ -208,8 +213,10 @@ void allBufferSet::fill_spm_line(uint64_t aligned_addr, const uint8_t* data, Wra
             }
         }
 #endif
-    } else if (!shared) {
-        printf("(%lu) Weird: request the DRAM when it hits the embedded buffer.\n", wrapper->tickcount);
+    } else {
+        requester(req)->spm_stats.fills_dropped++;   // [SPM_STATS] line already in the buffer
+        if (!shared)
+            printf("(%lu) Weird: request the DRAM when it hits the embedded buffer.\n", wrapper->tickcount);
     }
     // [SHARED_SPM] else: the other NVDLA brought (and maybe changed) this line while our DMA was in
     // flight. Keep the buffer copy; the waiting reads are served from it (AXIResponder::inflight_dma_resp).
@@ -220,8 +227,12 @@ uint32_t allBufferSet::erase_victim(Wrapper_nvdla* req) {
     auto to_erase_id = lru_order.front();
     auto& entry = lines[to_erase_id];
     assert(entry.valid);
+    Wrapper_nvdla* const who = requester(req);   // [SPM_STATS]
+    who->spm_stats.evictions++;
     if (entry.dirty) {
-        write_back_dirty_bytes(entry, req, shared);   // [DIRTY_MASK] was: addDMAWriteReq(addr, whole line)
+        who->spm_stats.dirty_evictions++;
+        who->spm_stats.writeback_bytes +=
+            write_back_dirty_bytes(entry, req, shared);   // [DIRTY_MASK] was: addDMAWriteReq(addr, whole line)
     }
     addr_map.erase(entry.map_it);
     entry.valid = 0;
@@ -267,14 +278,17 @@ void prefetchThrottleSet::fill_spm_line(uint64_t aligned_addr, const uint8_t* da
     // [BUF_MODE] (the assert below is compiled out with -DNDEBUG) the throttle counts only the
     // prefetches in flight of one NVDLA, so with a shared buffer the set can be full here.
     // Drop the line instead of writing past the end of `lines`.
-    if (addr_map.size() >= assoc)
+    if (addr_map.size() >= assoc) {
+        requester(req)->spm_stats.fills_dropped++;   // [SPM_STATS]
         return;
+    }
     assert(addr_map.size() < assoc);
 
     // some bias data are found to be accessed twice. We simply ignore them.
     // since biases make up only a small proportion, this phenomenon has little
     // impact on overall performance
     if (addr_map.find(aligned_addr) != addr_map.end()) {
+        requester(req)->spm_stats.fills_dropped++;   // [SPM_STATS]
         return;
     }
 
@@ -285,11 +299,14 @@ void prefetchThrottleSet::fill_spm_line(uint64_t aligned_addr, const uint8_t* da
             break;
         }
     }
-    if (to_write_vec_id >= assoc)   // [BUF_MODE] no invalid entry (see above): drop
+    if (to_write_vec_id >= assoc) {   // [BUF_MODE] no invalid entry (see above): drop
+        requester(req)->spm_stats.fills_dropped++;   // [SPM_STATS]
         return;
+    }
     addr_map.emplace(aligned_addr, to_write_vec_id);
     auto& entry = lines[to_write_vec_id];
     entry.valid = 1;
+    requester(req)->spm_stats.line_fills++;   // [SPM_STATS]
 #ifndef NO_DATA
     entry.spm_line.assign(data, data + spm_line_size);
 #endif
@@ -300,6 +317,21 @@ embeddedBuffer::embeddedBuffer(Wrapper_nvdla* wrap, uint32_t _lat, uint32_t _lin
         wrapper(wrap), spm_latency(_lat), spm_line_size(_line_size), spm_line_num(_line_num), assoc(_assoc),
         num_sets(_line_num / _assoc) {
     sets.reserve(_line_num / _assoc);
+}
+
+
+void embeddedBuffer::clear_and_write_back_dirty(Wrapper_nvdla* req) {
+    // [SPM_STATS] count only flushes of a non-empty buffer: some devices call this on every
+    // tick while NVDLA is idle after a task
+    for (auto& set: sets) {
+        if (set->size()) {
+            (req ? req : wrapper)->spm_stats.flushes++;
+            break;
+        }
+    }
+    for (auto& set: sets) {
+        set->clear_and_write_back_dirty(req);
+    }
 }
 
 
@@ -372,6 +404,7 @@ bool prefetchBuffer::read_spm_axi_line(uint64_t axi_addr, uint8_t* data_out, uin
             return false;
         }
         rb.first = addr_base;
+        (req ? req : wrapper)->spm_stats.prefetch_used++;   // [SPM_STATS]
     }
     // always in read buffer here
 #ifndef NO_DATA

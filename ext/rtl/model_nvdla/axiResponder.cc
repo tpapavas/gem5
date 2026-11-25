@@ -346,19 +346,28 @@ AXIResponder::eval_timing() {
             // write miss: the beat covers only part of the line, so fetch the whole line from memory
             // first; otherwise the bytes this beat does not write would be garbage in the spm and be
             // written back over memory. The beat stays in the FIFOs and is retried once the line is in.
+            if (!w_miss_pending) {   // [SPM_STATS] count the beat once, not on every retry
+                wrapper->spm_stats.write_misses++;
+                w_miss_pending = true;
+            }
             request_line_fill(spm_line_addr);
         } else {
             if (dma_enable) {
                 // intermediate variables and outputs should be written to spm (actually, all writes belong to this type)
-                if (cache_write)
+                if (cache_write) {
+                    if (!w_miss_pending)   // [SPM_STATS]
+                        wrapper->spm_stats.write_hits++;
+                    w_miss_pending = false;
                     wrapper->spm->write_spm_axi_line_with_mask(awtxn.awaddr, wtxn.wdata, wtxn.wstrb, awtxn.awid,
                                                                wrapper);   // [SHARED_SPM]
-                else if (wtxn.wstrb == 0xFFFFFFFFFFFFFFFF) {
+                } else if (wtxn.wstrb == 0xFFFFFFFFFFFFFFFF) {
+                    wrapper->spm_stats.write_bypass++;   // [SPM_STATS]
                     wrapper->tryMergeDMAWriteReq(awtxn.awaddr, wtxn.wdata, AXI_WIDTH / 8);
                 } else {
                     // [BUF_MODE] partial beat (pft modes write straight to memory): write only the
                     // bytes in wstrb, one DMA write per contiguous run. The old code wrote the whole
                     // beat and overwrote the bytes NVDLA did not write.
+                    wrapper->spm_stats.write_bypass++;   // [SPM_STATS]
                     int i = 0;
                     while (i < AXI_WIDTH / 8) {
                         if (!((wtxn.wstrb >> i) & 1)) { i++; continue; }
@@ -514,6 +523,11 @@ AXIResponder::process_read_req() {
                 std::tie(req_it, req_alloc_succ) = inflight_req.emplace(start_addr, std::list<axi_r_txn>());
                 req_it->second.push_back(txn);
 
+                if (data_get_in_spm)   // [SPM_STATS]
+                    wrapper->spm_stats.read_hits++;
+                else
+                    wrapper->spm_stats.read_misses++;
+
                 if (data_get_in_spm) {
                     // need to maintain the order of issuing requests
 #ifndef AXI_RESP_FAST_IO
@@ -543,6 +557,8 @@ AXIResponder::process_read_req() {
                         wrapper->addDMAReadReq(spm_line_addr, wrapper->spm->spm_line_size);
                         inflight_count_for_sets[(spm_line_addr / wrapper->spm->spm_line_size) % wrapper->spm->num_sets]++;
                         issued_req_this_cycle = true;
+                    } else {
+                        wrapper->spm_stats.read_miss_merged++;   // [SPM_STATS]
                     }
                     map_it->second.deps.emplace_back(start_addr, std::prev(req_it->second.end()));
                     req_it->second.back().rvalid = 0;
@@ -938,6 +954,7 @@ AXIResponder::generate_prefetch_request() {
                                         spm_line_addr);
 #endif
                     map_it->second.is_bypass = false;
+                    wrapper->spm_stats.prefetch_issued++;   // [SPM_STATS]
 
                     inflight_dma_addr_queue.push(spm_line_addr);
                     wrapper->addDMAReadReq(spm_line_addr, wrapper->spm->spm_line_size);

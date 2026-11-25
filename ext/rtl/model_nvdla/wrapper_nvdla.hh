@@ -168,6 +168,7 @@
 #include "axiResponder.hh"
 #include "embeddedBuffer.hh"
 #include "rtl_packet_nvdla.hh"
+#include "spmStats.hh"
 
 
 
@@ -230,6 +231,7 @@ public:
     //! SPM & DMA
     bool use_shared_spm;
     embeddedBuffer* spm;
+    SpmStats spm_stats;   // [SPM_STATS] events caused by this NVDLA
 
     // software prefetching
     int prefetch_enable;
