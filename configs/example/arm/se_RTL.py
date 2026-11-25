@@ -52,14 +52,6 @@ from devices import AtomicCluster, KvmCluster, FastmodelCluster
 default_mem_size = "1GB"
 def addOptions(parser):
     parser.add_argument(
-        "--loadable", type=str, required=True, help="Path to the NVDLA loadable"
-    )
-    parser.add_argument(
-        "--image", type=str, required=True, help="Path to the input image"
-    )
-    parser.add_argument("--normalize", type=float, default=255.0,
-                            help="Normalization value passed to the runtime (default: 255)")
-    parser.add_argument(
         "--restore-from",
         type=str,
         default=None,
@@ -724,13 +716,7 @@ def main():
         binary,
         "--loadable",
         options.loadable,
-        options.loadable,
         "--image",
-        options.image,
-    ]
-    if options.normalize is not None:
-        process.cmd += ["--normalize", str(options.normalize)]
-    process.cmd += [
         options.image,
     ]
     if options.normalize is not None:
