@@ -14,6 +14,7 @@
 
 #include <assert.h>
 #include <map>       // [B_SPACING]
+#include <map>       // [B_SPACING]
 #include "axiResponder.hh"
 
 AXIResponder::AXIResponder(struct connections _dla,
@@ -378,7 +379,19 @@ AXIResponder::eval_timing() {
                     printf("(%lu) nvdla#%d %s: write, last tick\n", wrapper->tickcount, wrapper->id_nvdla, name);
                 #endif
                 aw_fifo.pop();
+            if (wtxn.wlast) {
+                #ifdef PRINT_DEBUG
+                    printf("(%lu) nvdla#%d %s: write, last tick\n", wrapper->tickcount, wrapper->id_nvdla, name);
+                #endif
+                aw_fifo.pop();
 
+                axi_b_txn btxn;
+                btxn.bid = awtxn.awid;
+                b_fifo.push(std::move(btxn));
+            } else {
+                #ifdef PRINT_DEBUG
+                    printf("(%lu) nvdla#%d %s: write, ticks remaining\n", wrapper->tickcount, wrapper->id_nvdla, name);
+                #endif
                 axi_b_txn btxn;
                 btxn.bid = awtxn.awid;
                 b_fifo.push(std::move(btxn));
@@ -390,7 +403,12 @@ AXIResponder::eval_timing() {
                 awtxn.awlen--;
                 awtxn.awaddr += AXI_WIDTH / 8;
             }
+                awtxn.awlen--;
+                awtxn.awaddr += AXI_WIDTH / 8;
+            }
 
+            w_fifo.pop();
+        }
             w_fifo.pop();
         }
     }
@@ -456,13 +474,16 @@ AXIResponder::eval_timing() {
 
     *dla.b_bvalid = 0;
     if (*dla.b_bready && !b_fifo.empty() && b_spaced) {
+    if (*dla.b_bready && !b_fifo.empty() && b_spaced) {
         *dla.b_bvalid = 1;
 
         axi_b_txn &txn = b_fifo.front();
         *dla.b_bid = txn.bid;
         b_fifo.pop();
         last_b_tick[this] = wrapper->tickcount;
+        last_b_tick[this] = wrapper->tickcount;
     }
+
 
 }
 
@@ -733,6 +754,25 @@ AXIResponder::inflight_dma_resp(const uint8_t* data, uint32_t len) {
     inflight_dma_attr.erase(addr_it);
     inflight_dma_addr_queue.pop();
     inflight_count_for_sets[(addr / wrapper->spm->spm_line_size) % wrapper->spm->num_sets]--;
+}
+
+// Fetch a whole spm line from memory for a write miss (same DMA path as a read miss, without a
+// waiting read). Nothing to do if a fetch of this line is already in flight.
+void
+AXIResponder::request_line_fill(uint64_t spm_line_addr) {
+    std::map<uint64_t, DMAAttr>::iterator map_it;
+    bool alloc_succ;
+    std::tie(map_it, alloc_succ) = inflight_dma_attr.emplace(spm_line_addr, DMAAttr());
+    if (!alloc_succ)
+        return;
+
+#ifndef AXI_RESP_FAST_IO
+    printf("(%lu) DMA read req issued for write miss, addr 0x%08lx\n", wrapper->tickcount, spm_line_addr);
+#endif
+    map_it->second.is_bypass = false;
+    inflight_dma_addr_queue.push(spm_line_addr);
+    wrapper->addDMAReadReq(spm_line_addr, wrapper->spm->spm_line_size);
+    inflight_count_for_sets[(spm_line_addr / wrapper->spm->spm_line_size) % wrapper->spm->num_sets]++;
 }
 
 // Fetch a whole spm line from memory for a write miss (same DMA path as a read miss, without a

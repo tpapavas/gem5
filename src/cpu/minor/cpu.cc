@@ -49,7 +49,7 @@
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
 
-// #define NVDLA_VERILATED
+#define NVDLA_VERILATED
 namespace gem5
 {
 MinorCPU::MinorCPU(const BaseMinorCPUParams &params) :
@@ -576,6 +576,8 @@ MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
 {
     DPRINTF(NvDlaDevice,
         "[GEM5 LOG] DLA #%d: Trying to read_reg(0x%016x)\n",
+    DPRINTF(NvDlaDevice,
+        "[GEM5 LOG] DLA #%d: Trying to read_reg(0x%016x)\n",
         accel_id, addr);
     RequestPtr req = std::make_shared<Request>(addr, 4,
                                             Request::UNCACHEABLE, 0);
@@ -589,9 +591,11 @@ MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
         case 0:
             nvdla_port_plus_0.sendTimingReq(pkt);
             break;
+
         case 1:
             nvdla_port_plus_1.sendTimingReq(pkt);
             break;
+
         default:
             assert(false);
     }

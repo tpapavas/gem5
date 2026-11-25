@@ -50,6 +50,7 @@
 #include <string>
 #include "base/compiler.hh"
 #include "base/output.hh"
+#include "base/output.hh"
 #include "base/random.hh"
 #include "cpu/base.hh"
 #include "cpu/minor/activity.hh"
