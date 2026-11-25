@@ -61,7 +61,8 @@ protected:
 
     // [DIRTY_MASK] issue one DMA write per contiguous run of dirty bytes, then clear the mask
     // [SHARED_SPM] on req's DMA engine; on eviction of a shared buffer also keep the bytes in wb_overlay
-    void write_back_dirty_bytes(allBufferLineWithTag& entry, Wrapper_nvdla* req, bool keep_in_overlay);
+    // [SPM_STATS] returns the number of bytes written back
+    uint64_t write_back_dirty_bytes(allBufferLineWithTag& entry, Wrapper_nvdla* req, bool keep_in_overlay);
 
     // [SHARED_SPM] Bytes written back on eviction of a shared buffer, kept until the next flush.
     // The DMA reads and DMA writes of an NVDLA are separate engines, and with a shared buffer the
@@ -136,11 +137,7 @@ public:
 
     // [SHARED_SPM] req: see abstractSet. With a shared buffer the NVDLA that flushes writes back
     // the dirty bytes of both NVDLAs, on its own DMA engine, and waits for them.
-    inline virtual void clear_and_write_back_dirty(Wrapper_nvdla* req = nullptr) {
-        for (auto& set: sets) {
-            set->clear_and_write_back_dirty(req);
-        }
-    }
+    virtual void clear_and_write_back_dirty(Wrapper_nvdla* req = nullptr);
 
     inline void fill_spm_line(uint64_t aligned_addr, const uint8_t* data, Wrapper_nvdla* req = nullptr) {
         uint32_t set_id = (aligned_addr / spm_line_size) % num_sets;

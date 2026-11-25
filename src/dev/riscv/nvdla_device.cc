@@ -421,6 +421,7 @@ NvDlaDevice::runIterationNVDLA() {
         Wrapper_nvdla::buf_ptr = 0;
     }
 #endif
+    spmStats.sync(wr->spm_stats);   // [SPM_STATS]
 }
 
 void

@@ -143,6 +143,7 @@ private:
     std::map<uint64_t, DMAAttr> inflight_dma_attr;  // record the inflight dma attribute: whether to bypass DMA
     std::queue<uint64_t> inflight_dma_addr_queue;   // keep dma request order
     std::vector<uint32_t> inflight_count_for_sets;  // count inflight dma requests for each embedded buffer set
+    bool w_miss_pending = false;   // [SPM_STATS] the write beat at the FIFO head already counted as a miss
 
     // prefetch
     uint32_t pft_threshold;      // [BUF_MODE] set from NvDlaDeviceSE pft_threshold (was fixed 16)

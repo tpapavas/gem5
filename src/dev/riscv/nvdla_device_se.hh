@@ -50,6 +50,7 @@
 #include "rtl/traceLoaderGem5.hh"
 #include "sim/clocked_object.hh"
 #include "sim/system.hh"
+#include "dev/nvdla_spm_stats.hh"
 #include "wrapper_nvdla.hh"
 
 namespace gem5
@@ -507,6 +508,7 @@ class NvDlaDeviceSE : public BasicPioDevice
         statistics::Scalar nvdla_total_CdmaWt1 =0;
     };
     nvdla_stats stats;
+    NvdlaSpmStats spmStats{this};   // [SPM_STATS] embedded buffer stats
     void processOutput(outputNVDLA& out);
 
 public:
