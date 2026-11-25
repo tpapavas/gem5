@@ -576,8 +576,6 @@ MinorCPU::NvDlaReadReg(int accel_id, Addr addr)
 {
     DPRINTF(NvDlaDevice,
         "[GEM5 LOG] DLA #%d: Trying to read_reg(0x%016x)\n",
-    DPRINTF(NvDlaDevice,
-        "[GEM5 LOG] DLA #%d: Trying to read_reg(0x%016x)\n",
         accel_id, addr);
     RequestPtr req = std::make_shared<Request>(addr, 4,
                                             Request::UNCACHEABLE, 0);
