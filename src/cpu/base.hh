@@ -48,8 +48,8 @@
 #include "arch/generic/interrupts.hh"
 #include "base/statistics.hh"
 #include "debug/Mwait.hh"
-#include "dev/arm/nvdla_device.hh"
-#include "dev/arm/nvdla_device_se.hh"
+#include "dev/nvdla_device.hh"
+#include "dev/nvdla_device_se.hh"
 #include "mem/htm.hh"
 #include "mem/port_proxy.hh"
 #include "sim/clocked_object.hh"
@@ -63,7 +63,7 @@
 
 namespace gem5
 {
-    
+
 class BaseCPU;
 struct BaseCPUParams;
 class CheckerCPU;

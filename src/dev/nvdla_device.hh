@@ -28,8 +28,8 @@
  * Authors: Guillem Lopez Paradis
  */
 
-#ifndef __NVDLA_DEVICE_SE_HH__
-#define __NVDLA_DEVICE_SE_HH__
+#ifndef __NVDLA_DEVICE_HH__
+#define __NVDLA_DEVICE_HH__
 
 #include <ctime>
 #include <string>
@@ -40,12 +40,11 @@
 #include "cpu/translation.hh"
 #include "debug/rtlNVDLA.hh"
 #include "debug/rtlNVDLADebug.hh"
-
-// #include "dev/arm/base_gic.hh"
 #include "dev/dma_device.hh"
 #include "dev/dma_nvdla.hh"
 #include "dev/io_device.hh"
-#include "params/NvDlaDeviceSE.hh"
+#include "dev/nvdla_spm_stats.hh"
+#include "params/NvDlaDevice.hh"
 #include "params/rtlNVDLA.hh"
 #include "rtl/rtlObject.hh"
 #include "rtl/traceLoaderGem5.hh"
@@ -57,12 +56,11 @@ namespace gem5
 {
 
 class TraceLoaderGem5;
-// class ArmInterruptPin;
 
 /**
- * NvDlaDeviceSE class
+ * NvDlaDevice class
  */
-class NvDlaDeviceSE : public BasicPioDevice
+class NvDlaDevice : public BasicPioDevice
 {
   private:
     time_t sim_time;
@@ -75,8 +73,8 @@ class NvDlaDeviceSE : public BasicPioDevice
     class CPUSidePort : public ResponsePort
     {
       private:
-        /// The object that owns this object (NvDlaDeviceSE)
-        NvDlaDeviceSE *owner;
+        /// The object that owns this object (NvDlaDevice)
+        NvDlaDevice *owner;
 
         /// True if the port needs to send a retry req.
         bool needRetry;
@@ -88,7 +86,7 @@ class NvDlaDeviceSE : public BasicPioDevice
         /**
          * Constructor. Just calls the superclass constructor.
          */
-        CPUSidePort(const std::string& name, NvDlaDeviceSE *owner) :
+        CPUSidePort(const std::string& name, NvDlaDevice *owner) :
             ResponsePort(name, owner), owner(owner), needRetry(false),
             blockedPacket(nullptr)
         { }
@@ -112,7 +110,7 @@ class NvDlaDeviceSE : public BasicPioDevice
 
         /**
          * Send a retry to the peer port only if it is needed. This is called
-         * from the NvDlaDeviceSE whenever it is unblocked.
+         * from the NvDlaDevice whenever it is unblocked.
          */
         void trySendRetry();
 
@@ -158,8 +156,8 @@ class NvDlaDeviceSE : public BasicPioDevice
     class CmdCPUSidePort : public ResponsePort
     {
       private:
-        /// The object that owns this object (NvDlaDeviceSE)
-        NvDlaDeviceSE *owner;
+        /// The object that owns this object (NvDlaDevice)
+        NvDlaDevice *owner;
 
         /// True if the port needs to send a retry req.
         bool needRetry;
@@ -171,7 +169,7 @@ class NvDlaDeviceSE : public BasicPioDevice
         /**
          * Constructor. Just calls the superclass constructor.
          */
-        CmdCPUSidePort(const std::string& name, NvDlaDeviceSE *owner) :
+        CmdCPUSidePort(const std::string& name, NvDlaDevice *owner) :
             ResponsePort(name, owner), owner(owner), needRetry(false),
             blockedPacket(nullptr)
         { }
@@ -195,7 +193,7 @@ class NvDlaDeviceSE : public BasicPioDevice
 
         /**
          * Send a retry to the peer port only if it is needed. This is called
-         * from the NvDlaDeviceSE whenever it is unblocked.
+         * from the NvDlaDevice whenever it is unblocked.
          */
         void trySendRetry();
 
@@ -240,8 +238,8 @@ class NvDlaDeviceSE : public BasicPioDevice
     class MemSidePort : public RequestPort
     {
       private:
-        // The object that owns this object (NvDlaDeviceSE)
-        NvDlaDeviceSE *owner;
+        // The object that owns this object (NvDlaDevice)
+        NvDlaDevice *owner;
 
       public:
 
@@ -251,7 +249,7 @@ class NvDlaDeviceSE : public BasicPioDevice
         /**
          * Constructor. Just calls the superclass constructor.
          */
-        MemSidePort(const std::string& name, NvDlaDeviceSE *owner) :
+        MemSidePort(const std::string& name, NvDlaDevice *owner) :
             RequestPort(name, owner), owner(owner), blockedPacket(nullptr)
         { }
 
@@ -299,7 +297,7 @@ class NvDlaDeviceSE : public BasicPioDevice
     {
       private:
         /// The object that owns this object (rtlNVDLA)
-        NvDlaDeviceSE *owner;
+        NvDlaDevice *owner;
 
         /// If we tried to send a packet and it was blocked, store it here
         //PacketPtr blockedPacket;
@@ -308,8 +306,7 @@ class NvDlaDeviceSE : public BasicPioDevice
         /**
          * Constructor. Just calls the superclass constructor.
          */
-        MemNVDLAPort(const std::string& name,
-          NvDlaDeviceSE *owner, bool sram_) :
+        MemNVDLAPort(const std::string& name, NvDlaDevice *owner, bool sram_) :
             RequestPort(name, owner),
             owner(owner),
             sram(sram_),
@@ -455,7 +452,7 @@ class NvDlaDeviceSE : public BasicPioDevice
 
     const unsigned int max_req_inflight;
 
-    const double freq_ratio;
+    const uint32_t freq_ratio;
 
     uint32_t id_nvdla;
 
@@ -485,6 +482,7 @@ class NvDlaDeviceSE : public BasicPioDevice
         statistics::Scalar num_spm_hit;
         statistics::Scalar num_spm_miss;
         statistics::Scalar num_spm_use;
+
         statistics::Scalar nvdla_rtl_cycles = 0;
         //statistics::Scalar nvdla_rtl_cycles_idle = 0;
 
@@ -508,6 +506,7 @@ class NvDlaDeviceSE : public BasicPioDevice
         statistics::Scalar nvdla_total_CdmaWt1 =0;
     };
     nvdla_stats stats;
+    NvdlaSpmStats spmStats{this};   // [SPM_STATS] embedded buffer stats
     void processOutput(outputNVDLA& out);
 
 public:
@@ -532,7 +531,7 @@ public:
     // rtl packet
     inputNVDLA input;
 
-    ~NvDlaDeviceSE();
+    ~NvDlaDevice();
     void runIterationNVDLA();
     void initNVDLA(bool use_shared_spm);
     void loadTraceNVDLA(char *ptr);
@@ -549,7 +548,7 @@ public:
       * The constructor for NVDLA device just registers itself with the MMU.
       * @param p params structure
       */
-    NvDlaDeviceSE(const NvDlaDeviceSEParams &params);
+    NvDlaDevice(const NvDlaDeviceParams &params);
 
     gem5::Port &getPort(const std::string &if_name,
                   PortID idx=InvalidPortID) override;
@@ -641,9 +640,12 @@ public:
     uint64_t getTickfromWrapperNVDLA() const { return (wr->tickcount); }
 
   protected:
-    // ArmInterruptPin *const interrupt;
+    // ISA-specific interrupt signalling, implemented by the ISA subclass
+    // (e.g. ArmNvDlaDevice in dev/arm).
+    virtual void raiseInterrupt() = 0;
+    virtual void clearInterrupt() = 0;
+
     bool interruptRaised;
-    bool netFinished;
     bool onRead;
     uint32_t readData;
 
@@ -653,4 +655,4 @@ public:
 
 } //End namespace gem5
 
-#endif // __NVDLA_DEVICE_SE_HH__
+#endif // __NVDLA_DEVICE_HH__

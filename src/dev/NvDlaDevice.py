@@ -44,12 +44,15 @@ from m5.objects.Device import BasicPioDevice
 
 
 class NvDlaDevice(BasicPioDevice):
+    """ISA-independent FS NVDLA. Abstract: instantiate the ISA subclass
+    (e.g. ArmNvDlaDevice), which provides the interrupt pin."""
+
     type = "NvDlaDevice"
-    cxx_header = "dev/arm/nvdla_device.hh"
+    abstract = True
+    cxx_header = "dev/nvdla_device.hh"
     cxx_class = "gem5::NvDlaDevice"
 
     pio_size = Param.Addr(0x8, "Size of address range")
-    interrupt = Param.ArmInterruptPin("Interrupt to use for this device")
 
     # new glue stuff
     trace_mode = Param.Bool(False, "Use register trace")
@@ -125,7 +128,7 @@ class NvDlaDevice(BasicPioDevice):
 
 class NvDlaDeviceSE(BasicPioDevice):
     type = "NvDlaDeviceSE"
-    cxx_header = "dev/arm/nvdla_device_se.hh"
+    cxx_header = "dev/nvdla_device_se.hh"
     cxx_class = "gem5::NvDlaDeviceSE"
 
     pio_size = Param.Addr(0x8, "Size of address range")

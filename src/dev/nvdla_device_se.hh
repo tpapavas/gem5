@@ -40,17 +40,16 @@
 #include "cpu/translation.hh"
 #include "debug/rtlNVDLA.hh"
 #include "debug/rtlNVDLADebug.hh"
-#include "dev/arm/base_gic.hh"
 #include "dev/dma_device.hh"
 #include "dev/dma_nvdla.hh"
 #include "dev/io_device.hh"
+#include "dev/nvdla_spm_stats.hh"
 #include "params/NvDlaDeviceSE.hh"
 #include "params/rtlNVDLA.hh"
 #include "rtl/rtlObject.hh"
 #include "rtl/traceLoaderGem5.hh"
 #include "sim/clocked_object.hh"
 #include "sim/system.hh"
-#include "dev/nvdla_spm_stats.hh"
 #include "wrapper_nvdla.hh"
 
 namespace gem5
@@ -589,15 +588,17 @@ public:
     // [RAW_FIX] NVDLA address range of the block dma_wr_engine is sending
     uint64_t dma_wr_cur_addr = 0;
     uint64_t dma_wr_cur_len = 0;
-    bool dmaReadHitsPendingWrite(const outputNVDLA& out, uint64_t addr, uint64_t len) const;
+    bool dmaReadHitsPendingWrite(const outputNVDLA& out,
+        uint64_t addr, uint64_t len) const;
 
     // control the mode of using embedded SPM / cache,
     // whether as an all-in-one buffer or simply a prefetch buffer
     BufferMode buffer_mode;
     bool use_fake_mem;
 
-    // [BUF_MODE] runtime mode has no trace with the read-only tensors, so the weight tensors for
-    // prefetching are taken from the CSB writes of the firmware to the CDMA weight registers
+    // [BUF_MODE] runtime mode has no trace with the read-only tensors,
+    // so the weight tensors for prefetching are taken from the CSB writes
+    // of the firmware to the CDMA weight registers
     uint64_t pft_wt_addr_hi = 0;
     uint64_t pft_wt_addr_lo = 0;
     uint32_t pft_wt_bytes = 0;
@@ -669,8 +670,9 @@ public:
     bool traceMode;
     bool engineStarted;
 
-    // [IDLE_SLEEP] after the runtime reads 0x20004 (end of a task) and NVDLA has been quiet for
-    // idle_sleep_threshold cycles, tick() stops rescheduling itself; the next CSB access wakes it.
+    // [IDLE_SLEEP] after the runtime reads 0x20004 (end of a task) and
+    // NVDLA has been quiet for // idle_sleep_threshold cycles,
+    // tick() stops rescheduling itself; the next CSB access wakes it.
     bool idleSleep;
     uint32_t idleSleepThreshold;
     bool sleepArmed = false;

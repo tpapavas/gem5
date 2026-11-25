@@ -786,7 +786,7 @@ def build(options):
     if options.vio_9p:
         FSConfig.attach_9p(system.realview, system.iobus)
 
-    system.fake_nvdla = NvDlaDevice(
+    system.fake_nvdla = ArmNvDlaDevice(
         pio_addr=0x10200000,
         pio_size=0x20000,
         interrupt=ArmSPI(num=208),

@@ -28,24 +28,30 @@
  * Authors: Guillem Lopez Paradis
  */
 
-#include "dev/riscv/nvdla_device_se.hh"
+#include "dev/nvdla_device.hh"
 
-#include "debug/NvDlaDeviceSE.hh"
-#include "debug/NvDlaDeviceSEDebug.hh"
+#include "../ext/rtl/model_nvdla/wrapper_nvdla.hh"
+#include "debug/NvDlaDevice.hh"
+#include "debug/NvDlaDeviceDebug.hh"
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
+
+#ifdef NV_SMALL_EN
+#define INTR_STATUS_ADDR (0xffff0403)
+#else
+#define INTR_STATUS_ADDR (0xffff0003)
+#endif
 
 namespace gem5
 {
 
 
-NvDlaDeviceSE::NvDlaDeviceSE(const NvDlaDeviceSEParams &params) :
+NvDlaDevice::NvDlaDevice(const NvDlaDeviceParams &params) :
     BasicPioDevice(params, params.pio_size),
     interruptRaised(false),
     traceMode(params.trace_mode),
     engineStarted(false),
     onRead(false),
-    netFinished(false),
     system(params.system),
     cpu(params.cpu),
     enableObject(params.enableRTLObject),
@@ -81,8 +87,6 @@ NvDlaDeviceSE::NvDlaDeviceSE(const NvDlaDeviceSEParams &params) :
     print_path(params.print_path),
     trace(nullptr)
     {
-    // fatal_if(!interrupt, "No NvDlaDeviceSE interrupt specified\n");
-
     cpu->setNvDlaDevice(id_nvdla, this);
     switch (params.buffer_mode) {
         case 0:
@@ -127,7 +131,7 @@ NvDlaDeviceSE::NvDlaDeviceSE(const NvDlaDeviceSEParams &params) :
 }
 
 
-NvDlaDeviceSE::~NvDlaDeviceSE() {
+NvDlaDevice::~NvDlaDevice() {
     delete wr;
     if (dma_rd_engine != nullptr)
         delete dma_rd_engine;
@@ -136,7 +140,7 @@ NvDlaDeviceSE::~NvDlaDeviceSE() {
 }
 
 Port &
-NvDlaDeviceSE::getPort(const std::string &if_name, PortID idx) {
+NvDlaDevice::getPort(const std::string &if_name, PortID idx) {
     if (if_name == "mem_side") {
         return memPort;
     } else if (if_name == "cpu_side") {
@@ -150,14 +154,14 @@ NvDlaDeviceSE::getPort(const std::string &if_name, PortID idx) {
     } else if (if_name == "dma_port") {
         return dmaPort;
     } else {
-        warn_if(true, "Asking to NvDlaDeviceSE for a port other "
+        warn_if(true, "Asking to NvDlaDevice for a port other "
                        "than cpu or mem");
         return BasicPioDevice::getPort(if_name, idx);
     }
 }
 
 bool
-NvDlaDeviceSE::handleRequest(PacketPtr pkt) {
+NvDlaDevice::handleRequest(PacketPtr pkt) {
     // [DLA IO] this is used only with reg trace
     assert(traceMode);
 
@@ -171,7 +175,7 @@ NvDlaDeviceSE::handleRequest(PacketPtr pkt) {
 
     blocked = true;
 
-    DPRINTF(NvDlaDeviceSE, "Got request for size: %d, addr: %#x\n",
+    DPRINTF(NvDlaDevice, "Got request for size: %d, addr: %#x\n",
                         pkt->getSize(),
                         pkt->req->getVaddr());
 
@@ -186,7 +190,7 @@ NvDlaDeviceSE::handleRequest(PacketPtr pkt) {
 }
 
 void
-NvDlaDeviceSE::initNVDLA(bool use_shared_spm) {
+NvDlaDevice::initNVDLA(bool use_shared_spm) {
     // Wrapper
     wr = new Wrapper_nvdla(id_nvdla, max_req_inflight,
         dma_enable, spm_latency, spm_line_size, spm_line_num,
@@ -194,11 +198,9 @@ NvDlaDeviceSE::initNVDLA(bool use_shared_spm) {
 
     // wrapper trace from nvidia
     if (traceMode) {
-        std::cout << "trace loaded!!" << std::endl;
         trace = new TraceLoaderGem5(wr->csb, wr->axi_dbb, wr->axi_cvsram);
     } else {
         // reset NVDLA
-        std::cout << "reset NVDLA... at else " << std::endl;
         wr->init();
         // init some variable before exec of trace
         quiesc_timer = 200;
@@ -209,7 +211,7 @@ NvDlaDeviceSE::initNVDLA(bool use_shared_spm) {
 }
 
 void
-NvDlaDeviceSE::loadTraceNVDLA(char *ptr) {
+NvDlaDevice::loadTraceNVDLA(char *ptr) {
     // load the trace into the queues
     trace->load(ptr);
     trace->load_read_var_log(ptr);  // call load_read_var_log
@@ -219,7 +221,7 @@ NvDlaDeviceSE::loadTraceNVDLA(char *ptr) {
 
     startBaseTrace = trace->getBaseAddr();
 
-    DPRINTF(NvDlaDeviceSE,
+    DPRINTF(NvDlaDevice,
             "Base Addr: %#x \n",
             trace->getBaseAddr());
     // reset NVDLA
@@ -228,14 +230,12 @@ NvDlaDeviceSE::loadTraceNVDLA(char *ptr) {
     quiesc_timer = 200;
     waiting = 0;
 
-    //schedule(tickEvent, nextCycle() + (freq_ratio - 1) * clockPeriod());
-    schedule(tickEvent,
-        nextCycle() + static_cast<Tick>(abs((freq_ratio-1.0))*clockPeriod()));
+    schedule(tickEvent, nextCycle() + (freq_ratio - 1) * clockPeriod());
     sim_time = time(nullptr);
 }
 
 void
-NvDlaDeviceSE::processOutput(outputNVDLA& out) {
+NvDlaDevice::processOutput(outputNVDLA& out) {
     if (out.read_valid) {
         while (!out.read_buffer.empty()) {
             read_req_entry_t aux = out.read_buffer.front();
@@ -277,10 +277,6 @@ NvDlaDeviceSE::processOutput(outputNVDLA& out) {
     // memory requests already in spm is dealt with in wrapper_nvdla
     // only one DMA request can be tackled at once
     if (!out.dma_read_buffer.empty()) {
-        std::cout << "DMA read req: addr "
-                  << std::hex << out.dma_read_buffer.front().first
-                  << ", len " << std::dec << out.dma_read_buffer.front().second
-                  << std::endl;
         auto& aux = out.dma_read_buffer.front();
 
         uint64_t real_addr = getRealAddr(aux.first, false);
@@ -292,7 +288,7 @@ NvDlaDeviceSE::processOutput(outputNVDLA& out) {
                    "addr 0x%08lx, len %d\n",
                    wr->tickcount, id_nvdla, aux.first, aux.second);
 #endif
-            stats.num_dma_rd++;
+            // stats.num_dma_rd++;
             // after successfully calling DMA, pop aux
             out.dma_read_buffer.pop();
         }   // if previous DMA request not sent, have to stop here
@@ -313,14 +309,14 @@ NvDlaDeviceSE::processOutput(outputNVDLA& out) {
                    "addr 0x%08lx, len %ld\n",
                    wr->tickcount, id_nvdla, aux.first, aux.second.size());
 #endif
-            stats.num_dma_wr++;
+            // stats.num_dma_wr++;
             out.dma_write_buffer.pop_front();
         }
     }
 }
 
 void
-NvDlaDeviceSE::runIterationNVDLA() {
+NvDlaDevice::runIterationNVDLA() {
     wr->clearOutput();
 
     if (interruptRaised && !wr->dla->dla_intr) {
@@ -367,7 +363,7 @@ NvDlaDeviceSE::runIterationNVDLA() {
 #ifndef AXI_RESP_FAST_IO
                 printf("(%lu) nvdla#%d interrupt!\n", wr->tickcount, id_nvdla);
 #endif
-                // interrupt->raise();
+                raiseInterrupt();
                 interruptRaised = true;
             }
         }
@@ -388,27 +384,6 @@ NvDlaDeviceSE::runIterationNVDLA() {
     }
 
     outputNVDLA& output = wr->tick();
-    getStats().nvdla_rtl_cycles = getTickfromWrapperNVDLA();
-    //getStats().nvdla_rtl_cycles_idle =
-        // (getStats().nvdla_rtl_cycles.value() -
-        // getStats().nvdla_total_Bdma0.value() -
-        // getStats().nvdla_total_Bdma1.value() -
-        // getStats().nvdla_total_Cdp0.value() -
-        // getStats().nvdla_total_Cdp1.value() -
-        // getStats().nvdla_total_Cmnv0.value() -
-        // getStats().nvdla_total_Conv1.value() -
-        // getStats().nvdla_total_Pdp0.value() -
-        // getStats().nvdla_total_Pdp1.value() -
-        // getStats().nvdla_total_Rubik0.value() -
-        // getStats().nvdla_total_Rubik1.value() -
-        // getStats().nvdla_total_Sdp0.value() -
-        // getStats().nvdla_total_Sdp1.value() -
-        // getStats().nvdla_total_Cacc0.value() -
-        // getStats().nvdla_total_Cacc1.value() -
-        // getStats().nvdla_total_CdmaDat0.value() -
-        // getStats().nvdla_total_CdmaDat1.value() -
-        // getStats().nvdla_total_CdmaWt0.value() -
-        // getStats().nvdla_total_CdmaWt1.value());
 
     if (dma_enable) {
         try_get_dma_read_data(spm_line_size);
@@ -425,17 +400,6 @@ NvDlaDeviceSE::runIterationNVDLA() {
                     // printf("nvdla#%d spm flush complete!\n", id_nvdla);
                 }
             }
-        } else if (netFinished) {
-            // write back dirty data in spm to main memory
-            if (!flushing_spm) {
-                wr->spm->clear_and_write_back_dirty();
-                flushing_spm = 1;
-            }
-            // all items have been flushed to dma write engine
-            if (flushing_spm && output.dma_write_buffer.empty()) {
-                flushing_spm = 0;
-                // printf("nvdla#%d spm flush complete!\n", id_nvdla);
-            }
         }
     }
     processOutput(output);
@@ -451,11 +415,12 @@ NvDlaDeviceSE::runIterationNVDLA() {
         Wrapper_nvdla::buf_ptr = 0;
     }
 #endif
+    spmStats.sync(wr->spm_stats);   // [SPM_STATS]
 }
 
 void
-NvDlaDeviceSE::tick() {
-    DPRINTF(NvDlaDeviceSEDebug, "Tick NVDLA \n");
+NvDlaDevice::tick() {
+    DPRINTF(NvDlaDeviceDebug, "Tick NVDLA \n");
     // if we are still running trace
     // runIteration
     // schedule new iteration
@@ -483,10 +448,7 @@ NvDlaDeviceSE::tick() {
         stats.nvdla_cycles++;
         cyclesNVDLA++;
         runIterationNVDLA();
-        //schedule(tickEvent, nextCycle() + (freq_ratio - 1) * clockPeriod());
-        schedule(tickEvent,
-            nextCycle() +
-            static_cast<Tick>(abs((freq_ratio-1.0))*clockPeriod()));
+        schedule(tickEvent, nextCycle() + (freq_ratio - 1) * clockPeriod());
     } else {
         if (traceMode) {
             // we have finished running the trace
@@ -524,10 +486,8 @@ NvDlaDeviceSE::tick() {
             cpuPort.sendPacket(packet);
         } else {
             runIterationNVDLA();
-            //schedule(tickEvent, nextCycle() + (freq_ratio-1)*clockPeriod());
             schedule(tickEvent,
-                nextCycle() +
-                static_cast<Tick>(abs((freq_ratio-1.0))*clockPeriod()));
+                nextCycle() + (freq_ratio - 1) * clockPeriod());
         }
     }
     // check DRAM Ports
@@ -537,7 +497,7 @@ NvDlaDeviceSE::tick() {
 
 
 bool
-NvDlaDeviceSE::handleResponse(PacketPtr pkt) {
+NvDlaDevice::handleResponse(PacketPtr pkt) {
     assert(traceMode);
 
     if (pkt->hasData()) {
@@ -564,7 +524,7 @@ NvDlaDeviceSE::handleResponse(PacketPtr pkt) {
     }
     else {
         // Strange situation, report!
-        DPRINTF(NvDlaDeviceSE, "Got response for addr %#x no data\n",
+        DPRINTF(NvDlaDevice, "Got response for addr %#x no data\n",
                             pkt->getAddr());
     }
 
@@ -579,7 +539,7 @@ NvDlaDeviceSE::handleResponse(PacketPtr pkt) {
 }
 
 bool
-NvDlaDeviceSE::handleResponseNVDLA(PacketPtr pkt, bool sram) {
+NvDlaDevice::handleResponseNVDLA(PacketPtr pkt, bool sram) {
     if (pkt->hasData()) {
         if (pkt->isRead()) {
             // Get data from gem5 memory system
@@ -598,11 +558,11 @@ NvDlaDeviceSE::handleResponseNVDLA(PacketPtr pkt, bool sram) {
             }
         } else {
             // this is somehow odd, report!
-            DPRINTF(NvDlaDeviceSE, "Got response for addr %#x no read\n",
+            DPRINTF(NvDlaDevice, "Got response for addr %#x no read\n",
                     pkt->getAddr());
         }
     } else {
-         DPRINTF(NvDlaDeviceSE, "Got response for addr %#x no data\n",
+         DPRINTF(NvDlaDevice, "Got response for addr %#x no data\n",
          pkt->getAddr());
     }
 
@@ -610,7 +570,7 @@ NvDlaDeviceSE::handleResponseNVDLA(PacketPtr pkt, bool sram) {
 }
 
 void
-NvDlaDeviceSE::handleFunctional(PacketPtr pkt) {
+NvDlaDevice::handleFunctional(PacketPtr pkt) {
     assert(traceMode);
 
     // Just pass this on to the memory side to handle for now.
@@ -618,8 +578,8 @@ NvDlaDeviceSE::handleFunctional(PacketPtr pkt) {
 }
 
 AddrRangeList
-NvDlaDeviceSE::getAddrRanges() const {
-    DPRINTF(NvDlaDeviceSE, "Sending new ranges\n");
+NvDlaDevice::getAddrRanges() const {
+    DPRINTF(NvDlaDevice, "Sending new ranges\n");
     // Just use the same ranges as whatever is on the memory side.
     if (traceMode) {
         return memPort.getAddrRanges();
@@ -629,18 +589,18 @@ NvDlaDeviceSE::getAddrRanges() const {
 }
 
 void
-NvDlaDeviceSE::sendRangeChange() {
+NvDlaDevice::sendRangeChange() {
     cpuPort.sendRangeChange();
 }
 
 void
-NvDlaDeviceSE::finishTranslation(WholeTranslationState *state) {
-    DPRINTF(NvDlaDeviceSE, "Finishing translation\n");
+NvDlaDevice::finishTranslation(WholeTranslationState *state) {
+    DPRINTF(NvDlaDevice, "Finishing translation\n");
 
     RequestPtr req = state->mainReq;
 
     if (req->hasPaddr()) {
-        DPRINTF(NvDlaDeviceSE,
+        DPRINTF(NvDlaDevice,
                 "Finished translation step: Got request for addr %#x %#x\n",
         state->mainReq->getVaddr(),state->mainReq->getPaddr());
 
@@ -653,7 +613,7 @@ NvDlaDeviceSE::finishTranslation(WholeTranslationState *state) {
     PacketPtr new_pkt = new Packet(req, MemCmd::ReadReq, 64);
 
     if (memPort.blockedPacket != nullptr) {
-        DPRINTF(NvDlaDeviceSE, "Packet lost\n");
+        DPRINTF(NvDlaDevice, "Packet lost\n");
     } else {
         new_pkt->allocate();
         memPort.sendPacket(new_pkt);
@@ -662,16 +622,14 @@ NvDlaDeviceSE::finishTranslation(WholeTranslationState *state) {
 
 // DRAM PORT
 void
-NvDlaDeviceSE::MemNVDLAPort::sendPacket(PacketPtr pkt, bool timing) {
+NvDlaDevice::MemNVDLAPort::sendPacket(PacketPtr pkt, bool timing) {
     if (timing) {
-        DPRINTF(NvDlaDeviceSE,
-            "Add Mem Req pending %#x size: %d timing s: %d\n",
+        DPRINTF(NvDlaDevice, "Add Mem Req pending %#x size: %d timing s: %d\n",
             pkt->getAddr(), pkt->getSize(), pending_req.size());
         // we add as a pending request, we deal later
         pending_req.push(pkt);
     } else {
-        DPRINTF(NvDlaDeviceSE,
-            "Send Mem Req to DRAM %#x size: %d functional\n",
+        DPRINTF(NvDlaDevice, "Send Mem Req to DRAM %#x size: %d functional\n",
             pkt->getAddr(), pkt->getSize());
         // send Atomic
         sendAtomic(pkt);
@@ -683,18 +641,18 @@ NvDlaDeviceSE::MemNVDLAPort::sendPacket(PacketPtr pkt, bool timing) {
 }
 
 void
-NvDlaDeviceSE::MemNVDLAPort::recvRangeChange() {
+NvDlaDevice::MemNVDLAPort::recvRangeChange() {
     owner->sendRangeChange();
 }
 
 bool
-NvDlaDeviceSE::MemNVDLAPort::recvTimingResp(PacketPtr pkt) {
-    DPRINTF(NvDlaDeviceSE, "Got response SRAM?: %d\n", sram);
+NvDlaDevice::MemNVDLAPort::recvTimingResp(PacketPtr pkt) {
+    DPRINTF(NvDlaDevice, "Got response SRAM?: %d\n", sram);
     return owner->handleResponseNVDLA(pkt, sram);
 }
 
 void
-NvDlaDeviceSE::MemNVDLAPort::recvReqRetry() {
+NvDlaDevice::MemNVDLAPort::recvReqRetry() {
     // we check we have pending packets
     assert(blockedRetry);
     // Grab the blocked packet.
@@ -712,7 +670,7 @@ NvDlaDeviceSE::MemNVDLAPort::recvReqRetry() {
 
 // In this function we send the packets
 void
-NvDlaDeviceSE::MemNVDLAPort::tick() {
+NvDlaDevice::MemNVDLAPort::tick() {
     // we check we have pending packets
     if (!blockedRetry and !pending_req.empty()) {
         PacketPtr pkt = pending_req.front();
@@ -727,7 +685,7 @@ NvDlaDeviceSE::MemNVDLAPort::tick() {
 }
 
 uint64_t
-NvDlaDeviceSE::getRealAddr(uint64_t addr, bool sram) {
+NvDlaDevice::getRealAddr(uint64_t addr, bool sram) {
     uint64_t real_addr;
 
     if (sram) {
@@ -745,30 +703,26 @@ NvDlaDeviceSE::getRealAddr(uint64_t addr, bool sram) {
 }
 
 uint64_t
-NvDlaDeviceSE::getAddrNVDLA(uint64_t addr, bool sram) {
+NvDlaDevice::getAddrNVDLA(uint64_t addr, bool sram) {
     uint64_t real_addr;
 
     if (sram) {
         real_addr = (addr - baseAddrSRAM) + 0x50000000;
     } else {
-        if (traceMode) {
-            real_addr = (addr - baseAddrDRAM) + 0xc0000000;
-        } else {
-            real_addr = addr;
-        }
+        real_addr = (addr - baseAddrDRAM) + 0xc0000000;
     }
     return real_addr;
 }
 
 const uint8_t *
-NvDlaDeviceSE::readAXIVariable(uint64_t addr, bool sram, bool timing,
+NvDlaDevice::readAXIVariable(uint64_t addr, bool sram, bool timing,
         bool cacheable, unsigned int size) {
     // Update stats
     stats.nvdla_reads++;
 
     uint64_t real_addr = getRealAddr(addr, sram);
 
-    DPRINTF(NvDlaDeviceSE,
+    DPRINTF(NvDlaDevice,
             "Read AXI Variable addr: %#x, real_addr %#x, size %d\n",
             addr, real_addr, size);
 
@@ -790,13 +744,13 @@ NvDlaDeviceSE::readAXIVariable(uint64_t addr, bool sram, bool timing,
 }
 
 void
-NvDlaDeviceSE::writeAXI(uint64_t addr, uint8_t data, bool sram, bool timing) {
+NvDlaDevice::writeAXI(uint64_t addr, uint8_t data, bool sram, bool timing) {
     // Update stats
     stats.nvdla_writes++;
 
     uint64_t real_addr = getRealAddr(addr, sram);
 
-    DPRINTF(NvDlaDeviceSE,
+    DPRINTF(NvDlaDevice,
         "Write AXI Variable addr: %#x, real_addr %#x, data_to_write 0x%02x\n",
         addr, real_addr, data);
     //Request(Addr paddr, unsigned size, Flags flags, MasterID mid)
@@ -823,7 +777,7 @@ NvDlaDeviceSE::writeAXI(uint64_t addr, uint8_t data, bool sram, bool timing) {
 }
 
 void
-NvDlaDeviceSE::writeAXILong(uint64_t addr, uint32_t length, uint8_t* data,
+NvDlaDevice::writeAXILong(uint64_t addr, uint32_t length, uint8_t* data,
         uint64_t mask, bool sram, bool timing, bool cacheable) {
     stats.nvdla_writes++;
 
@@ -853,11 +807,10 @@ NvDlaDeviceSE::writeAXILong(uint64_t addr, uint32_t length, uint8_t* data,
 }
 
 void
-NvDlaDeviceSE::try_get_dma_read_data(uint32_t size) {
+NvDlaDevice::try_get_dma_read_data(uint32_t size) {
     uint8_t dma_temp_buffer[size];
     bool get_success = dma_rd_engine->tryGet(dma_temp_buffer, size);
     if (get_success) {
-        std::cout << " Success Got DMA "<< std::endl;
         // we assume only DBB involves DMA.
         // SRAM should not be accessed with DMA
         wr->axi_dbb->inflight_dma_resp(dma_temp_buffer, size);
@@ -865,7 +818,7 @@ NvDlaDeviceSE::try_get_dma_read_data(uint32_t size) {
 }
 
 void
-NvDlaDeviceSE::regStats() {
+NvDlaDevice::regStats() {
     // If you don't do this you get errors about uninitialized stats.
     ClockedObject::regStats();
 
@@ -986,7 +939,7 @@ NvDlaDeviceSE::regStats() {
 
 //// rtlObject code ////
 void
-NvDlaDeviceSE::CPUSidePort::sendPacket(PacketPtr pkt)
+NvDlaDevice::CPUSidePort::sendPacket(PacketPtr pkt)
 {
     // Note: This flow control is very simple since the memobj is blocking.
     panic_if(blockedPacket != nullptr, "Should never try to send if blocked!");
@@ -998,35 +951,35 @@ NvDlaDeviceSE::CPUSidePort::sendPacket(PacketPtr pkt)
 }
 
 AddrRangeList
-NvDlaDeviceSE::CPUSidePort::getAddrRanges() const
+NvDlaDevice::CPUSidePort::getAddrRanges() const
 {
     return owner->getAddrRanges();
 }
 
 void
-NvDlaDeviceSE::CPUSidePort::trySendRetry()
+NvDlaDevice::CPUSidePort::trySendRetry()
 {
     if (needRetry && blockedPacket == nullptr) {
         // Only send a retry if the port is now completely free
         needRetry = false;
-        DPRINTF(NvDlaDeviceSE, "Sending retry req for %d\n", id);
+        DPRINTF(NvDlaDevice, "Sending retry req for %d\n", id);
         sendRetryReq();
     }
 }
 
 void
-NvDlaDeviceSE::CPUSidePort::recvFunctional(PacketPtr pkt)
+NvDlaDevice::CPUSidePort::recvFunctional(PacketPtr pkt)
 {
     // Just forward to the memobj.
     return owner->handleFunctional(pkt);
 }
 
 bool
-NvDlaDeviceSE::CPUSidePort::recvTimingReq(PacketPtr pkt)
+NvDlaDevice::CPUSidePort::recvTimingReq(PacketPtr pkt)
 {
     // Just forward to the memobj.
     if (pkt->req->hasPaddr()) {
-        DPRINTF(NvDlaDeviceSE, "Got request for size: %d,  addr: %#x %#x\n",
+        DPRINTF(NvDlaDevice, "Got request for size: %d,  addr: %#x %#x\n",
             pkt->getSize(),
             pkt->req->getVaddr(),
             pkt->req->getPaddr());
@@ -1047,7 +1000,7 @@ NvDlaDeviceSE::CPUSidePort::recvTimingReq(PacketPtr pkt)
 }
 
 void
-NvDlaDeviceSE::CPUSidePort::recvRespRetry()
+NvDlaDevice::CPUSidePort::recvRespRetry()
 {
     // We should have a blocked packet if this function is called.
     assert(blockedPacket != nullptr);
@@ -1062,7 +1015,7 @@ NvDlaDeviceSE::CPUSidePort::recvRespRetry()
 
 //////// NvDla CODE ////////
 void
-NvDlaDeviceSE::CmdCPUSidePort::sendPacket(PacketPtr pkt)
+NvDlaDevice::CmdCPUSidePort::sendPacket(PacketPtr pkt)
 {
     // Note: This flow control is very simple since the memobj is blocking.
     panic_if(blockedPacket != nullptr, "Should never try to send if blocked!");
@@ -1074,35 +1027,35 @@ NvDlaDeviceSE::CmdCPUSidePort::sendPacket(PacketPtr pkt)
 }
 
 AddrRangeList
-NvDlaDeviceSE::CmdCPUSidePort::getAddrRanges() const
+NvDlaDevice::CmdCPUSidePort::getAddrRanges() const
 {
     return owner->getAddrRanges();
 }
 
 void
-NvDlaDeviceSE::CmdCPUSidePort::trySendRetry()
+NvDlaDevice::CmdCPUSidePort::trySendRetry()
 {
     if (needRetry && blockedPacket == nullptr) {
         // Only send a retry if the port is now completely free
         needRetry = false;
-        DPRINTF(NvDlaDeviceSE, "Sending retry req for %d\n", id);
+        DPRINTF(NvDlaDevice, "Sending retry req for %d\n", id);
         sendRetryReq();
     }
 }
 
 void
-NvDlaDeviceSE::CmdCPUSidePort::recvFunctional(PacketPtr pkt)
+NvDlaDevice::CmdCPUSidePort::recvFunctional(PacketPtr pkt)
 {
     // Just forward to the memobj.
     return owner->handleFunctional(pkt);
 }
 
 bool
-NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
+NvDlaDevice::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
 {
     // Just forward to the memobj.
     if (pkt->req->hasPaddr()) {
-        // DPRINTF(NvDlaDeviceSE, "[GEM5 LOG] got request\n");
+        // DPRINTF(NvDlaDevice, "[GEM5 LOG] got request\n");
 
         // uint32_t *data = new uint32_t;
         // *data = 100;
@@ -1111,7 +1064,7 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
         // pkt->setData((uint8_t*)data);
         // return true;
 
-        // DPRINTF(NvDlaDeviceSE, "Got request for size: %d,  addr: %#x %#x\n",
+        // DPRINTF(NvDlaDevice, "Got request for size: %d,  addr: %#x %#x\n",
         //     pkt->getSize(),
         //     pkt->req->getVaddr(),
         //     pkt->req->getPaddr());
@@ -1122,77 +1075,47 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
             uint32_t write_addr =
             (uint32_t) 0xFFFF0000 + ((pkt->getAddr() - 0) >> 2);
 
-            DPRINTF(NvDlaDeviceSE, "write req: addr: 0x%08x, data: 0x%08x\n",
+            DPRINTF(NvDlaDevice, "write req: addr: 0x%08x, data: 0x%08x\n",
             write_addr, pkt->getLE<uint32_t>());
 
             owner->wr->csb->write(write_addr, pkt->getLE<uint32_t>());
             owner->stats.nvdla_csb_writes++;
 
-            if (write_addr == 0xFFFF0003) {
-                // owner->interrupt->clear();
+            if (write_addr == INTR_STATUS_ADDR) {
+                owner->clearInterrupt();
             }
         } else {
             // this is a read request
             owner->onRead = true;
             if (!owner->engineStarted) {
                 owner->engineStarted = true;
-                //owner->schedule(owner->tickEvent,
-                //    owner->nextCycle() +
-                //    (owner->freq_ratio - 1) * owner->clockPeriod());
-
                 owner->schedule(owner->tickEvent,
-                    owner->nextCycle() +
-                    static_cast<Tick>(
-                        (owner->freq_ratio-1)*owner->clockPeriod()
-                    )
-                );
+                    owner->nextCycle() + (owner->freq_ratio - 1)
+                    * owner->clockPeriod());
             }
 
             uint32_t *data = new uint32_t;
 
             pkt->makeAtomicResponse();
 
-            DPRINTF(NvDlaDeviceSE, "read req: addr: 0x%08x\n",
+            DPRINTF(NvDlaDevice, "read req: addr: 0x%08x\n",
             pkt->getAddr());
-
-            if (pkt->getAddr() == 0x20000) {
-                *data = owner->interruptRaised ? 1 : 0;
-                pkt->allocate();
-                pkt->setData((uint8_t*)data);
-
-                DPRINTF(NvDlaDeviceSE,
-                    "read req: packet size: %d, data: 0x%08x\n",
-                    pkt->getSize(), pkt->getLE<uint32_t>());
-
-                owner->onRead = false;
-                return 0;
-            } else if (pkt->getAddr() == 0x20004) {
-                pkt->allocate();
-
-                DPRINTF(NvDlaDeviceSE,
-                    "read req: packet size: %d, data: 0x%08x\n",
-                    pkt->getSize(), pkt->getLE<uint32_t>());
-
-                owner->netFinished = true;
-                return 0;
-            }
 
             uint32_t read_addr =
             (uint32_t) 0xFFFF0000 + ((pkt->getAddr() - 0) >> 2);
-            DPRINTF(NvDlaDeviceSE, "read req: reg: 0x%08x\n", read_addr);
+            DPRINTF(NvDlaDevice, "read req: reg: 0x%08x\n", read_addr);
 
             owner->wr->csb->read(read_addr, 0xffffffff, 0);
             owner->stats.nvdla_csb_reads++;
 
             // temp solution
             while (!owner->wr->csb->done()) {
-                DPRINTF(NvDlaDeviceSEDebug, "Tick NVDLA \n");
+                DPRINTF(NvDlaDeviceDebug, "Tick NVDLA \n");
                 // if we are still running trace
                 // runIteration
                 // schedule new iteration
                 if (!owner->wr->csb->done() || (owner->quiesc_timer-- > 0)
-                        || owner->waiting_for_gem5_mem
-                        || owner->flushing_spm) {
+                      || owner->waiting_for_gem5_mem || owner->flushing_spm) {
                     // Update stats
                     // stats.nvdla_avgReqCVSRAM.sample(
                     //     wr->axi_cvsram->getRequestsOnFlight());
@@ -1216,7 +1139,7 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
                         extevent = 0;
 
                     if (extevent == TraceLoaderGem5::TRACE_AXIEVENT
-                        || owner->waiting_for_gem5_mem) {
+                          || owner->waiting_for_gem5_mem) {
                         owner->trace->axievent(&owner->waiting_for_gem5_mem);
                     } else if (extevent == TraceLoaderGem5::TRACE_WFI) {
                         owner->waiting = 1;
@@ -1246,7 +1169,7 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
                                 printf("(%lu) nvdla#%d interrupt!\n",
                                     owner->wr->tickcount, owner->id_nvdla);
                 #endif
-                                // owner->interrupt->raise();
+                                owner->raiseInterrupt();
                                 owner->interruptRaised = true;
                             }
                         }
@@ -1274,16 +1197,17 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
                             if (owner->wr->csb->done()) {
                                 // write back dirty data in spm to main memory
                                 if (!owner->flushing_spm) {
-                                  owner->wr->spm->clear_and_write_back_dirty();
-                                  owner->flushing_spm = 1;
+                                    owner->wr->spm->
+                                      clear_and_write_back_dirty();
+                                    owner->flushing_spm = 1;
                                 }
                                 // all items have been flushed
                                 // to dma write engine
                                 if (owner->flushing_spm
-                                  && output.dma_write_buffer.empty()) {
+                                      && output.dma_write_buffer.empty()) {
                                     owner->flushing_spm = 0;
                                     // printf("nvdla#%d spm flush complete!\n",
-                                    //    id_nvdla);
+                                    //   id_nvdla);
                                 }
                             }
                         }
@@ -1294,8 +1218,7 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
                     if (Wrapper_nvdla::buf_ptr >= PB_SIZE) {
                         std::ofstream fout;
                         fout.open(print_path,
-                                std::ios::out
-                                | std::ios::app
+                                std::ios::out | std::ios::app
                                 | std::ios::binary);
                         fout.write((char*)Wrapper_nvdla::print_buffer,
                                 Wrapper_nvdla::buf_ptr * sizeof(uint64_t));
@@ -1325,8 +1248,7 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
                         if (Wrapper_nvdla::buf_ptr != 0) {
                             std::ofstream fout;
                             fout.open(print_path,
-                                std::ios::out
-                                | std::ios::app
+                                std::ios::out | std::ios::app
                                 | std::ios::binary);
                             fout.write((char*)Wrapper_nvdla::print_buffer,
                                 Wrapper_nvdla::buf_ptr * sizeof(uint64_t));
@@ -1352,7 +1274,7 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
             pkt->allocate();
             pkt->setData((uint8_t*)data);
 
-            DPRINTF(NvDlaDeviceSE, "read req: packet size: %d, data: 0x%08x\n",
+            DPRINTF(NvDlaDevice, "read req: packet size: %d, data: 0x%08x\n",
                 pkt->getSize(), pkt->getLE<uint32_t>());
 
             owner->onRead = false;
@@ -1364,7 +1286,7 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
 }
 
 void
-NvDlaDeviceSE::CmdCPUSidePort::recvRespRetry()
+NvDlaDevice::CmdCPUSidePort::recvRespRetry()
 {
     // We should have a blocked packet if this function is called.
     assert(blockedPacket != nullptr);
@@ -1379,13 +1301,13 @@ NvDlaDeviceSE::CmdCPUSidePort::recvRespRetry()
 //////// EOF NvDla CODE ////////
 
 void
-NvDlaDeviceSE::MemSidePort::sendPacket(PacketPtr pkt)
+NvDlaDevice::MemSidePort::sendPacket(PacketPtr pkt)
 {
     // Note: This flow control is very simple since the memobj is blocking.
 
     panic_if(blockedPacket != nullptr, "Should never try to send if blocked!");
 
-    DPRINTF(NvDlaDeviceSE, "Send Mem Req to L2 %#x %d \n",
+    DPRINTF(NvDlaDevice, "Send Mem Req to L2 %#x %d \n",
             pkt->getAddr(), pkt->getSize());
 
     // If we can't send the packet across the port, store it for later.
@@ -1395,14 +1317,14 @@ NvDlaDeviceSE::MemSidePort::sendPacket(PacketPtr pkt)
 }
 
 bool
-NvDlaDeviceSE::MemSidePort::recvTimingResp(PacketPtr pkt)
+NvDlaDevice::MemSidePort::recvTimingResp(PacketPtr pkt)
 {
     // Just forward to the memobj.
     return owner->handleResponse(pkt);
 }
 
 void
-NvDlaDeviceSE::MemSidePort::recvReqRetry()
+NvDlaDevice::MemSidePort::recvReqRetry()
 {
     // We should have a blocked packet if this function is called.
     assert(blockedPacket != nullptr);
@@ -1416,15 +1338,15 @@ NvDlaDeviceSE::MemSidePort::recvReqRetry()
 }
 
 void
-NvDlaDeviceSE::MemSidePort::recvRangeChange()
+NvDlaDevice::MemSidePort::recvRangeChange()
 {
     owner->sendRangeChange();
 }
 
 void
-NvDlaDeviceSE::startTranslate(Addr vaddr, ContextID contextId) {
+NvDlaDevice::startTranslate(Addr vaddr, ContextID contextId) {
 
-    DPRINTF(NvDlaDeviceSE, "Started translation\n");
+    DPRINTF(NvDlaDevice, "Started translation\n");
 
     BaseMMU * mmu =
         system->threads[contextId]->getMMUPtr();
@@ -1437,8 +1359,8 @@ NvDlaDeviceSE::startTranslate(Addr vaddr, ContextID contextId) {
 
     WholeTranslationState *state =
         new WholeTranslationState(req, new uint8_t[64], NULL, mode);
-    DataTranslation<NvDlaDeviceSE *> *translation
-        = new DataTranslation<NvDlaDeviceSE *>(this, state);
+    DataTranslation<NvDlaDevice *> *translation
+        = new DataTranslation<NvDlaDevice *>(this, state);
 
     mmu->translateTiming(req, system->threads[contextId],
                              translation, mode);
@@ -1446,48 +1368,34 @@ NvDlaDeviceSE::startTranslate(Addr vaddr, ContextID contextId) {
 }
 
 void
-NvDlaDeviceSE::retryTranslate() {
+NvDlaDevice::retryTranslate() {
     printf("retryTranslate at tick = %lu\n", curTick());
     startTranslate(to_retry_vaddr, 0);
 }
 
 
 Tick
-NvDlaDeviceSE::read(PacketPtr pkt)
+NvDlaDevice::read(PacketPtr pkt)
 {
     onRead = true;
     if (!engineStarted) {
         engineStarted = true;
-        //schedule(tickEvent, nextCycle() + (freq_ratio - 1) * clockPeriod());
-        schedule(tickEvent,
-            nextCycle() +
-            static_cast<Tick>(abs((freq_ratio-1.0))*clockPeriod()));
+        schedule(tickEvent, nextCycle() + (freq_ratio - 1) * clockPeriod());
     }
 
     uint32_t *data = new uint32_t;
 
     pkt->makeAtomicResponse();
 
-    // interrupt->raise();
+    // raiseInterrupt();
 
-    DPRINTF(NvDlaDeviceSE, "read req: addr: 0x%08x\n",
+    DPRINTF(NvDlaDevice, "read req: addr: 0x%08x\n",
       pkt->getAddr());
-
-    if (pkt->getAddr() == 0x40020000) {
-        *data = interruptRaised ? 1 : 0;
-        pkt->setData((uint8_t*)data);
-
-        DPRINTF(NvDlaDeviceSE, "read req: packet size: %d, data: 0x%08x\n",
-            pkt->getSize(), pkt->getLE<uint32_t>());
-
-        onRead = false;
-        return 0;
-    }
 
     uint32_t read_addr =
       (uint32_t) 0xFFFF0000 + (0x0000FFFF & ((pkt->getAddr() - 0) >> 2));
 
-    DPRINTF(NvDlaDeviceSE, "read req: reg: 0x%08x\n", read_addr);
+    DPRINTF(NvDlaDevice, "read req: reg: 0x%08x\n", read_addr);
 
     wr->csb->read(read_addr, 0xffffffff, 0);
     stats.nvdla_csb_reads++;
@@ -1507,7 +1415,7 @@ NvDlaDeviceSE::read(PacketPtr pkt)
 
     // temp solution
     while (!wr->csb->done()) {
-        DPRINTF(NvDlaDeviceSEDebug, "Tick NVDLA \n");
+        DPRINTF(NvDlaDeviceDebug, "Tick NVDLA \n");
         // if we are still running trace
         // runIteration
         // schedule new iteration
@@ -1534,12 +1442,13 @@ NvDlaDeviceSE::read(PacketPtr pkt)
                 extevent = 0;
 
             if (extevent == TraceLoaderGem5::TRACE_AXIEVENT
-                || waiting_for_gem5_mem) {
+                  || waiting_for_gem5_mem) {
                 trace->axievent(&waiting_for_gem5_mem);
             } else if (extevent == TraceLoaderGem5::TRACE_WFI) {
                 waiting = 1;
         #ifndef AXI_RESP_FAST_IO
-                printf("(%lu) waiting for interrupt...\n", wr->tickcount);
+                printf("(%lu) waiting for interrupt...\n",
+                    wr->tickcount);
         #endif
             } else if (extevent == TraceLoaderGem5::TRACE_RESET) {
                 wr->init();
@@ -1551,8 +1460,8 @@ NvDlaDeviceSE::read(PacketPtr pkt)
             if (traceMode) {
                 if (waiting && wr->dla->dla_intr) {
         #ifndef AXI_RESP_FAST_IO
-                    printf("(%lu) nvdla#%d interrupt!\n", wr->tickcount,
-                        id_nvdla);
+                    printf("(%lu) nvdla#%d interrupt!\n",
+                        wr->tickcount, id_nvdla);
         #endif
                     waiting = 0;
                 }
@@ -1560,10 +1469,10 @@ NvDlaDeviceSE::read(PacketPtr pkt)
                 if (wr->dla->dla_intr) {
                     if (!interruptRaised) {
         #ifndef AXI_RESP_FAST_IO
-                        printf("(%lu) nvdla#%d interrupt!\n", wr->tickcount,
-                            id_nvdla);
+                        printf("(%lu) nvdla#%d interrupt!\n",
+                            wr->tickcount, id_nvdla);
         #endif
-                        // interrupt->raise();
+                        raiseInterrupt();
                         interruptRaised = true;
                     }
                 }
@@ -1598,7 +1507,7 @@ NvDlaDeviceSE::read(PacketPtr pkt)
                         if (flushing_spm && output.dma_write_buffer.empty()) {
                             flushing_spm = 0;
                             // printf("nvdla#%d spm flush complete!\n",
-                            //   id_nvdla);
+                            // id_nvdla);
                         }
                     }
                 }
@@ -1660,7 +1569,7 @@ NvDlaDeviceSE::read(PacketPtr pkt)
     }
     pkt->setData((uint8_t*)data);
 
-    DPRINTF(NvDlaDeviceSE, "read req: packet size: %d, data: 0x%08x\n",
+    DPRINTF(NvDlaDevice, "read req: packet size: %d, data: 0x%08x\n",
         pkt->getSize(), pkt->getLE<uint32_t>());
 
     onRead = false;
@@ -1669,21 +1578,21 @@ NvDlaDeviceSE::read(PacketPtr pkt)
 }
 
 Tick
-NvDlaDeviceSE::write(PacketPtr pkt)
+NvDlaDevice::write(PacketPtr pkt)
 {
     pkt->makeAtomicResponse();
 
     uint32_t write_addr =
       (uint32_t) 0xFFFF0000 + (0x0000FFFF & ((pkt->getAddr() - 0) >> 2));
 
-    DPRINTF(NvDlaDeviceSE, "write req: addr: 0x%08x, data: 0x%08x\n",
+    DPRINTF(NvDlaDevice, "write req: addr: 0x%08x, data: 0x%08x\n",
       write_addr, pkt->getLE<uint32_t>());
 
     wr->csb->write(write_addr, pkt->getLE<uint32_t>());
     stats.nvdla_csb_writes++;
 
-    if (write_addr == 0xFFFF0003) {
-        // interrupt->clear();
+    if (write_addr == INTR_STATUS_ADDR) {
+        clearInterrupt();
     }
 
     return 0;
