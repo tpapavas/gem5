@@ -538,8 +538,10 @@ def main():
         parser.error(
             "--dma-enable and --add-accel-private-cache are mutually exclusive"
         )
-    if options.add_accel_shared_cache:
-        parser.error("--add-accel-shared-cache is not implemented in this config")
+    if options.dma_enable and options.add_accel_shared_cache:
+        parser.error(
+            "--dma-enable and --add-accel-shared-cache are mutually exclusive"
+        )
     # --buffer-mode was parsed but never passed to the device (always BUF_MODE_ALL)
     BUFFER_MODES = {"all": 0, "pft": 1, "pft-cut": 2}
     if options.buffer_mode not in BUFFER_MODES:
@@ -559,7 +561,17 @@ def main():
             + ("_pft" if options.pft_enable else "")
         )
         if options.dma_enable
-        else ("nvdla_cache" if options.add_accel_private_cache else "direct"),
+        else (
+            "_".join(
+                n
+                for n, on in (
+                    ("nvdla_cache", options.add_accel_private_cache),
+                    ("nvdla_shared_cache", options.add_accel_shared_cache),
+                )
+                if on
+            )
+            or "direct"
+        ),
     )
 
     # Program to execute
@@ -704,12 +716,32 @@ def main():
             )
             for i in range(options.dlas)
         ]
+    # one gem5 Cache shared by all DLAs (as devices.py of gem5-NVDLA):
+    # [private cache ->] nvdla_sh_bus (L2XBar) -> nvdla_sh_cache -> membus
+    if options.add_accel_shared_cache:
+        system.nvdla_sh_bus = L2XBar(width=64)
+        system.nvdla_sh_cache = Cache(
+            size=options.accel_sh_cache_size,
+            assoc=options.accel_sh_cache_assoc,
+            tag_latency=options.accel_sh_cache_tag_lat,
+            data_latency=options.accel_sh_cache_dat_lat,
+            response_latency=options.accel_sh_cache_resp_lat,
+            mshrs=options.accel_sh_cache_mshr,
+            tgts_per_mshr=options.accel_sh_cache_tgts_per_mshr,
+            write_buffers=options.accel_sh_cache_wr_buf,
+            clusivity=options.accel_sh_cache_clus,
+        )
+        system.nvdla_sh_bus.mem_side_ports = system.nvdla_sh_cache.cpu_side
+        system.nvdla_sh_cache.mem_side = system.membus.cpu_side_ports
+        accel_mem = system.nvdla_sh_bus.cpu_side_ports
+    else:
+        accel_mem = system.membus.cpu_side_ports
     for i in range(options.dlas):
         if options.add_accel_private_cache:
             system.nvdla[i].dram_port = system.nvdla_pr_cache[i].cpu_side
-            system.nvdla_pr_cache[i].mem_side = system.membus.cpu_side_ports
+            system.nvdla_pr_cache[i].mem_side = accel_mem
         else:
-            system.nvdla[i].dram_port = system.membus.cpu_side_ports
+            system.nvdla[i].dram_port = accel_mem
         system.nvdla[i].dma_port = system.membus.cpu_side_ports
 
     for i in range(options.dlas):

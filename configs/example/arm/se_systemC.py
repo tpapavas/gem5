@@ -533,7 +533,15 @@ def main():
         )
     print(
         "NVDLA memory mode:",
-        "nvdla_cache" if options.add_accel_private_cache else "direct",
+        "_".join(
+            n
+            for n, on in (
+                ("nvdla_cache", options.add_accel_private_cache),
+                ("nvdla_shared_cache", options.add_accel_shared_cache),
+            )
+            if on
+        )
+        or "direct",
     )
 
     # Simulation system
@@ -660,12 +668,33 @@ def main():
             )
             for _ in range(options.dlas)
         ]
+    # nvdla_shared_cache: one gem5 Cache shared by all DLAs (as devices.py of
+    # gem5-NVDLA):
+    # dbb [-> private cache] -> nvdla_sh_bus -> nvdla_sh_cache -> membus
+    if options.add_accel_shared_cache:
+        system.nvdla_sh_bus = L2XBar(width=64)
+        system.nvdla_sh_cache = Cache(
+            tag_latency=options.accel_sh_cache_tag_lat,
+            data_latency=options.accel_sh_cache_dat_lat,
+            response_latency=options.accel_sh_cache_resp_lat,
+            mshrs=options.accel_sh_cache_mshr,
+            tgts_per_mshr=options.accel_sh_cache_tgts_per_mshr,
+            size=options.accel_sh_cache_size,
+            assoc=options.accel_sh_cache_assoc,
+            write_buffers=options.accel_sh_cache_wr_buf,
+            clusivity=options.accel_sh_cache_clus,
+        )
+        system.nvdla_sh_bus.mem_side_ports = system.nvdla_sh_cache.cpu_side
+        system.nvdla_sh_cache.mem_side = system.membus.cpu_side_ports
+        accel_mem = system.nvdla_sh_bus.cpu_side_ports
+    else:
+        accel_mem = system.membus.cpu_side_ports
     for i in range(options.dlas):
         if options.add_accel_private_cache:
             system.bridge_dbb[i].gem5 = system.nvdla_pr_cache[i].cpu_side
-            system.nvdla_pr_cache[i].mem_side = system.membus.cpu_side_ports
+            system.nvdla_pr_cache[i].mem_side = accel_mem
         else:
-            system.bridge_dbb[i].gem5 = system.membus.cpu_side_ports
+            system.bridge_dbb[i].gem5 = accel_mem
         system.bridge_sram[i].gem5 = system.membus.cpu_side_ports
 
     # Create interrupt controller
