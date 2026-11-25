@@ -376,6 +376,7 @@ rtlNVDLA::tick() {
         stats.nvdla_cycles = wr->tickcount;
         cyclesNVDLA++;
         runIterationNVDLA();
+        spmStats.sync(wr->spm_stats);   // [SPM_STATS]
         schedule(tickEvent, nextCycle() + (freq_ratio - 1) * clockPeriod());
     } else {
         // we have finished running the trace
