@@ -472,6 +472,38 @@ def addOptions(parser):
         action="store_true",
         help="Doesn't run simulation, it generates a DTB only",
     )
+    parser.add_argument(
+        "--loadable",
+        type=str,
+        required=True,
+        help="Path to model loadable",
+    )
+    parser.add_argument(
+        "--image",
+        "--input-image",
+        dest="image",
+        type=str,
+        required=True,
+        help="Path to model input image",
+    )
+    parser.add_argument(
+        "--normalize",
+        type=float,
+        default=None,
+        help="Normalization value passed to the runtime (default: None)",
+    )
+    parser.add_argument(
+        "--batches",
+        type=int,
+        default=1,
+        help="Number of batches passed to the runtime (--batches)",
+    )
+    parser.add_argument(
+        "--runtime",
+        type=str,
+        default="",
+        help="nvdla_runtime binary (default: the built-in path)",
+    )
     return parser
 def generateDtb(root):
     root.system.generateDtb(os.path.join(m5.options.outdir, "system.dtb"))
@@ -481,9 +513,47 @@ def main():
     )
     addOptions(parser)
     options = parser.parse_args()
+    for name in ("loadable", "image"):
+        path = getattr(options, name)
+        if not os.path.isfile(path):
+            parser.error("--{}: file not found: {}".format(name, path))
+    if options.dlas < 1 or options.dlas > 2:
+        parser.error("--dlas must be 1 or 2 (CPU has nvdla_port_plus_0/1 only)")
+    if options.dma_enable and options.add_accel_private_cache:
+        parser.error(
+            "--dma-enable and --add-accel-private-cache are mutually exclusive"
+        )
+    if options.add_accel_shared_cache:
+        parser.error("--add-accel-shared-cache is not implemented in this config")
+    # --buffer-mode was parsed but never passed to the device (always BUF_MODE_ALL)
+    BUFFER_MODES = {"all": 0, "pft": 1, "pft-cut": 2}
+    if options.buffer_mode not in BUFFER_MODES:
+        parser.error("--buffer-mode must be one of: all, pft, pft-cut")
+    if options.shared_spm and not options.dma_enable:
+        parser.error("--shared-spm needs --dma-enable")
+    if options.buffer_mode != "all" and not options.dma_enable:
+        parser.error("--buffer-mode pft/pft-cut needs --dma-enable (embedded buffer)")
+    if options.buffer_mode != "all" and not options.pft_enable:
+        print("warning: --buffer-mode {} without --pft-enable: nothing is prefetched, "
+              "the buffer stays empty".format(options.buffer_mode))
+    print(
+        "NVDLA memory mode:",
+        (
+            ("dma_spm_shared" if options.shared_spm else "dma_spm")
+            + ("" if options.buffer_mode == "all" else "_" + options.buffer_mode)
+            + ("_pft" if options.pft_enable else "")
+        )
+        if options.dma_enable
+        else ("nvdla_cache" if options.add_accel_private_cache else "direct"),
+    )
+
     # Program to execute
     # binary = 'tests/test-progs/nvdla-se/nvdla-se'
-    binary = "path-to-nvdla-runtime"
+    binary = "<custom-path-to-runtime>/nvdla_runtime"
+    if options.runtime:
+        binary = options.runtime
+        if not os.path.isfile(binary):
+            parser.error("--runtime: file not found: {}".format(binary))
     # Simulation system
     system = System(multi_thread=True)
     # Clock configuration
@@ -495,12 +565,16 @@ def main():
     # Memory configuration
     system.mem_mode = "timing"
     system.mem_ranges = [AddrRange("1GB")]
+    # system.mem_ranges.append(AddrRange(start=0xC0000000, size="1GB"))
     NVDLA_SHARED_BASE = 0x20000000
     NVDLA_SHARED_SIZE = 0x20000000
     NVDLA_PIO_BASE = 0x40000000
     NVDLA_PIO_STRIDE = 0x20040
     cpu_cacheable_range = AddrRange(start=0x00000000, size=NVDLA_SHARED_BASE)
-    nvdla_shared_range = AddrRange(start=NVDLA_SHARED_BASE, size=NVDLA_SHARED_SIZE)
+    nvdla_shared_range = AddrRange(
+        start=NVDLA_SHARED_BASE, size=NVDLA_SHARED_SIZE
+    )
+
     # Create CPU
     # system.cpu = X86MinorCPU()
     system.cpu = ArmMinorCPU(numThreads=2)
@@ -509,6 +583,7 @@ def main():
     system.cpu.icache = L1Cache()
     system.cpu.dcache = L1Cache()
     system.cpu.dcache.addr_ranges = [cpu_cacheable_range]
+
     # Connect L1I cache to the CPU
     system.cpu.icache.cpu_side = system.cpu.icache_port
     system.cpu.dcache.cpu_side = system.cpu.dcache_port
@@ -521,17 +596,22 @@ def main():
     # Create L2 cache
     system.l2cache = L2Cache()
     system.l2cache.addr_ranges = [cpu_cacheable_range]
+
     # Link L2 cache with L1 to L2 interconnect
     system.l2cache.cpu_side = system.l2bus.mem_side_ports
     # Create memory bus
     system.membus = SystemXBar()
     # Link L2 with interconnect
     system.l2cache.mem_side = system.membus.cpu_side_ports
-    # NVDLA shared range bypasses L2 through the existing l2bus.
-    # No extra cpu_dmem_xbar is used.
-    system.nvdla_shared_bridge = Bridge(delay="1ns", ranges=[nvdla_shared_range])
+
+    # Shared NVDLA region bypasses L2, but the Bridge isolates the coherent
+    # l2bus from the coherent membus. The Bridge advertises only this range.
+    system.nvdla_shared_bridge = Bridge(
+        delay="1ns", ranges=[nvdla_shared_range]
+    )
     system.nvdla_shared_bridge.cpu_side_port = system.l2bus.mem_side_ports
     system.nvdla_shared_bridge.mem_side_port = system.membus.cpu_side_ports
+
     # # For NO CACHE system
     # system.cpu.icache_port = system.membus.cpu_side_ports
     # system.cpu.dcache_port = system.membus.cpu_side_ports
@@ -539,7 +619,10 @@ def main():
     # system.gemmini_dev.dma_port = system.l2bus.cpu_side_ports
     system.iobus = IOXBar()
     system.iobridge = Bridge(delay="50ns")
-    system.iobridge.ranges = [AddrRange(start=NVDLA_PIO_BASE, size=NVDLA_PIO_STRIDE * options.dlas)]
+    system.iobridge.ranges = [
+        AddrRange(start=NVDLA_PIO_BASE, size=NVDLA_PIO_STRIDE * options.dlas)
+    ]
+
     system.iobridge.mem_side_port = system.iobus.cpu_side_ports
     system.iobridge.cpu_side_port = system.membus.mem_side_ports
     print("options.freq_ratio:", options.freq_ratio)
@@ -549,15 +632,19 @@ def main():
             id_nvdla=i,
             pio_addr=NVDLA_PIO_BASE + NVDLA_PIO_STRIDE * i,
             pio_size=NVDLA_PIO_STRIDE,
-            dma_enable=True,  # options.dma_enable,
+            dma_enable=options.dma_enable,  # was hardcoded True
             spm_latency=options.embed_spm_lat,
             spm_line_size=1024,
             spm_size=options.embed_spm_size,
             use_shared_spm=options.shared_spm,
+            buffer_mode=BUFFER_MODES[options.buffer_mode],
+            prefetch_enable=1 if options.pft_enable else 0,
+            pft_threshold=options.pft_threshold,
             freq_ratio=options.freq_ratio,
             assoc=options.embed_spm_assoc.lower(),
             base_addr_dram=0x40000000,
             base_addr_sram=0x0,
+            trace_mode=False,
             maxReq=options.maxReqNVDLA,
         )
         for i in range(options.dlas)
@@ -565,8 +652,28 @@ def main():
     for i in range(options.dlas):
         system.nvdla[i].pio = system.iobus.mem_side_ports
     # for DMA
+    # one private gem5 Cache per DLA (dram_port -> cache -> membus)
+    if options.add_accel_private_cache:
+        system.nvdla_pr_cache = [
+            Cache(
+                size=options.accel_pr_cache_size,
+                assoc=options.accel_pr_cache_assoc,
+                tag_latency=options.accel_pr_cache_tag_lat,
+                data_latency=options.accel_pr_cache_dat_lat,
+                response_latency=options.accel_pr_cache_resp_lat,
+                mshrs=options.accel_pr_cache_mshr,
+                tgts_per_mshr=options.accel_pr_cache_tgts_per_mshr,
+                write_buffers=options.accel_pr_cache_wr_buf,
+                clusivity=options.accel_pr_cache_clus,
+            )
+            for i in range(options.dlas)
+        ]
     for i in range(options.dlas):
-        system.nvdla[i].dram_port = system.membus.cpu_side_ports
+        if options.add_accel_private_cache:
+            system.nvdla[i].dram_port = system.nvdla_pr_cache[i].cpu_side
+            system.nvdla_pr_cache[i].mem_side = system.membus.cpu_side_ports
+        else:
+            system.nvdla[i].dram_port = system.membus.cpu_side_ports
         system.nvdla[i].dma_port = system.membus.cpu_side_ports
     for i in range(options.dlas):
         exec(
@@ -617,7 +724,13 @@ def main():
         binary,
         "--loadable",
         options.loadable,
+        options.loadable,
         "--image",
+        options.image,
+    ]
+    if options.normalize is not None:
+        process.cmd += ["--normalize", str(options.normalize)]
+    process.cmd += [
         options.image,
     ]
     if options.normalize is not None:
@@ -625,7 +738,10 @@ def main():
     process.cmd += [
         "--dlas",
         str(options.dlas),
+        "--batches",
+        str(options.batches),
     ]
+    print("Runtime cmd:", " ".join(process.cmd))
 
     # Set the cpu to use the process as its workload and create thread contexts
     system.cpu.workload = [process, process]
@@ -636,7 +752,7 @@ def main():
     m5.instantiate()
     # Dedicate NVDLA shared DRAM
     system.cpu.workload[0].map(
-        NVDLA_SHARED_BASE, NVDLA_SHARED_BASE, NVDLA_SHARED_SIZE, cacheable=False
+        0x2000_0000, 0x2000_0000, 0x2000_0000, cacheable=False
     )
     print("========== Beginning simulation ==========")
     exit_event = m5.simulate()

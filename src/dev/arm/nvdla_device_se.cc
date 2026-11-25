@@ -44,6 +44,8 @@ NvDlaDeviceSE::NvDlaDeviceSE(const NvDlaDeviceSEParams &params) :
     interruptRaised(false),
     traceMode(params.trace_mode),
     engineStarted(false),
+    idleSleep(params.idle_sleep),
+    idleSleepThreshold(params.idle_sleep_threshold),
     onRead(false),
     netFinished(false),
     system(params.system),
@@ -191,6 +193,7 @@ NvDlaDeviceSE::initNVDLA(bool use_shared_spm) {
     wr = new Wrapper_nvdla(id_nvdla, max_req_inflight,
         dma_enable, spm_latency, spm_line_size, spm_line_num,
         prefetch_enable, use_shared_spm, buffer_mode, assoc);
+    wr->axi_dbb->set_pft_threshold(pft_threshold);   // [BUF_MODE] was fixed to 16 in AXIResponder
 
     // wrapper trace from nvidia
     if (traceMode) {
@@ -232,6 +235,51 @@ NvDlaDeviceSE::loadTraceNVDLA(char *ptr) {
     schedule(tickEvent,
         nextCycle() + static_cast<Tick>(abs((freq_ratio-1.0))*clockPeriod()));
     sim_time = time(nullptr);
+}
+
+// [BUF_MODE] CSB word addresses (byte offset >> 2) of the nv_full CDMA registers
+// (firmware/include/opendla_initial.h): D_OP_ENABLE 0x5010, D_MISC_CFG 0x5014,
+// D_WEIGHT_ADDR_HIGH 0x5078, D_WEIGHT_ADDR_LOW 0x507c, D_WEIGHT_BYTES 0x5080.
+// When the firmware enables a CDMA op, its weight tensor (unless weight_reuse) is appended to the
+// read-only log of the DBB AXIResponder, which issues the prefetches (generate_prefetch_request).
+// The firmware programs op N+1 into the second register group while op N runs, so the weights of
+// the next op are prefetched during the current one. Same role as load_read_var_log() in trace mode.
+void
+NvDlaDeviceSE::snoopCsbWriteForPrefetch(uint32_t write_addr, uint32_t data) {
+    if (!dma_enable || !prefetch_enable)
+        return;
+    switch (write_addr & 0xFFFF) {
+        case (0x5014 >> 2): pft_cdma_misc_cfg = data; break;
+        case (0x5078 >> 2): pft_wt_addr_hi = data; break;
+        case (0x507c >> 2): pft_wt_addr_lo = data; break;
+        case (0x5080 >> 2): pft_wt_bytes = data; break;
+        case (0x5010 >> 2): {
+            const bool weight_reuse = (pft_cdma_misc_cfg >> 20) & 1;
+            if ((data & 1) && !weight_reuse && pft_wt_bytes) {
+                uint64_t addr = (pft_wt_addr_hi << 32) | pft_wt_addr_lo;
+                wr->axi_dbb->add_rd_var_log_entry(addr, pft_wt_bytes);
+                pft_log_entries++;
+                printf("[PFT_LOG] nvdla#%d weight tensor addr 0x%08lx bytes 0x%x (entry %lu)\n",
+                       id_nvdla, (unsigned long)addr, pft_wt_bytes, (unsigned long)pft_log_entries);
+            }
+            break;
+        }
+        default: break;
+    }
+}
+
+// [RAW_FIX] true if [addr, addr+len) overlaps a DMA write not yet fully sent to memory
+bool
+NvDlaDeviceSE::dmaReadHitsPendingWrite(const outputNVDLA& out, uint64_t addr, uint64_t len) const {
+    auto overlaps = [addr, len](uint64_t a, uint64_t l) {
+        return a < addr + len && addr < a + l;
+    };
+    if (!dma_wr_engine->atEndOfBlock() && overlaps(dma_wr_cur_addr, dma_wr_cur_len))
+        return true;
+    for (const auto& w : out.dma_write_buffer)
+        if (overlaps(w.first, w.second.size()))
+            return true;
+    return false;
 }
 
 void
@@ -285,7 +333,15 @@ NvDlaDeviceSE::processOutput(outputNVDLA& out) {
 
         uint64_t real_addr = getRealAddr(aux.first, false);
         // only DRAM has DMA fetch
-        if (dma_rd_engine->atEndOfBlock()) {
+        // [RAW_FIX] NVDLA gets its write response as soon as a beat is queued for DMA write
+        // (pft modes, spm flush/evictions), so a later read of the same bytes must not reach
+        // memory before that write has been sent. Writes already sent are ordered by the memory
+        // system. Reads stay in order, so the head waits.
+        bool raw_hazard = dma_rd_engine->atEndOfBlock() &&
+                          dmaReadHitsPendingWrite(out, aux.first, aux.second);
+        if (raw_hazard)
+            stats.num_dma_rd_raw_stall++;
+        if (dma_rd_engine->atEndOfBlock() && !raw_hazard) {
             dma_rd_engine->startFill(real_addr, aux.second);
 #ifndef AXI_RESP_FAST_IO
             printf("(%lu) nvdla#%d DMA read req is issued: "
@@ -308,6 +364,8 @@ NvDlaDeviceSE::processOutput(outputNVDLA& out) {
             // only DRAM has DMA write
             dma_wr_engine->startFill(real_addr, aux.second.size(),
                                      aux.second.data());
+            dma_wr_cur_addr = aux.first;          // [RAW_FIX]
+            dma_wr_cur_len = aux.second.size();
 #ifndef AXI_RESP_FAST_IO
             printf("(%lu) nvdla#%d DMA write req is issued: "
                    "addr 0x%08lx, len %ld\n",
@@ -416,7 +474,7 @@ NvDlaDeviceSE::runIterationNVDLA() {
             if (wr->csb->done()) {
                 // write back dirty data in spm to main memory
                 if (!flushing_spm) {
-                    wr->spm->clear_and_write_back_dirty();
+                    wr->spm->clear_and_write_back_dirty(wr);  // [SHARED_SPM]
                     flushing_spm = 1;
                 }
                 // all items have been flushed to dma write engine
@@ -428,12 +486,18 @@ NvDlaDeviceSE::runIterationNVDLA() {
         } else if (netFinished) {
             // write back dirty data in spm to main memory
             if (!flushing_spm) {
-                wr->spm->clear_and_write_back_dirty();
+                wr->spm->clear_and_write_back_dirty(wr);  // [SHARED_SPM]
                 flushing_spm = 1;
             }
             // all items have been flushed to dma write engine
             if (flushing_spm && output.dma_write_buffer.empty()) {
                 flushing_spm = 0;
+                // [NETFINISHED_RESET] one flush per 0x20004 read (end of a submitted task). Without
+                // this, netFinished stayed true after the first task and the spm was flushed and
+                // invalidated on every tick of every later task (ping_pong loadables submit one task
+                // per DLA segment): a line fetched for a write miss was dropped before the write beat
+                // could use it, and the write-miss fill repeated forever (livelock).
+                netFinished = false;
                 // printf("nvdla#%d spm flush complete!\n", id_nvdla);
             }
         }
@@ -451,6 +515,63 @@ NvDlaDeviceSE::runIterationNVDLA() {
         Wrapper_nvdla::buf_ptr = 0;
     }
 #endif
+}
+
+// [IDLE_SLEEP] NVDLA has nothing in flight: no CSB op, no interrupt, no AXI/DMA traffic, no flush
+bool
+NvDlaDeviceSE::deviceQuiet() {
+    if (!wr->csb->done() || waiting_for_gem5_mem || flushing_spm)
+        return false;
+    if (wr->dla->dla_intr || interruptRaised)
+        return false;
+    if (wr->axi_dbb->getRequestsOnFlight() != 0)
+        return false;
+    if (wr->axi_cvsram && wr->axi_cvsram->getRequestsOnFlight() != 0)
+        return false;
+    if (!dramPort.idle() || !sramPort.idle())
+        return false;
+    if (dma_enable) {
+        if (netFinished || !wr->output.dma_read_buffer.empty() || !wr->output.dma_write_buffer.empty())
+            return false;
+        if (dma_rd_engine->isActive() || dma_rd_engine->size() != 0 || dma_wr_engine->isActive())
+            return false;
+    }
+    return true;
+}
+
+void
+NvDlaDeviceSE::scheduleNextTick() {
+    if (!traceMode && idleSleep && sleepArmed) {
+        if (deviceQuiet()) {
+            if (++quietCycles >= idleSleepThreshold) {
+                sleeping = true;
+                sleepStart = curTick();
+                quietCycles = 0;
+                stats.nvdla_sleeps++;
+                DPRINTF(NvDlaDeviceSE, "%s: nvdla#%d idle, RTL stops ticking at %lu\n",
+                        __func__, id_nvdla, wr->tickcount);
+                return;
+            }
+        } else {
+            quietCycles = 0;
+        }
+    }
+    schedule(tickEvent,
+        nextCycle() +
+        static_cast<Tick>(abs((freq_ratio-1.0))*clockPeriod()));
+}
+
+void
+NvDlaDeviceSE::wakeUp() {
+    if (!sleeping)
+        return;
+    sleeping = false;
+    sleepArmed = false;
+    quietCycles = 0;
+    stats.nvdla_sleep_skipped_cycles += (curTick() - sleepStart) / clockPeriod();
+    DPRINTF(NvDlaDeviceSE, "%s: nvdla#%d wakes up\n", __func__, id_nvdla);
+    if (!tickEvent.scheduled())
+        schedule(tickEvent, nextCycle());
 }
 
 void
@@ -484,9 +605,7 @@ NvDlaDeviceSE::tick() {
         cyclesNVDLA++;
         runIterationNVDLA();
         //schedule(tickEvent, nextCycle() + (freq_ratio - 1) * clockPeriod());
-        schedule(tickEvent,
-            nextCycle() +
-            static_cast<Tick>(abs((freq_ratio-1.0))*clockPeriod()));
+        scheduleNextTick();   // [IDLE_SLEEP]
     } else {
         if (traceMode) {
             // we have finished running the trace
@@ -525,9 +644,7 @@ NvDlaDeviceSE::tick() {
         } else {
             runIterationNVDLA();
             //schedule(tickEvent, nextCycle() + (freq_ratio-1)*clockPeriod());
-            schedule(tickEvent,
-                nextCycle() +
-                static_cast<Tick>(abs((freq_ratio-1.0))*clockPeriod()));
+            scheduleNextTick();   // [IDLE_SLEEP]
         }
     }
     // check DRAM Ports
@@ -894,6 +1011,12 @@ NvDlaDeviceSE::regStats() {
     stats.nvdla_idle_cycles
         .name(name() + ".nvdla_idle_cycles")
         .desc("Number of idle cycles");
+    stats.nvdla_sleeps
+        .name(name() + ".nvdla_sleeps")
+        .desc("Times the RTL stopped ticking while idle (IDLE_SLEEP)");
+    stats.nvdla_sleep_skipped_cycles
+        .name(name() + ".nvdla_sleep_skipped_cycles")
+        .desc("gem5 clock cycles not evaluated in the RTL while asleep (IDLE_SLEEP)");
 
     stats.nvdla_avgReqCVSRAM
         .init(256)
@@ -914,6 +1037,9 @@ NvDlaDeviceSE::regStats() {
     stats.num_dma_wr
         .name(name() + ".num_dma_wr")
         .desc("Number of DMA write issued by this NVDLA");
+    stats.num_dma_rd_raw_stall
+        .name(name() + ".num_dma_rd_raw_stall")
+        .desc("Cycles a DMA read waited for an overlapping pending DMA write (RAW)");
 
     stats.nvdla_rtl_cycles
         .name(name() + ".nvdla_rtl_cycles")
@@ -1101,6 +1227,7 @@ bool
 NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
 {
     // Just forward to the memobj.
+    owner->wakeUp();   // [IDLE_SLEEP] any CSB access (new task, status poll) restarts the RTL
     if (pkt->req->hasPaddr()) {
         // DPRINTF(NvDlaDeviceSE, "[GEM5 LOG] got request\n");
 
@@ -1127,6 +1254,7 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
 
             owner->wr->csb->write(write_addr, pkt->getLE<uint32_t>());
             owner->stats.nvdla_csb_writes++;
+            owner->snoopCsbWriteForPrefetch(write_addr, pkt->getLE<uint32_t>());   // [BUF_MODE]
 
             if (write_addr == 0xFFFF0003) {
                 // owner->interrupt->clear();
@@ -1174,6 +1302,8 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
                     pkt->getSize(), pkt->getLE<uint32_t>());
 
                 owner->netFinished = true;
+                owner->sleepArmed = true;   // [IDLE_SLEEP] end of a task: may sleep once quiet
+                owner->quietCycles = 0;
                 return 0;
             }
 
@@ -1274,7 +1404,7 @@ NvDlaDeviceSE::CmdCPUSidePort::recvTimingReq(PacketPtr pkt)
                             if (owner->wr->csb->done()) {
                                 // write back dirty data in spm to main memory
                                 if (!owner->flushing_spm) {
-                                  owner->wr->spm->clear_and_write_back_dirty();
+                                  owner->wr->spm->clear_and_write_back_dirty(owner->wr);  // [SHARED_SPM]
                                   owner->flushing_spm = 1;
                                 }
                                 // all items have been flushed
@@ -1455,6 +1585,7 @@ NvDlaDeviceSE::retryTranslate() {
 Tick
 NvDlaDeviceSE::read(PacketPtr pkt)
 {
+    wakeUp();   // [IDLE_SLEEP]
     onRead = true;
     if (!engineStarted) {
         engineStarted = true;
@@ -1591,7 +1722,7 @@ NvDlaDeviceSE::read(PacketPtr pkt)
                     if (wr->csb->done()) {
                         // write back dirty data in spm to main memory
                         if (!flushing_spm) {
-                            wr->spm->clear_and_write_back_dirty();
+                            wr->spm->clear_and_write_back_dirty(wr);  // [SHARED_SPM]
                             flushing_spm = 1;
                         }
                         // all items have been flushed to dma write engine

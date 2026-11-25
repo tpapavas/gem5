@@ -1,3 +1,4 @@
+#include <algorithm>   // [DIRTY_MASK] std::fill
 #include "embeddedBuffer.hh"
 
 
@@ -11,7 +12,7 @@ abstractSet::~abstractSet() = default;
 
 
 allBufferSet::allBufferSet(Wrapper_nvdla* wrap, uint32_t _lat, uint32_t _line_size, uint32_t _assoc) :
-        abstractSet(wrap, _lat, _line_size, _assoc) {
+        abstractSet(wrap, _lat, _line_size, _assoc), shared(wrap->use_shared_spm) {
     for (uint32_t i = 0; i < assoc; i++) {
         lru_order.emplace_back(i);
     }
@@ -62,7 +63,8 @@ bool allBufferSet::read_spm_line(uint64_t aligned_addr, std::vector<uint8_t>& da
 }
 
 
-void allBufferSet::write_spm_axi_line_with_mask(uint64_t axi_addr, const uint8_t* data, uint64_t mask) {
+void allBufferSet::write_spm_axi_line_with_mask(uint64_t axi_addr, const uint8_t* data, uint64_t mask,
+                                                Wrapper_nvdla* req) {
     assert((axi_addr & (uint64_t)(AXI_WIDTH / 8 - 1)) == 0);
 
     uint64_t addr_base = axi_addr & ~(uint64_t)(spm_line_size - 1);
@@ -72,7 +74,7 @@ void allBufferSet::write_spm_axi_line_with_mask(uint64_t axi_addr, const uint8_t
     if (addr_map_it == addr_map.end()) {
         uint32_t to_write_vec_id = assoc;
         if (addr_map.size() >= assoc) {
-            to_write_vec_id = erase_victim();   // lru_order maintenance of erasing (moving to lru back) is done inside
+            to_write_vec_id = erase_victim(req);   // lru_order maintenance of erasing (moving to lru back) is done inside
         } else {
             // find a currently invalid entry to write in
             for (uint32_t i = 0; i < lines.size(); i++) {
@@ -91,9 +93,15 @@ void allBufferSet::write_spm_axi_line_with_mask(uint64_t axi_addr, const uint8_t
         auto& entry = lines[addr_map_it->second];
         entry.map_it = addr_map_it;
         entry.valid = 1;
+        std::fill(entry.dirty_mask.begin(), entry.dirty_mask.end(), 0);  // [DIRTY_MASK]
     }
     auto& entry = lines[addr_map_it->second];
     entry.dirty = 1;
+    // [DIRTY_MASK] remember exactly which bytes this beat wrote
+    for (int i = 0; i < AXI_WIDTH / 8; i++) {
+        if ((mask >> i) & 1)
+            entry.dirty_mask[offset + i] = 1;
+    }
 #ifndef NO_DATA
     if (mask == 0xFFFFFFFFFFFFFFFF) {
         for (int i = 0; i < AXI_WIDTH / 8; i++) {
@@ -110,28 +118,66 @@ void allBufferSet::write_spm_axi_line_with_mask(uint64_t axi_addr, const uint8_t
 }
 
 
-void allBufferSet::clear_and_write_back_dirty() {
+// [DIRTY_MASK] Write back only the bytes NVDLA wrote. The old code wrote the whole 1 KiB line,
+// so bytes this NVDLA never wrote (stale copies of what another NVDLA wrote meanwhile into the
+// same line) overwrote memory. With 2 DLAs and batch 2 the two outputs share one line
+// (e.g. 0x2001d800 / 0x2001d820), and the later flush erased the other batch.
+void allBufferSet::write_back_dirty_bytes(allBufferLineWithTag& entry, Wrapper_nvdla* req, bool keep_in_overlay) {
+    const uint64_t base = entry.map_it->first;
+    Wrapper_nvdla* const out = requester(req);   // [SHARED_SPM]
+    if (keep_in_overlay) {
+        auto& ov = wb_overlay[base];
+        if (ov.data.empty()) {
+            ov.data.assign(spm_line_size, 0);
+            ov.mask.assign(spm_line_size, 0);
+        }
+        for (uint32_t b = 0; b < spm_line_size; b++) {
+            if (entry.dirty_mask[b]) {
+                ov.data[b] = entry.spm_line[b];
+                ov.mask[b] = 1;
+            }
+        }
+    }
+    uint32_t i = 0;
+    while (i < spm_line_size) {
+        if (!entry.dirty_mask[i]) {
+            i++;
+            continue;
+        }
+        uint32_t start = i;
+        while (i < spm_line_size && entry.dirty_mask[i])
+            i++;
+        out->addDMAWriteReq(base + start,
+            std::vector<uint8_t>(entry.spm_line.begin() + start, entry.spm_line.begin() + i));
+    }
+    std::fill(entry.dirty_mask.begin(), entry.dirty_mask.end(), 0);
+    entry.dirty = 0;
+}
+
+
+void allBufferSet::clear_and_write_back_dirty(Wrapper_nvdla* req) {
     for (auto& line: lines) {
         if (line.dirty) {
-            wrapper->addDMAWriteReq(line.map_it->first, line.spm_line);
-            line.dirty = 0;
+            write_back_dirty_bytes(line, req, false);   // [DIRTY_MASK] was: addDMAWriteReq(addr, whole line)
         }
         line.map_it = addr_map.end();
         line.valid = 0;
         // don't clear lru_order and the vector itself because they may be used for data coming in afterward
     }
     addr_map.clear();
+    // [SHARED_SPM] after the flush memory has every byte; the CPU may change it before the next task
+    wb_overlay.clear();
 }
 
 
-void allBufferSet::fill_spm_line(uint64_t aligned_addr, const uint8_t* data) {
+void allBufferSet::fill_spm_line(uint64_t aligned_addr, const uint8_t* data, Wrapper_nvdla* req) {
     assert((aligned_addr & (uint64_t)(spm_line_size - 1)) == 0);
 
     auto addr_map_it = addr_map.find(aligned_addr);
     if (addr_map_it == addr_map.end()) {
         uint32_t to_write_vec_id = assoc;
         if (addr_map.size() >= assoc) {
-            to_write_vec_id = erase_victim();       // lru_order maintenance of erasing is done inside
+            to_write_vec_id = erase_victim(req);       // lru_order maintenance of erasing is done inside
         } else {
             // find a currently invalid entry to write in
             for (uint32_t i = 0; i < lines.size(); i++) {
@@ -150,21 +196,32 @@ void allBufferSet::fill_spm_line(uint64_t aligned_addr, const uint8_t* data) {
         entry.map_it = addr_map_it;
         entry.valid = 1;
         entry.dirty = 0;
+        std::fill(entry.dirty_mask.begin(), entry.dirty_mask.end(), 0);  // [DIRTY_MASK]
 #ifndef NO_DATA
         entry.spm_line.assign(data, data + spm_line_size);
+        // [SHARED_SPM] bytes written back on eviction may not be in memory yet: they win over memory
+        auto ov_it = wb_overlay.find(aligned_addr);
+        if (ov_it != wb_overlay.end()) {
+            for (uint32_t b = 0; b < spm_line_size; b++) {
+                if (ov_it->second.mask[b])
+                    entry.spm_line[b] = ov_it->second.data[b];
+            }
+        }
 #endif
-    } else {
+    } else if (!shared) {
         printf("(%lu) Weird: request the DRAM when it hits the embedded buffer.\n", wrapper->tickcount);
     }
+    // [SHARED_SPM] else: the other NVDLA brought (and maybe changed) this line while our DMA was in
+    // flight. Keep the buffer copy; the waiting reads are served from it (AXIResponder::inflight_dma_resp).
 }
 
 
-uint32_t allBufferSet::erase_victim() {
+uint32_t allBufferSet::erase_victim(Wrapper_nvdla* req) {
     auto to_erase_id = lru_order.front();
     auto& entry = lines[to_erase_id];
     assert(entry.valid);
     if (entry.dirty) {
-        wrapper->addDMAWriteReq(entry.map_it->first, entry.spm_line);
+        write_back_dirty_bytes(entry, req, shared);   // [DIRTY_MASK] was: addDMAWriteReq(addr, whole line)
     }
     addr_map.erase(entry.map_it);
     entry.valid = 0;
@@ -196,7 +253,7 @@ bool prefetchThrottleSet::read_spm_line(uint64_t aligned_addr, std::vector<uint8
 }
 
 
-void prefetchThrottleSet::clear_and_write_back_dirty() {
+void prefetchThrottleSet::clear_and_write_back_dirty(Wrapper_nvdla* req) {
     for (auto& line: lines) {
         line.valid = 0;
         // don't clear lru_order and the vector itself because they may be used for data coming in afterward
@@ -205,8 +262,13 @@ void prefetchThrottleSet::clear_and_write_back_dirty() {
 }
 
 
-void prefetchThrottleSet::fill_spm_line(uint64_t aligned_addr, const uint8_t* data) {
+void prefetchThrottleSet::fill_spm_line(uint64_t aligned_addr, const uint8_t* data, Wrapper_nvdla* req) {
     assert((aligned_addr & (uint64_t)(spm_line_size - 1)) == 0);
+    // [BUF_MODE] (the assert below is compiled out with -DNDEBUG) the throttle counts only the
+    // prefetches in flight of one NVDLA, so with a shared buffer the set can be full here.
+    // Drop the line instead of writing past the end of `lines`.
+    if (addr_map.size() >= assoc)
+        return;
     assert(addr_map.size() < assoc);
 
     // some bias data are found to be accessed twice. We simply ignore them.
@@ -223,7 +285,8 @@ void prefetchThrottleSet::fill_spm_line(uint64_t aligned_addr, const uint8_t* da
             break;
         }
     }
-    assert(to_write_vec_id < assoc);
+    if (to_write_vec_id >= assoc)   // [BUF_MODE] no invalid entry (see above): drop
+        return;
     addr_map.emplace(aligned_addr, to_write_vec_id);
     auto& entry = lines[to_write_vec_id];
     entry.valid = 1;
@@ -255,15 +318,17 @@ allBuffer::~allBuffer() {
 }
 
 
-bool allBuffer::read_spm_axi_line(uint64_t axi_addr, uint8_t* data_out, uint8_t stream_id) {
+bool allBuffer::read_spm_axi_line(uint64_t axi_addr, uint8_t* data_out, uint8_t stream_id,
+                                  Wrapper_nvdla* req) {
     uint32_t set_id = (axi_addr / spm_line_size) % num_sets;
     return sets[set_id]->read_spm_axi_line(axi_addr, data_out);
 }
 
 
-void allBuffer::write_spm_axi_line_with_mask(uint64_t axi_addr, const uint8_t* data, uint64_t mask, uint8_t stream) {
+void allBuffer::write_spm_axi_line_with_mask(uint64_t axi_addr, const uint8_t* data, uint64_t mask, uint8_t stream,
+                                             Wrapper_nvdla* req) {
     uint32_t set_id = (axi_addr / spm_line_size) % num_sets;
-    sets[set_id]->write_spm_axi_line_with_mask(axi_addr, data, mask);
+    sets[set_id]->write_spm_axi_line_with_mask(axi_addr, data, mask, req);
 }
 
 
@@ -294,20 +359,24 @@ prefetchBuffer::~prefetchBuffer() {
 }
 
 
-bool prefetchBuffer::read_spm_axi_line(uint64_t axi_addr, uint8_t* data_out, uint8_t stream_id) {
+bool prefetchBuffer::read_spm_axi_line(uint64_t axi_addr, uint8_t* data_out, uint8_t stream_id,
+                                       Wrapper_nvdla* req) {
     uint32_t set_id = (axi_addr / spm_line_size) % num_sets;
     uint64_t addr_base = axi_addr & ~(uint64_t)(spm_line_size - 1);
-    if (addr_base != read_buffers[stream_id].first) {
-        bool found = sets[set_id]->read_spm_line(addr_base, read_buffers[stream_id].second);
+    // [BUF_MODE] read buffer of this NVDLA and stream
+    const int nv = (req ? req->id_nvdla : wrapper->id_nvdla) % MAX_RB_NVDLA;
+    auto& rb = read_buffers[nv][stream_id % MAX_RB_STREAMS];
+    if (addr_base != rb.first) {
+        bool found = sets[set_id]->read_spm_line(addr_base, rb.second);
         if (!found) {
             return false;
         }
-        read_buffers[stream_id].first = addr_base;
+        rb.first = addr_base;
     }
     // always in read buffer here
 #ifndef NO_DATA
     uint64_t offset = axi_addr & (uint64_t)(spm_line_size - 1);
-    std::vector<uint8_t> &entry_vector = read_buffers[stream_id].second;
+    std::vector<uint8_t> &entry_vector = rb.second;
     for (int i = 0; i < AXI_WIDTH / 8; i++)
         data_out[i] = entry_vector[offset + i];
 #endif

@@ -484,6 +484,28 @@ def addOptions(parser):
         action="store_true",
         help="Doesn't run simulation, it generates a DTB only",
     )
+    # SE run: runtime binary and its arguments
+    parser.add_argument(
+        "--runtime", type=str, required=True,
+        help="AArch64 nvdla_runtime binary (SystemC build)",
+    )
+    parser.add_argument(
+        "--loadable", type=str, required=True,
+        help="Path to the NVDLA loadable (.nvdla)",
+    )
+    parser.add_argument(
+        "--image", "--input-image", dest="image", type=str, required=True,
+        help="Path to the input image",
+    )
+    parser.add_argument(
+        "--normalize", type=float, default=None,
+        help="Input normalization value passed to nvdla_runtime "
+        "(omit for INT8)",
+    )
+    parser.add_argument(
+        "--batches", type=int, default=1,
+        help="Number of batches passed to the runtime (--batches)",
+    )
     return parser
 
 
@@ -500,7 +522,19 @@ def main():
 
     # Program to execute
     # binary = 'tests/test-progs/nvdla-se/nvdla-se'
-    binary = "<add-path-to-nvdla-se-binary>"
+    binary = options.runtime
+    for name, path in (("runtime", binary), ("loadable", options.loadable),
+                       ("image", options.image)):
+        if not os.path.isfile(path):
+            parser.error("--{}: file not found: {}".format(name, path))
+    if options.dlas < 1 or options.dlas > 2:
+        parser.error(
+            "--dlas must be 1 or 2 (CPU has nvdla_port_plus_0/1 only)"
+        )
+    print(
+        "NVDLA memory mode:",
+        "nvdla_cache" if options.add_accel_private_cache else "direct",
+    )
 
     # Simulation system
     system = System(multi_thread=True)
@@ -517,7 +551,7 @@ def main():
 
     # Create CPU
     # system.cpu = X86MinorCPU()
-    system.cpu = ArmMinorCPU(numThreads=2)
+    system.cpu = ArmMinorCPU(numThreads=2, num_accels=options.dlas)
 
     # Create Gemmini device
     # system.gemmini_dev = GemminiDevA(
@@ -588,68 +622,51 @@ def main():
     # for i in range(options.dlas):
     #    system.nvdla[i].pio = system.iobus.mem_side_ports
 
-    system.bridge_csb = Gem5ToTlmBridge32()
-
-    system.nvdla = TLM_ScNvDlaSE(
-        cpu_freq=float(options.little_cpu_clock.replace("GHz", "")),
-        freq_ratio=options.freq_ratio,
-    )
-
-    system.cpu.nvdla_port_plus_0 = system.bridge_csb.gem5
-    system.bridge_csb.tlm = system.nvdla.csb_target
-
-    system.bridge_dbb = TlmToGem5Bridge32()
-    system.bridge_sram = TlmToGem5Bridge32()
-
-    system.nvdla.dbb_init = system.bridge_dbb.tlm
-    system.nvdla.sram_init = system.bridge_sram.tlm
-
-    # system.nvdla_pr_cache = Cache(
-    #    size="64B",
-    #    assoc=1,
-    #    tag_latency=1,
-    #    data_latency=1,
-    #    response_latency=1,
-    #    mshrs=1,
-    #    tgts_per_mshr=1,
-    #    write_buffers=1,
-    #    clusivity="mostly_incl"
-    # )
-    # system.nvdla_pr_cache = Cache(
-    #    size="64B",
-    #    assoc=1,
-    #    tag_latency=1,
-    #    data_latency=1,
-    #    response_latency=1,
-    #    mshrs=1,
-    #    tgts_per_mshr=1,
-    #    write_buffers=1,
-    #    clusivity="mostly_incl",
-    #
-    #    writeback_clean=False,
-    #    writeback_dirty=False,
-    # )
-    # system.bridge_dbb.gem5 = system.nvdla_pr_cache.cpu_side
-    # system.nvdla_pr_cache.mem_side = system.membus.cpu_side_ports
-
-    if options.add_accel_private_cache:
-        system.nvdla_pr_cache = Cache(
-            tag_latency=options.accel_pr_cache_tag_lat,
-            data_latency=options.accel_pr_cache_dat_lat,
-            response_latency=options.accel_pr_cache_resp_lat,
-            mshrs=options.accel_pr_cache_mshr,
-            tgts_per_mshr=options.accel_pr_cache_tgts_per_mshr,
-            size=options.accel_pr_cache_size,
-            assoc=options.accel_pr_cache_assoc,
-            write_buffers=options.accel_pr_cache_wr_buf,
-            clusivity=options.accel_pr_cache_clus,
+    # One SystemC NVDLA (CMOD) per DLA, each with its own CSB bridge
+    # (CPU -> NVDLA) and DBB/SRAM bridges (NVDLA -> gem5).
+    system.nvdla = [
+        TLM_ScNvDlaSE(
+            nvdla_id=i,
+            cpu_freq=float(options.little_cpu_clock.replace("GHz", "")),
+            freq_ratio=options.freq_ratio,
         )
-        system.bridge_dbb.gem5 = system.nvdla_pr_cache.cpu_side
-        system.nvdla_pr_cache.mem_side = system.membus.cpu_side_ports
-        system.bridge_sram.gem5 = system.membus.cpu_side_ports
-    else:
-        system.bridge_dbb.gem5 = system.membus.cpu_side_ports
-        system.bridge_sram.gem5 = system.membus.cpu_side_ports
+        for i in range(options.dlas)
+    ]
+    system.bridge_csb = [Gem5ToTlmBridge32() for _ in range(options.dlas)]
+    system.bridge_dbb = [TlmToGem5Bridge32() for _ in range(options.dlas)]
+    system.bridge_sram = [TlmToGem5Bridge32() for _ in range(options.dlas)]
+
+    for i in range(options.dlas):
+        setattr(
+            system.cpu, "nvdla_port_plus_{}".format(i), system.bridge_csb[i].gem5
+        )
+        system.bridge_csb[i].tlm = system.nvdla[i].csb_target
+        system.nvdla[i].dbb_init = system.bridge_dbb[i].tlm
+        system.nvdla[i].sram_init = system.bridge_sram[i].tlm
+
+    # nvdla_cache: one private gem5 Cache per DLA (dbb -> cache -> membus)
+    if options.add_accel_private_cache:
+        system.nvdla_pr_cache = [
+            Cache(
+                tag_latency=options.accel_pr_cache_tag_lat,
+                data_latency=options.accel_pr_cache_dat_lat,
+                response_latency=options.accel_pr_cache_resp_lat,
+                mshrs=options.accel_pr_cache_mshr,
+                tgts_per_mshr=options.accel_pr_cache_tgts_per_mshr,
+                size=options.accel_pr_cache_size,
+                assoc=options.accel_pr_cache_assoc,
+                write_buffers=options.accel_pr_cache_wr_buf,
+                clusivity=options.accel_pr_cache_clus,
+            )
+            for _ in range(options.dlas)
+        ]
+    for i in range(options.dlas):
+        if options.add_accel_private_cache:
+            system.bridge_dbb[i].gem5 = system.nvdla_pr_cache[i].cpu_side
+            system.nvdla_pr_cache[i].mem_side = system.membus.cpu_side_ports
+        else:
+            system.bridge_dbb[i].gem5 = system.membus.cpu_side_ports
+        system.bridge_sram[i].gem5 = system.membus.cpu_side_ports
 
     # Create interrupt controller
     system.cpu.createInterruptController()
@@ -686,14 +703,19 @@ def main():
     process.cmd = [
         binary,
         "--loadable",
-        "<path-to-nvdla-se-loadable>",
+        options.loadable,
         "--image",
-        "<path-to-nvdla-se-image>",
-        "--normalize",
-        "255",
-        "--dlas",
-        options.dlas,
+        options.image,
     ]
+    if options.normalize is not None:
+        process.cmd += ["--normalize", str(options.normalize)]
+    process.cmd += [
+        "--dlas",
+        str(options.dlas),
+        "--batches",
+        str(options.batches),
+    ]
+    print("Runtime cmd:", " ".join(process.cmd))
 
     # Set the cpu to use the process as its workload and create thread contexts
     system.cpu.workload = [process, process]

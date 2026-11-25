@@ -277,13 +277,9 @@ TlmToGem5Bridge<BITWIDTH>::handleBeginReq(tlm::tlm_generic_payload &trans)
         sc_core::sc_time_stamp().value()
     );
 
-    PktList::iterator it;
     DPRINTF(TlmBridge, "%s: == REQ QUEUE ==\n", __func__);
-    for (it = pktReqQueue.begin(); it != pktReqQueue.end(); ++it) {
-        gem5::PacketPtr nextPkt = *it;
-        DPRINTF(TlmBridge, "%s: : 0x%08x\n",
-            __func__, nextPkt->getAddr()
-        );
+    for (gem5::Addr a : pktReqQueue) {
+        DPRINTF(TlmBridge, "%s: : 0x%08x\n", __func__, a);
     }
 
     sc_assert(!waitForRetry);
@@ -300,7 +296,7 @@ TlmToGem5Bridge<BITWIDTH>::handleBeginReq(tlm::tlm_generic_payload &trans)
     // ourselves.
     bool needsResponse = pkt->needsResponse();
     if (bmp.sendTimingReq(pkt)) { // port is free -> send END_REQ immediately
-        pktReqQueue.push_back(pkt);
+        pktReqQueue.push_back(pkt->getAddr());
         sendEndReq(trans);
         if (!needsResponse) {
             auto delay = sc_core::SC_ZERO_TIME;
@@ -350,7 +346,7 @@ TlmToGem5Bridge<BITWIDTH>::handleEndResp(tlm::tlm_generic_payload &trans)
     }
     for (it = pktRespList.begin(); it != pktRespList.end(); ) {
         gem5::PacketPtr nextPkt = *it;
-        if (nextPkt->getAddr() == pktReqQueue.front()->getAddr()) {
+        if (nextPkt->getAddr() == pktReqQueue.front()) {
             DPRINTF(TlmBridge,
                 "%s: next req (addr: 0x%08x) in response queue\n",
                 __func__, nextPkt->getAddr()
@@ -637,10 +633,10 @@ TlmToGem5Bridge<BITWIDTH>::recvTimingResp(PacketPtr pkt)
 
     sc_assert(pkt->isResponse());
 
-     if (pkt->getAddr() != pktReqQueue.front()->getAddr()) {
+     if (pkt->getAddr() != pktReqQueue.front()) {
         DPRINTF(TlmBridge,"%s:(incorrect order) "
             "received addr: 0x%08x, expected addr: 0x%08x,\n",
-            __func__, pkt->getAddr(), pktReqQueue.front()->getAddr()
+            __func__, pkt->getAddr(), pktReqQueue.front()
         );
         pktRespList.push_back(pkt);
 
@@ -703,8 +699,7 @@ TlmToGem5Bridge<BITWIDTH>::recvReqRetry()
         /**
          * TODO: destroy packets when they are popped (?)
          */
-        auto pkt = new gem5::Packet(pendingPacket, false, true);
-        pktReqQueue.push_back(pkt);
+        pktReqQueue.push_back(pendingPacket->getAddr());
         waitForRetry = false;
 
         auto &trans = *pendingRequest;

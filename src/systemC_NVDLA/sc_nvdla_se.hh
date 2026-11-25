@@ -94,12 +94,15 @@ public:
     double nvdlaFreq;
     sc_time nvdlaClockPeriod;
 
+    unsigned nvdlaId;
+
 public:
     SC_HAS_PROCESS(ScNvDlaSE);
-    ScNvDlaSE(sc_module_name name, double cpu_freq, double freq_ratio) :
+    ScNvDlaSE(sc_module_name name, double cpu_freq, double freq_ratio, unsigned nvdla_id) :
         sc_module(name),
         cpuFreq(cpu_freq),
         freqRatio(freq_ratio),
+        nvdlaId(nvdla_id),
         initiator("dla_tlm_initiator"),
         csb_target("csb_target"),
         csb_wrapper(csb_target,
@@ -124,10 +127,11 @@ public:
         nvdlaFreq = cpuFreq / freqRatio;
 
         nvdlaClockPeriod =  sc_time(1.0 / nvdlaFreq, SC_NS);
-        gNvdlaStats.nvdlaClockPeriod = nvdlaClockPeriod;
+        gNvdlaStats[nvdlaId].nvdlaClockPeriod = nvdlaClockPeriod;
         std::cout
             << "CPU freq = " << cpuFreq << " GHz\n"
             << "freqRatio = " << freqRatio << "\n"
+            << "Id = " << nvdlaId << "\n"
             << "NVDLA freq = " << nvdlaFreq << " GHz\n"
             << "NVDLA period = " << nvdlaClockPeriod << "\n";
 
@@ -142,7 +146,10 @@ public:
 
         sram_target.register_b_transport(this, &ScNvDlaSE::b_transport_sram);
 
-        nvdla = new scsim::cmod::NV_nvdla("nvdla_core");
+        const std::string core_name =
+            "nvdla_core_" + std::to_string(nvdlaId);
+        nvdla = new scsim::cmod::NV_nvdla(core_name.c_str(), nvdlaId);
+        registerNvdlaStatsRoot(nvdla, nvdlaId);
         initiator.tSocket.bind(nvdla->nvdla_host_master_if);
         nvdla->nvdla_core2dbb_axi4.bind(dbb_target);
         nvdla->nvdla_core2cvsram_axi4.bind(sram_target);
@@ -163,61 +170,62 @@ public:
         nvdlaClockPeriod = sc_time(freqRatio, SC_NS);
         registerExitCallback([this]()
         {
-            std::string fname =
-                simout.directory() + "/nvdla_stats.txt";
+            std::string fname = simout.directory() + "/nvdla_stats_" + std::to_string(nvdlaId) + ".txt";
 
             std::ofstream out(fname);
 
             out << "---------- Begin Simulation Statistics NVDLA ----------\n";
             out << "\n";
 
+            const NvdlaStats &s = gNvdlaStats[nvdlaId];
 
-            out << "CSB Reads      : " << gNvdlaStats.csbReads << "\n";
-            out << "CSB Writes     : " << gNvdlaStats.csbWrites << "\n";
 
-            out << "DBB Reads      : " << gNvdlaStats.dbbReads << "\n";
-            out << "DBB Writes     : " << gNvdlaStats.dbbWrites << "\n";
+            out << "CSB Reads      : " << s.csbReads << "\n";
+            out << "CSB Writes     : " << s.csbWrites << "\n";
 
-            out << "DBB ReadBytes  : " << gNvdlaStats.dbbReadBytes << "\n";
-            out << "DBB WriteBytes : " << gNvdlaStats.dbbWriteBytes << "\n";
+            out << "DBB Reads      : " << s.dbbReads << "\n";
+            out << "DBB Writes     : " << s.dbbWrites << "\n";
 
-            out << "SRAM Reads     : " << gNvdlaStats.sramReads << "\n";
-            out << "SRAM Writes    : " << gNvdlaStats.sramWrites << "\n";
+            out << "DBB ReadBytes  : " << s.dbbReadBytes << "\n";
+            out << "DBB WriteBytes : " << s.dbbWriteBytes << "\n";
 
-            out << "SRAM ReadBytes : " << gNvdlaStats.sramReadBytes << "\n";
-            out << "SRAM WriteBytes: " << gNvdlaStats.sramWriteBytes << "\n";
+            out << "SRAM Reads     : " << s.sramReads << "\n";
+            out << "SRAM Writes    : " << s.sramWrites << "\n";
 
-            out << "Interrupts     : " << gNvdlaStats.interruptsRaised << "\n";
+            out << "SRAM ReadBytes : " << s.sramReadBytes << "\n";
+            out << "SRAM WriteBytes: " << s.sramWriteBytes << "\n";
 
-            out << "BDMA ReadReqs  : " << gNvdlaStats.bdmaReadReqs << "\n";
-            out << "BDMA WriteReqs : " << gNvdlaStats.bdmaWriteReqs << "\n";
+            out << "Interrupts     : " << s.interruptsRaised << "\n";
 
-            out << "BDMA G0 cycles : " << gNvdlaStats.bdmaGrp0Cycles << "\n";
-            out << "BDMA G1 cycles : " << gNvdlaStats.bdmaGrp1Cycles << "\n";
+            out << "BDMA ReadReqs  : " << s.bdmaReadReqs << "\n";
+            out << "BDMA WriteReqs : " << s.bdmaWriteReqs << "\n";
 
-            out << "CACC G0 cycles : " << gNvdlaStats.caccGrp0Cycles << "\n";
-            out << "CACC G1 cycles : " << gNvdlaStats.caccGrp1Cycles << "\n";
+            out << "BDMA G0 cycles : " << s.bdmaGrp0Cycles << "\n";
+            out << "BDMA G1 cycles : " << s.bdmaGrp1Cycles << "\n";
 
-            out << "CDMA G0 cycles : " << gNvdlaStats.cdmaGrp0Cycles << "\n";
-            out << "CDMA G1 cycles : " << gNvdlaStats.cdmaGrp1Cycles << "\n";
+            out << "CACC G0 cycles : " << s.caccGrp0Cycles << "\n";
+            out << "CACC G1 cycles : " << s.caccGrp1Cycles << "\n";
 
-            out << "CDP G0 cycles : " << gNvdlaStats.cdpGrp0Cycles << "\n";
-            out << "CDP G1 cycles : " << gNvdlaStats.cdpGrp1Cycles << "\n";
+            out << "CDMA G0 cycles : " << s.cdmaGrp0Cycles << "\n";
+            out << "CDMA G1 cycles : " << s.cdmaGrp1Cycles << "\n";
 
-            out << "CMAC G0 cycles : " << gNvdlaStats.cmacGrp0Cycles << "\n";
-            out << "CMAC G1 cycles : " << gNvdlaStats.cmacGrp1Cycles << "\n";
+            out << "CDP G0 cycles : " << s.cdpGrp0Cycles << "\n";
+            out << "CDP G1 cycles : " << s.cdpGrp1Cycles << "\n";
 
-            out << "CSC G0 cycles : " << gNvdlaStats.cscGrp0Cycles << "\n";
-            out << "CSC G1 cycles : " << gNvdlaStats.cscGrp1Cycles << "\n";
+            out << "CMAC G0 cycles : " << s.cmacGrp0Cycles << "\n";
+            out << "CMAC G1 cycles : " << s.cmacGrp1Cycles << "\n";
 
-            out << "PDP G0 cycles : " << gNvdlaStats.pdpGrp0Cycles << "\n";
-            out << "PDP G1 cycles : " << gNvdlaStats.pdpGrp1Cycles << "\n";
+            out << "CSC G0 cycles : " << s.cscGrp0Cycles << "\n";
+            out << "CSC G1 cycles : " << s.cscGrp1Cycles << "\n";
 
-            out << "RUBIK G0 cycles : " << gNvdlaStats.rubikGrp0Cycles << "\n";
-            out << "RUBIK G1 cycles : " << gNvdlaStats.rubikGrp1Cycles << "\n";
+            out << "PDP G0 cycles : " << s.pdpGrp0Cycles << "\n";
+            out << "PDP G1 cycles : " << s.pdpGrp1Cycles << "\n";
 
-            out << "SDP G0 cycles : " << gNvdlaStats.sdpGrp0Cycles << "\n";
-            out << "SDP G1 cycles : " << gNvdlaStats.sdpGrp1Cycles << "\n";
+            out << "RUBIK G0 cycles : " << s.rubikGrp0Cycles << "\n";
+            out << "RUBIK G1 cycles : " << s.rubikGrp1Cycles << "\n";
+
+            out << "SDP G0 cycles : " << s.sdpGrp0Cycles << "\n";
+            out << "SDP G1 cycles : " << s.sdpGrp1Cycles << "\n";
 
             out << "\n";
             out << "---------- End Simulation Statistics NVDLA ----------\n";

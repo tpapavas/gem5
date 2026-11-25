@@ -14,6 +14,7 @@
 
 #include <assert.h>
 #include <map>       // [B_SPACING]
+#include <map>       // [B_SPACING]
 #include "axiResponder.hh"
 
 AXIResponder::AXIResponder(struct connections _dla,
@@ -351,15 +352,33 @@ AXIResponder::eval_timing() {
             if (dma_enable) {
                 // intermediate variables and outputs should be written to spm (actually, all writes belong to this type)
                 if (cache_write)
-                    wrapper->spm->write_spm_axi_line_with_mask(awtxn.awaddr, wtxn.wdata, wtxn.wstrb, awtxn.awid);
-                else {  // todo: temporarily ignoring masks
+                    wrapper->spm->write_spm_axi_line_with_mask(awtxn.awaddr, wtxn.wdata, wtxn.wstrb, awtxn.awid,
+                                                               wrapper);   // [SHARED_SPM]
+                else if (wtxn.wstrb == 0xFFFFFFFFFFFFFFFF) {
                     wrapper->tryMergeDMAWriteReq(awtxn.awaddr, wtxn.wdata, AXI_WIDTH / 8);
+                } else {
+                    // [BUF_MODE] partial beat (pft modes write straight to memory): write only the
+                    // bytes in wstrb, one DMA write per contiguous run. The old code wrote the whole
+                    // beat and overwrote the bytes NVDLA did not write.
+                    int i = 0;
+                    while (i < AXI_WIDTH / 8) {
+                        if (!((wtxn.wstrb >> i) & 1)) { i++; continue; }
+                        int start = i;
+                        while (i < AXI_WIDTH / 8 && ((wtxn.wstrb >> i) & 1)) i++;
+                        wrapper->addDMAWriteReq(awtxn.awaddr + start,
+                            std::vector<uint8_t>(wtxn.wdata + start, wtxn.wdata + i));
+                    }
                 }
             } else {
                 wrapper->addLongWriteReq(sram, true, cache_write, awtxn.awaddr, AXI_WIDTH / 8, wtxn.wdata, wtxn.wstrb);
             }
 
 
+            if (wtxn.wlast) {
+                #ifdef PRINT_DEBUG
+                    printf("(%lu) nvdla#%d %s: write, last tick\n", wrapper->tickcount, wrapper->id_nvdla, name);
+                #endif
+                aw_fifo.pop();
             if (wtxn.wlast) {
                 #ifdef PRINT_DEBUG
                     printf("(%lu) nvdla#%d %s: write, last tick\n", wrapper->tickcount, wrapper->id_nvdla, name);
@@ -373,11 +392,23 @@ AXIResponder::eval_timing() {
                 #ifdef PRINT_DEBUG
                     printf("(%lu) nvdla#%d %s: write, ticks remaining\n", wrapper->tickcount, wrapper->id_nvdla, name);
                 #endif
+                axi_b_txn btxn;
+                btxn.bid = awtxn.awid;
+                b_fifo.push(std::move(btxn));
+            } else {
+                #ifdef PRINT_DEBUG
+                    printf("(%lu) nvdla#%d %s: write, ticks remaining\n", wrapper->tickcount, wrapper->id_nvdla, name);
+                #endif
 
                 awtxn.awlen--;
                 awtxn.awaddr += AXI_WIDTH / 8;
             }
+                awtxn.awlen--;
+                awtxn.awaddr += AXI_WIDTH / 8;
+            }
 
+            w_fifo.pop();
+        }
             w_fifo.pop();
         }
     }
@@ -436,12 +467,13 @@ AXIResponder::eval_timing() {
     /* write response */
     // [B_SPACING] at most one write ack (B) every other NVDLA tick: the spacing NVDLA always saw
     // before the write-miss fix. Releasing held writes otherwise produced acks on consecutive ticks
-    // and NVDLA stopped writing (tasks/04_gem5_verilator_wrong_results/HANG_AFTER_FIX.md, approach A).
+    // and NVDLA stopped writing.
     static std::map<const AXIResponder *, uint64_t> last_b_tick;
     auto last_b = last_b_tick.find(this);
     const bool b_spaced = last_b == last_b_tick.end() || wrapper->tickcount >= last_b->second + 2;
 
     *dla.b_bvalid = 0;
+    if (*dla.b_bready && !b_fifo.empty() && b_spaced) {
     if (*dla.b_bready && !b_fifo.empty() && b_spaced) {
         *dla.b_bvalid = 1;
 
@@ -449,7 +481,9 @@ AXIResponder::eval_timing() {
         *dla.b_bid = txn.bid;
         b_fifo.pop();
         last_b_tick[this] = wrapper->tickcount;
+        last_b_tick[this] = wrapper->tickcount;
     }
+
 
 }
 
@@ -492,7 +526,8 @@ AXIResponder::process_read_req() {
                 if (wrapper->prefetch_enable && !sram) log_req_issue(start_addr);
 
                 // check spm and write queue
-                bool data_get_in_spm = wrapper->spm->read_spm_axi_line(start_addr, txn.rdata, *dla.ar_arid);
+                bool data_get_in_spm = wrapper->spm->read_spm_axi_line(start_addr, txn.rdata, *dla.ar_arid,
+                                                                       wrapper);   // [BUF_MODE]
                 inflight_req_order.push_back(start_addr);
 
                 std::map<uint64_t, std::list<axi_r_txn>>::iterator req_it;
@@ -696,14 +731,22 @@ AXIResponder::inflight_dma_resp(const uint8_t* data, uint32_t len) {
     auto addr_it = inflight_dma_attr.find(addr);
     assert(addr_it != inflight_dma_attr.end());
     if (!addr_it->second.is_bypass)     // if not bypass, then write this data
-        wrapper->spm->fill_spm_line(addr, data);
+        wrapper->spm->fill_spm_line(addr, data, wrapper);   // [SHARED_SPM] evictions on our DMA engine
 
+    // [SHARED_SPM] With a shared buffer the line may already have been there (brought and written by
+    // the other NVDLA), or memory may be behind an eviction: the buffer copy is the current one.
+    // [BUF_MODE] only for the all-in-one buffer: a prefetch buffer holds read-only lines (the DMA data
+    // is current) and a read there consumes the line.
+    const bool from_spm = wrapper->use_shared_spm && wrapper->buf_mode == BUF_MODE_ALL &&
+                          !addr_it->second.is_bypass;
     for (auto dep : inflight_dma_attr[addr].deps) {
         auto txn_addr = dep.first;
         auto txn_it = dep.second;
 #ifndef NO_DATA
-        for (uint64_t pos = 0; pos < AXI_WIDTH / 8; pos++)
-            txn_it->rdata[pos] = data[txn_addr - addr + pos];
+        if (!(from_spm && wrapper->spm->read_spm_axi_line(txn_addr, txn_it->rdata, 0, wrapper))) {
+            for (uint64_t pos = 0; pos < AXI_WIDTH / 8; pos++)
+                txn_it->rdata[pos] = data[txn_addr - addr + pos];
+        }
 #endif
         txn_it->rvalid = 1;
     }
@@ -711,6 +754,25 @@ AXIResponder::inflight_dma_resp(const uint8_t* data, uint32_t len) {
     inflight_dma_attr.erase(addr_it);
     inflight_dma_addr_queue.pop();
     inflight_count_for_sets[(addr / wrapper->spm->spm_line_size) % wrapper->spm->num_sets]--;
+}
+
+// Fetch a whole spm line from memory for a write miss (same DMA path as a read miss, without a
+// waiting read). Nothing to do if a fetch of this line is already in flight.
+void
+AXIResponder::request_line_fill(uint64_t spm_line_addr) {
+    std::map<uint64_t, DMAAttr>::iterator map_it;
+    bool alloc_succ;
+    std::tie(map_it, alloc_succ) = inflight_dma_attr.emplace(spm_line_addr, DMAAttr());
+    if (!alloc_succ)
+        return;
+
+#ifndef AXI_RESP_FAST_IO
+    printf("(%lu) DMA read req issued for write miss, addr 0x%08lx\n", wrapper->tickcount, spm_line_addr);
+#endif
+    map_it->second.is_bypass = false;
+    inflight_dma_addr_queue.push(spm_line_addr);
+    wrapper->addDMAReadReq(spm_line_addr, wrapper->spm->spm_line_size);
+    inflight_count_for_sets[(spm_line_addr / wrapper->spm->spm_line_size) % wrapper->spm->num_sets]++;
 }
 
 // Fetch a whole spm line from memory for a write miss (same DMA path as a read miss, without a
@@ -894,7 +956,15 @@ AXIResponder::generate_prefetch_request() {
 
             // first check whether this addr has been covered by an inflight DMA request or not
             uint64_t spm_line_addr = to_issue_addr & ~((uint64_t) (wrapper->spm->spm_line_size - 1));
-            if (!wrapper->spm->check_has_line(spm_line_addr)) {
+            // [PFT_EDGE] prefetch only lines that lie entirely inside the weight tensor. A line at
+            // the edge of the tensor also holds other data (activations, outputs) that NVDLA may
+            // write later; writes do not update the prefetch buffer, so a later read of those bytes
+            // would hit the stale prefetched copy. Edge lines are read on demand (bypass).
+            const bool partial_line = spm_line_addr < log_entry_addr ||
+                spm_line_addr + wrapper->spm->spm_line_size > log_entry_addr + log_entry_length;
+            if (partial_line) {
+                log_entry_issued_len += spm_line_addr + wrapper->spm->spm_line_size - to_issue_addr;
+            } else if (!wrapper->spm->check_has_line(spm_line_addr)) {
                 std::map<uint64_t, DMAAttr>::iterator map_it;
                 bool alloc_succ;
                 std::tie(map_it, alloc_succ) = inflight_dma_attr.emplace(spm_line_addr, DMAAttr());

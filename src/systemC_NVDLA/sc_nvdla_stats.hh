@@ -1,46 +1,14 @@
 #ifndef __ACCELERATORS_SC_NVDLA_STATS_HH__
 #define __ACCELERATORS_SC_NVDLA_STATS_HH__
 
-//#include "base/statistics.hh"
-//#include "sim/eventq.hh"
-//#include "sim/sim_object.hh"
-//#include "systemc/ext/channel/sc_buffer.hh"
-//#include "systemc/tlm_port_wrapper.hh"
-//#include "systemc/ext/core/sc_module.hh"
-//#include "systemc/tlm_bridge/tlm_to_gem5.hh"
-//#include "systemc/tlm_bridge/gem5_to_tlm.hh"
-//#include "mem/port.hh"
-//#include "mem/port.hh"
-//#include "mem/packet.hh"
-//#include "mem/packet_access.hh"
-//#include "sim/eventq.hh"
-//#include <tlm>
-//#include <tlm_utils/simple_target_socket.h>
-//#include <tlm_utils/multi_passthrough_target_socket.h>
-//#include <tlm_utils/multi_passthrough_initiator_socket.h>
-//#include <tlm_utils/simple_initiator_socket.h>
-//#include <tlm_utils/simple_initiator_socket.h>
-//#include <tlm_utils/simple_target_socket.h>
-//#include <iomanip>
-//#include <iostream>
-//#include <map>
-//#include <queue>
-//#include <vector>
-//#include "base/trace.hh"
-//#include "systemc.h"
-//#include "systemc/ext/tlm"
-//#include <fstream>
-//#include "sim/sim_exit.hh"
-//#include "base/output.hh"
-//#include <fstream>
-
+#include <array>
 #include <cstdint>
 
 #include "systemc.h"
 
-using namespace std;
 using namespace sc_core;
-//using namespace gem5;
+
+static constexpr unsigned MAX_NVDLAS = 2;
 
 struct NvdlaStats
 {
@@ -81,8 +49,10 @@ struct NvdlaStats
     sc_time cdmaStartGrp1;
     uint64_t cdmaGrp0Cycles = 0;
     uint64_t cdmaGrp1Cycles = 0;
+
     uint64_t cdmaDataReadReqs = 0;
     uint64_t cdmaDataReadBytes = 0;
+
     uint64_t cdmaWeightReadReqs = 0;
     uint64_t cdmaWeightReadBytes = 0;
 
@@ -121,7 +91,6 @@ struct NvdlaStats
     uint64_t cbufDataReads = 0;
     uint64_t cbufDataReadBytes = 0;
 
-
     uint64_t cbufWeightWrites = 0;
     uint64_t cbufWeightWriteBytes = 0;
     uint64_t cbufWeightReads = 0;
@@ -130,6 +99,13 @@ struct NvdlaStats
     sc_time nvdlaClockPeriod;
 };
 
-extern NvdlaStats gNvdlaStats;
+extern std::array<NvdlaStats, MAX_NVDLAS> gNvdlaStats;
 
-#endif // __ACCELERATORS_SC_NVDLA_STATS_HH__
+void registerNvdlaStatsRoot(
+    const sc_core::sc_object *root,
+    unsigned id);
+
+NvdlaStats &nvdlaStatsFor(
+    const sc_core::sc_object *obj);
+
+#endif

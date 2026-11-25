@@ -893,20 +893,20 @@ uint32_t readregaccel(ThreadContext *tc, int accel_id, Addr addr)
     return tc->getCpuPtr()->NvDlaReadReg(accel_id, addr);
 }
 
-bool respaccel(ThreadContext *tc)
+bool respaccel(ThreadContext *tc, int accel_id)
 {
-    DPRINTF(PseudoInst,
-            "PseudoInst::respaccel\n");
+    panic_if(accel_id >= 2,
+             "respaccel: invalid NVDLA id %d",(accel_id));
 
-    return tc->getCpuPtr()->NvDlaRespReg();
+    return tc->getCpuPtr()->NvDlaRespReg(accel_id);
 }
 
-uint32_t getdataaccel(ThreadContext *tc)
+uint32_t getdataaccel(ThreadContext *tc, int accel_id)
 {
-    DPRINTF(PseudoInst,
-            "PseudoInst::getdataaccel\n");
+    panic_if(accel_id >= 2,
+             "getdataaccel: invalid NVDLA id %d",(accel_id));
 
-    return tc->getCpuPtr()->NvDlaGetData();
+    return tc->getCpuPtr()->NvDlaGetData(accel_id);
 }
 
 void writeregaccel(ThreadContext *tc, int accel_id, uint32_t data, Addr addr)

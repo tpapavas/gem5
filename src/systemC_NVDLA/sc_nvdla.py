@@ -31,6 +31,8 @@ class TLM_ScNvDlaSE(SystemC_ScModule):
     cpu_freq = Param.Float(1.0, "CPU frequency in GHz")
 
     freq_ratio = Param.Float(1.0, "CPU/NVDLA frequency ratio")
+    
+    nvdla_id = Param.UInt32( 0, "NVDLA instance id")
 
     csb_target = TlmTargetSocket(32, "TLM NVDLA target socket")
 

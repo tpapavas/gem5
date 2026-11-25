@@ -109,7 +109,7 @@ public:
     trans.set_data_ptr(data);
 
     sc_time delay = SC_ZERO_TIME;
-
+    
     tSocket->b_transport(trans, delay);
   }
 
@@ -127,51 +127,9 @@ public:
     trans.set_streaming_width(4);
 
     tSocket->b_transport(trans, delay);
-    std::cout << "read_reg value are : " << std::hex << data << "\n";
-
+  
     return data;
   }
-
-  /*
-  uint32_t read_reg_fw(uint32_t addr)
-  {
-    tlm::tlm_generic_payload trans;
-    tlm::tlm_phase phase = tlm::BEGIN_REQ;
-    sc_core::sc_time delay = sc_core::SC_ZERO_TIME;
-
-    uint32_t data = 0;
-
-    trans.set_command(tlm::TLM_READ_COMMAND);
-    trans.set_address(addr);
-    trans.set_data_ptr(reinterpret_cast<unsigned char *>(&data));
-    trans.set_data_length(4);
-    trans.set_streaming_width(4);
-    trans.set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
-
-    std::cout << "[TLM READ SEND] addr=0x"
-              << std::hex << addr
-              << " time=" << sc_core::sc_time_stamp()
-              << std::endl;
-
-    tlm::tlm_sync_enum status = tSocket->nb_transport_fw(trans, phase, delay);
-
-    if (status == tlm::TLM_COMPLETED)
-    {
-      std::cout << "[TLM READ COMPLETED] data=0x"
-                << std::hex << data
-                << std::endl;
-    }
-
-    if (trans.is_response_error())
-    {
-      SC_REPORT_ERROR("TLM-2", "Response error from nb_transport_fw");
-    }
-
-    std::cout << "read_reg value are : " << std::hex << data << std::endl;
-
-    return data;
-  }
-    */
 };
 
 #endif // __SYSTEC_TLM_INITIATOR_EXAMPLE__
