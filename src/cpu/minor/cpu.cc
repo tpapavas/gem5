@@ -400,14 +400,14 @@ MinorCPU::openNvDlaTrace()
     }
 }
 void
-MinorCPU::writeNvDlaInterruptTrace(uint32_t interruptValue)
+MinorCPU::writeNvDlaInterruptTrace(int accel_id, uint32_t interruptValue)
 {
     if (interruptValue == 0) {
         return;
     }
     openNvDlaTrace();
     std::ostream &trace = *nvdlaTraceFile->stream();
-    trace << "wait\n"
+    trace << "wait #id " << accel_id << '\n'
           << "read_reg 0xffff0003 0x"
           << std::hex
           << std::setw(8)
@@ -418,6 +418,7 @@ MinorCPU::writeNvDlaInterruptTrace(uint32_t interruptValue)
           << interruptValue
           << std::dec
           << std::setfill(' ')
+          << " #id " << accel_id
           << '\n'
           << std::flush;
 }
@@ -440,7 +441,7 @@ MinorCPU::nvDlaTraceRegisterAddress(Addr addr) const
     return static_cast<uint16_t>(wordAddress);
 }
 void
-MinorCPU::writeNvDlaWriteTrace(Addr addr, uint32_t data)
+MinorCPU::writeNvDlaWriteTrace(int accel_id, Addr addr, uint32_t data)
 {
     openNvDlaTrace();
     const uint16_t traceAddr =
@@ -459,11 +460,13 @@ MinorCPU::writeNvDlaWriteTrace(Addr addr, uint32_t data)
         << data
         << std::dec
         << std::setfill(' ')
+        << " #id " << accel_id
         << '\n'
         << std::flush;
 }
 void
 MinorCPU::writeNvDlaReadTrace(
+    int accel_id,
     Addr addr,
     uint32_t expectedData,
     uint32_t mask)
@@ -488,6 +491,7 @@ MinorCPU::writeNvDlaReadTrace(
         << expectedData
         << std::dec
         << std::setfill(' ')
+        << " #id " << accel_id
         << '\n'
         << std::flush;
 }
@@ -619,9 +623,9 @@ MinorCPU::NvDlaWriteReg(int accel_id, uint32_t data, Addr addr)
     constexpr uint16_t NvDlaInterruptStatusWord = 0x0003;
     const bool isInterruptClear = nvDlaTraceRegisterAddress(addr) == NvDlaInterruptStatusWord && data != 0;
     if (isInterruptClear) {
-        writeNvDlaInterruptTrace(data);
+        writeNvDlaInterruptTrace(accel_id, data);
     }
-    writeNvDlaWriteTrace(addr, data);
+    writeNvDlaWriteTrace(accel_id, addr, data);
     // we send a null packet telling we have finished
     RequestPtr req = std::make_shared<Request>(addr, 4,
                                             Request::UNCACHEABLE, 0);
