@@ -260,12 +260,15 @@ class MinorCPU : public BaseCPU
     };
     void openNvDlaTrace();
     uint16_t nvDlaTraceRegisterAddress(Addr addr) const;
-    void writeNvDlaInterruptTrace(uint32_t interruptValue);
+    // [TRACE_ID] every line of nvdla_trace.txt ends with " #id <accel_id>"
+    void writeNvDlaInterruptTrace(int accel_id, uint32_t interruptValue);
     void writeNvDlaReadTrace(
+        int accel_id,
         Addr addr,
         uint32_t expectedData,
         uint32_t mask = 0xffffffff);
     void writeNvDlaWriteTrace(
+        int accel_id,
         Addr addr,
         uint32_t data);
 };
