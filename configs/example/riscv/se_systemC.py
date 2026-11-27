@@ -482,32 +482,49 @@ def addOptions(parser):
     )
     # SE run: runtime binary and its arguments
     parser.add_argument(
-        "--runtime", type=str, required=True,
+        "--runtime",
+        type=str,
+        required=True,
         help="RISC-V nvdla_runtime binary (SystemC build)",
     )
     parser.add_argument(
-        "--loadable", type=str, required=True,
+        "--loadable",
+        type=str,
+        required=True,
         help="Path to the NVDLA loadable (.nvdla)",
     )
     parser.add_argument(
-        "--image", "--input-image", dest="image", type=str, required=True,
+        "--image",
+        "--input-image",
+        dest="image",
+        type=str,
+        required=True,
         help="Path to the input image",
     )
     parser.add_argument(
-        "--normalize", type=float, default=None,
+        "--normalize",
+        type=float,
+        default=None,
         help="Input normalization value passed to nvdla_runtime "
         "(omit for INT8)",
     )
     parser.add_argument(
-        "--dla-arch", type=str, default=None, choices=["nv_full", "nv_small"],
+        "--dla-arch",
+        type=str,
+        default=None,
+        choices=["nv_full", "nv_small"],
         help="Passed to the runtime as --arch (default: not passed, runtime default)",
     )
     parser.add_argument(
-        "--rawdump", action="store_true", default=False,
+        "--rawdump",
+        action="store_true",
+        default=False,
         help="Pass --rawdump to the runtime (raw output dump)",
     )
     parser.add_argument(
-        "--batches", type=int, default=1,
+        "--batches",
+        type=int,
+        default=1,
         help="Number of batches passed to the runtime (--batches)",
     )
     return parser
@@ -527,25 +544,66 @@ def main():
     # Program to execute
     # binary = 'tests/test-progs/nvdla-se/nvdla-se'
     binary = options.runtime
-    for name, path in (("runtime", binary), ("loadable", options.loadable),
-                       ("image", options.image)):
+    for name, path in (
+        ("runtime", binary),
+        ("loadable", options.loadable),
+        ("image", options.image),
+    ):
         if not os.path.isfile(path):
             parser.error("--{}: file not found: {}".format(name, path))
     if options.dlas < 1 or options.dlas > 2:
         parser.error(
             "--dlas must be 1 or 2 (CPU has nvdla_port_plus_0/1 only)"
         )
+    # Embedded buffer (SPM) and prefetcher: same options and checks as
+    # riscv/se_RTL.py (Verilator NVDLA)
+    if options.dma_enable and options.add_accel_private_cache:
+        parser.error(
+            "--dma-enable and --add-accel-private-cache are mutually exclusive"
+        )
+    if options.dma_enable and options.add_accel_shared_cache:
+        parser.error(
+            "--dma-enable and --add-accel-shared-cache are mutually exclusive"
+        )
+    BUFFER_MODES = {"all": 0, "pft": 1, "pft-cut": 2}
+    if options.buffer_mode not in BUFFER_MODES:
+        parser.error("--buffer-mode must be one of: all, pft, pft-cut")
+    if options.shared_spm and not options.dma_enable:
+        parser.error("--shared-spm needs --dma-enable")
+    if options.buffer_mode != "all" and not options.dma_enable:
+        parser.error(
+            "--buffer-mode pft/pft-cut needs --dma-enable (embedded buffer)"
+        )
+    if options.pft_enable and not options.dma_enable:
+        parser.error("--pft-enable needs --dma-enable (embedded buffer)")
+    if options.buffer_mode != "all" and not options.pft_enable:
+        print(
+            "warning: --buffer-mode {} without --pft-enable: nothing is prefetched, "
+            "the buffer stays empty".format(options.buffer_mode)
+        )
     print(
         "NVDLA memory mode:",
-        "_".join(
-            n
-            for n, on in (
-                ("nvdla_cache", options.add_accel_private_cache),
-                ("nvdla_shared_cache", options.add_accel_shared_cache),
+        (
+            ("dma_spm_shared" if options.shared_spm else "dma_spm")
+            + (
+                ""
+                if options.buffer_mode == "all"
+                else "_" + options.buffer_mode
             )
-            if on
+            + ("_pft" if options.pft_enable else "")
         )
-        or "direct",
+        if options.dma_enable
+        else (
+            "_".join(
+                n
+                for n, on in (
+                    ("nvdla_cache", options.add_accel_private_cache),
+                    ("nvdla_shared_cache", options.add_accel_shared_cache),
+                )
+                if on
+            )
+            or "direct"
+        ),
     )
 
     # Simulation system
@@ -641,6 +699,15 @@ def main():
             nvdla_id=i,
             cpu_freq=float(options.little_cpu_clock.replace("GHz", "")),
             freq_ratio=options.freq_ratio,
+            dma_enable=options.dma_enable,
+            spm_size=options.embed_spm_size,
+            spm_line_size=1024,
+            spm_latency=options.embed_spm_lat,
+            assoc=options.embed_spm_assoc.lower(),
+            use_shared_spm=options.shared_spm,
+            buffer_mode=BUFFER_MODES[options.buffer_mode],
+            prefetch_enable=options.pft_enable,
+            pft_threshold=options.pft_threshold,
         )
         for i in range(options.dlas)
     ]
@@ -650,7 +717,9 @@ def main():
 
     for i in range(options.dlas):
         setattr(
-            system.cpu, "nvdla_port_plus_{}".format(i), system.bridge_csb[i].gem5
+            system.cpu,
+            "nvdla_port_plus_{}".format(i),
+            system.bridge_csb[i].gem5,
         )
         system.bridge_csb[i].tlm = system.nvdla[i].csb_target
         system.nvdla[i].dbb_init = system.bridge_dbb[i].tlm
