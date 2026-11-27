@@ -13,8 +13,8 @@ SimObject(
 )
 Source('sc_tlm_target.cc')
 Source('sc_tlm_initiator.cc')
-Source('sc_nvdla_se.cc')
 Source('sc_nvdla_stats.cc')
+Source('sc_embedded_buffer.cc')
 
 
 ###########################################################################
@@ -25,6 +25,13 @@ nvdla_config = ARGUMENTS.get('NVDLA_CONFIG', 'nv_full')
 
 print('[NVDLA] Building NVDLA CMOD sources')
 print('[NVDLA] CONFIG: {}'.format(nvdla_config))
+
+# [SC_SPM] CSB address of the CDMA registers (the weight prefetcher snoops
+# the CDMA op programming): nv_full 0x5000, nv_small* 0x3000
+# (sw firmware/include/opendla_initial.h, opendla_small.h).
+cdma_reg_base = 0x3000 if nvdla_config.startswith('nv_small') else 0x5000
+Source('sc_nvdla_se.cc',
+       append={'CPPDEFINES': [('NVDLA_CDMA_REG_BASE', hex(cdma_reg_base))]})
 
 
 ###########################################################################
