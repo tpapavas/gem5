@@ -641,6 +641,15 @@ def main():
     system.mem_mode = "timing"
     system.mem_ranges = [AddrRange("1GB")]
     # system.mem_ranges.append(AddrRange(start=0xC0000000, size="1GB"))
+    # Same memory map as se_RTL.py: the CPU caches hold only the range
+    # below the NVDLA shared DRAM; the shared range (the buffers NVDLA
+    # reads and writes over DBB) is uncacheable and bypasses L1/L2.
+    NVDLA_SHARED_BASE = 0x20000000
+    NVDLA_SHARED_SIZE = 0x20000000
+    cpu_cacheable_range = AddrRange(start=0x00000000, size=NVDLA_SHARED_BASE)
+    nvdla_shared_range = AddrRange(
+        start=NVDLA_SHARED_BASE, size=NVDLA_SHARED_SIZE
+    )
 
     # Create CPU
     # system.cpu = X86MinorCPU()
@@ -657,7 +666,7 @@ def main():
     # Create L1 caches
     system.cpu.icache = L1Cache()
     system.cpu.dcache = L1Cache()
-    system.cpu.dcache.addr_ranges = system.mem_ranges
+    system.cpu.dcache.addr_ranges = [cpu_cacheable_range]
 
     # Connect L1I cache to the CPU
     system.cpu.icache.cpu_side = system.cpu.icache_port
@@ -672,6 +681,7 @@ def main():
 
     # Create L2 cache
     system.l2cache = L2Cache()
+    system.l2cache.addr_ranges = [cpu_cacheable_range]
 
     # Link L2 cache with L1 to L2 interconnect
     system.l2cache.cpu_side = system.l2bus.mem_side_ports
@@ -681,6 +691,14 @@ def main():
 
     # Link L2 with interconnect
     system.l2cache.mem_side = system.membus.cpu_side_ports
+
+    # Shared NVDLA region bypasses L2, but the Bridge isolates the coherent
+    # l2bus from the coherent membus. The Bridge advertises only this range.
+    system.nvdla_shared_bridge = Bridge(
+        delay="1ns", ranges=[nvdla_shared_range]
+    )
+    system.nvdla_shared_bridge.cpu_side_port = system.l2bus.mem_side_ports
+    system.nvdla_shared_bridge.mem_side_port = system.membus.cpu_side_ports
 
     # # For NO CACHE system
     # system.cpu.icache_port = system.membus.cpu_side_ports
@@ -863,9 +881,12 @@ def main():
     # Instantiate all of the objects we've created above
     m5.instantiate(None)
 
-    # Dedicate upper 1GB to Gemmini device
+    # Dedicate NVDLA shared DRAM
     system.cpu.workload[0].map(
-        0x2000_0000, 0x2000_0000, 0x6000_0000, cacheable=False
+        NVDLA_SHARED_BASE,
+        NVDLA_SHARED_BASE,
+        NVDLA_SHARED_SIZE,
+        cacheable=False,
     )
 
     print("========== Beginning simulation ==========")
