@@ -488,7 +488,8 @@ def addOptions(parser):
         help="Path to the NVDLA loadable (.nvdla)",
     )
     parser.add_argument(
-        "--image", "--input-image",
+        "--image",
+        "--input-image",
         dest="image",
         type=str,
         required=True,
@@ -520,9 +521,44 @@ def main():
         )
 
     if not os.path.isfile(options.image):
+        parser.error("Input image does not exist: {}".format(options.image))
+
+    # Embedded buffer (SPM) and prefetcher: same options and checks as
+    # riscv/se_RTL.py (Verilator NVDLA)
+    if options.dma_enable and options.add_accel_private_cache:
         parser.error(
-            "Input image does not exist: {}".format(options.image)
+            "--dma-enable and --add-accel-private-cache are mutually exclusive"
         )
+    BUFFER_MODES = {"all": 0, "pft": 1, "pft-cut": 2}
+    if options.buffer_mode not in BUFFER_MODES:
+        parser.error("--buffer-mode must be one of: all, pft, pft-cut")
+    if options.shared_spm and not options.dma_enable:
+        parser.error("--shared-spm needs --dma-enable")
+    if options.buffer_mode != "all" and not options.dma_enable:
+        parser.error(
+            "--buffer-mode pft/pft-cut needs --dma-enable (embedded buffer)"
+        )
+    if options.pft_enable and not options.dma_enable:
+        parser.error("--pft-enable needs --dma-enable (embedded buffer)")
+    if options.buffer_mode != "all" and not options.pft_enable:
+        print(
+            "warning: --buffer-mode {} without --pft-enable: nothing is "
+            "prefetched, the buffer stays empty".format(options.buffer_mode)
+        )
+    print(
+        "NVDLA memory mode:",
+        (
+            ("dma_spm_shared" if options.shared_spm else "dma_spm")
+            + (
+                ""
+                if options.buffer_mode == "all"
+                else "_" + options.buffer_mode
+            )
+            + ("_pft" if options.pft_enable else "")
+        )
+        if options.dma_enable
+        else ("nvdla_cache" if options.add_accel_private_cache else "direct"),
+    )
 
     # Program to execute
     # binary = 'tests/test-progs/nvdla-se/nvdla-se'
@@ -619,6 +655,15 @@ def main():
     system.nvdla = TLM_ScNvDlaSE(
         cpu_freq=float(options.little_cpu_clock.replace("GHz", "")),
         freq_ratio=options.freq_ratio,
+        dma_enable=options.dma_enable,
+        spm_size=options.embed_spm_size,
+        spm_line_size=1024,
+        spm_latency=options.embed_spm_lat,
+        assoc=options.embed_spm_assoc.lower(),
+        use_shared_spm=options.shared_spm,
+        buffer_mode=BUFFER_MODES[options.buffer_mode],
+        prefetch_enable=options.pft_enable,
+        pft_threshold=options.pft_threshold,
     )
 
     system.cpu.nvdla_port_plus_0 = system.bridge_csb.gem5

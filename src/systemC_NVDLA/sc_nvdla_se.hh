@@ -6,6 +6,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <list>
 #include <map>
 #include <queue>
 #include <tlm>
@@ -40,6 +41,7 @@
 #include "base/output.hh"
 #include "base/statistics.hh"
 #include "sim/sim_exit.hh"
+#include "systemC_NVDLA/sc_embedded_buffer.hh"
 #include "systemC_NVDLA/sc_nvdla_stats.hh"
 #include "systemC_NVDLA/sc_tlm_initiator.hh"
 #include "systemC_NVDLA/sc_tlm_target.hh"
@@ -50,8 +52,22 @@ using namespace gem5;
 
 
 
+// [SC_SPM] embedded buffer / prefetcher configuration (TLM_ScNvDlaSE params)
+struct ScNvDlaSpmConfig
+{
+    bool dma_enable = false;
+    uint64_t spm_size = 0;
+    uint32_t spm_line_size = 1024;
+    uint32_t spm_latency = 2;
+    uint32_t assoc = 0;              // 0 = fully associative
+    bool use_shared_spm = false;
+    uint32_t buffer_mode = 0;
+    bool prefetch_enable = false;
+    uint32_t mem_fill_chunk = 64;
+};
+
 // SC_MODULE(ScNvDlaSE)
-class ScNvDlaSE : public sc_core::sc_module
+class ScNvDlaSE : public sc_core::sc_module, public sc_nvdla_spm::MemPort
 {
 public:
     Initiator initiator;
@@ -227,6 +243,11 @@ public:
             out << "SDP G0 cycles : " << s.sdpGrp0Cycles << "\n";
             out << "SDP G1 cycles : " << s.sdpGrp1Cycles << "\n";
 
+            if (spm) {   // [SC_SPM]
+                out << "\n";
+                spmStatsData.dump(out);
+            }
+
             out << "\n";
             out << "---------- End Simulation Statistics NVDLA ----------\n";
             out.close();
@@ -238,6 +259,48 @@ public:
     }
 
     void handle_irq();
+
+    // [SC_SPM] embedded buffer (nullptr: DBB goes straight to dbb_init)
+    void configureSpm(const ScNvDlaSpmConfig &cfg);
+    ScNvDlaSpmConfig spmCfg;
+    sc_nvdla_spm::EmbeddedBuffer *spm = nullptr;
+    static sc_nvdla_spm::EmbeddedBuffer *sharedSpm;
+    sc_nvdla_spm::SpmStats spmStatsData;
+    sc_nvdla_spm::SpmStats &spmStats() override { return spmStatsData; }
+    unsigned spmId() const override { return nvdlaId; }
+    // blocking accesses to memory through dbb_init (see MemPort)
+    void memRead(uint64_t addr, uint8_t *data, uint32_t len) override;
+    void memWrite(uint64_t addr, const uint8_t *data,
+                  uint32_t len) override;
+    void memReadChunks(uint64_t addr, uint8_t *data, uint32_t len,
+                       uint32_t chunk) override;
+    void memAccess(tlm::tlm_command cmd, uint64_t addr, uint8_t *data,
+                   uint32_t len);
+    sc_core::sc_mutex dbbPortMutex;
+
+    // [SC_SPM] weight prefetcher: the weight tensor of every CDMA op the
+    // firmware enables is logged (CSB snoop) and prefetched line by line
+    struct RdVarLogEntry
+    {
+        uint64_t addr;
+        uint32_t len;
+        uint32_t issued;
+    };
+    std::list<RdVarLogEntry> rdVarLog;
+    uint32_t pftCdmaMiscCfg = 0;
+    uint64_t pftWtAddrHi = 0;
+    uint64_t pftWtAddrLo = 0;
+    uint32_t pftWtBytes = 0;
+    void snoopCsbWriteForPrefetch(uint32_t addr, uint32_t data);
+    void logDemandRead(uint64_t addr, uint32_t len);
+    // One line of the oldest logged tensor; false if nothing was done
+    bool generatePrefetch();
+    // The prefetcher runs in its own thread, so its memory time overlaps
+    // with NVDLA work: every demand DBB transaction kicks it, and it
+    // fetches one line per kick (Verilator: a prefetch is issued in a cycle
+    // in which NVDLA issues no read).
+    sc_core::sc_event pftKick;
+    void prefetchThread();
 
     gem5::Port &gem5_getPort(const std::string &if_name, int idx=-1) override;
 
