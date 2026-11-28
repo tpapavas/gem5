@@ -38,6 +38,7 @@
 
 import argparse
 import os
+import shlex
 import sys
 import m5
 import m5.util
@@ -518,6 +519,41 @@ def addOptions(parser):
         default=1,
         help="Number of batches passed to the runtime (--batches)",
     )
+    parser.add_argument(
+        "--dla-arch",
+        type=str,
+        default=None,
+        choices=["nv_full", "nv_small"],
+        help="Passed to the runtime as --arch (default: not passed, runtime default)",
+    )
+    parser.add_argument(
+        "--rawdump",
+        action="store_true",
+        default=False,
+        help="Pass --rawdump to the runtime (raw output dump)",
+    )
+    parser.add_argument(
+        "--sched",
+        type=str,
+        default=None,
+        choices=["naive", "batch", "stage"],
+        help="Multi-DLA batch-stage scheduler, passed to the runtime as "
+        "--sched (default: not passed, runtime default = batch)",
+    )
+    parser.add_argument(
+        "--mean",
+        type=str,
+        default=None,
+        help="Comma separated mean value of the input image, passed to the "
+        "runtime as --mean",
+    )
+    parser.add_argument(
+        "--runtime-args",
+        type=str,
+        default="",
+        help="Extra arguments appended as they are to the runtime command "
+        'line, e.g. --runtime-args="--sched naive"',
+    )
     return parser
 
 
@@ -609,6 +645,15 @@ def main():
     system.mem_mode = "timing"
     system.mem_ranges = [AddrRange("1GB")]
     # system.mem_ranges.append(AddrRange(start=0xC0000000, size="1GB"))
+    # Same memory map as se_RTL.py: the CPU caches hold only the range
+    # below the NVDLA shared DRAM; the shared range (the buffers NVDLA
+    # reads and writes over DBB) is uncacheable and bypasses L1/L2.
+    NVDLA_SHARED_BASE = 0x20000000
+    NVDLA_SHARED_SIZE = 0x20000000
+    cpu_cacheable_range = AddrRange(start=0x00000000, size=NVDLA_SHARED_BASE)
+    nvdla_shared_range = AddrRange(
+        start=NVDLA_SHARED_BASE, size=NVDLA_SHARED_SIZE
+    )
 
     # Create CPU
     # system.cpu = X86MinorCPU()
@@ -625,7 +670,7 @@ def main():
     # Create L1 caches
     system.cpu.icache = L1Cache()
     system.cpu.dcache = L1Cache()
-    system.cpu.dcache.addr_ranges = system.mem_ranges
+    system.cpu.dcache.addr_ranges = [cpu_cacheable_range]
 
     # Connect L1I cache to the CPU
     system.cpu.icache.cpu_side = system.cpu.icache_port
@@ -640,6 +685,7 @@ def main():
 
     # Create L2 cache
     system.l2cache = L2Cache()
+    system.l2cache.addr_ranges = [cpu_cacheable_range]
 
     # Link L2 cache with L1 to L2 interconnect
     system.l2cache.cpu_side = system.l2bus.mem_side_ports
@@ -649,6 +695,14 @@ def main():
 
     # Link L2 with interconnect
     system.l2cache.mem_side = system.membus.cpu_side_ports
+
+    # Shared NVDLA region bypasses L2, but the Bridge isolates the coherent
+    # l2bus from the coherent membus. The Bridge advertises only this range.
+    system.nvdla_shared_bridge = Bridge(
+        delay="1ns", ranges=[nvdla_shared_range]
+    )
+    system.nvdla_shared_bridge.cpu_side_port = system.l2bus.mem_side_ports
+    system.nvdla_shared_bridge.mem_side_port = system.membus.cpu_side_ports
 
     # # For NO CACHE system
     # system.cpu.icache_port = system.membus.cpu_side_ports
@@ -808,6 +862,15 @@ def main():
         "--batches",
         str(options.batches),
     ]
+    if options.dla_arch is not None:
+        process.cmd += ["--arch", options.dla_arch]
+    if options.rawdump:
+        process.cmd += ["--rawdump"]
+    if options.sched is not None:
+        process.cmd += ["--sched", options.sched]
+    if options.mean is not None:
+        process.cmd += ["--mean", options.mean]
+    process.cmd += shlex.split(options.runtime_args)
     print("Runtime cmd:", " ".join(process.cmd))
 
     # Set the cpu to use the process as its workload and create thread contexts
@@ -822,9 +885,12 @@ def main():
     # Instantiate all of the objects we've created above
     m5.instantiate(None)
 
-    # Dedicate upper 1GB to Gemmini device
+    # Dedicate NVDLA shared DRAM
     system.cpu.workload[0].map(
-        0x2000_0000, 0x2000_0000, 0x6000_0000, cacheable=False
+        NVDLA_SHARED_BASE,
+        NVDLA_SHARED_BASE,
+        NVDLA_SHARED_SIZE,
+        cacheable=False,
     )
 
     print("========== Beginning simulation ==========")
