@@ -38,6 +38,7 @@
 
 import argparse
 import os
+import shlex
 import sys
 import m5
 import m5.util
@@ -518,6 +519,41 @@ def addOptions(parser):
         default=1,
         help="Number of batches passed to the runtime (--batches)",
     )
+    parser.add_argument(
+        "--dla-arch",
+        type=str,
+        default=None,
+        choices=["nv_full", "nv_small"],
+        help="Passed to the runtime as --arch (default: not passed, runtime default)",
+    )
+    parser.add_argument(
+        "--rawdump",
+        action="store_true",
+        default=False,
+        help="Pass --rawdump to the runtime (raw output dump)",
+    )
+    parser.add_argument(
+        "--sched",
+        type=str,
+        default=None,
+        choices=["naive", "batch", "stage"],
+        help="Multi-DLA batch-stage scheduler, passed to the runtime as "
+        "--sched (default: not passed, runtime default = batch)",
+    )
+    parser.add_argument(
+        "--mean",
+        type=str,
+        default=None,
+        help="Comma separated mean value of the input image, passed to the "
+        "runtime as --mean",
+    )
+    parser.add_argument(
+        "--runtime-args",
+        type=str,
+        default="",
+        help="Extra arguments appended as they are to the runtime command "
+        'line, e.g. --runtime-args="--sched naive"',
+    )
     return parser
 
 
@@ -808,6 +844,15 @@ def main():
         "--batches",
         str(options.batches),
     ]
+    if options.dla_arch is not None:
+        process.cmd += ["--arch", options.dla_arch]
+    if options.rawdump:
+        process.cmd += ["--rawdump"]
+    if options.sched is not None:
+        process.cmd += ["--sched", options.sched]
+    if options.mean is not None:
+        process.cmd += ["--mean", options.mean]
+    process.cmd += shlex.split(options.runtime_args)
     print("Runtime cmd:", " ".join(process.cmd))
 
     # Set the cpu to use the process as its workload and create thread contexts

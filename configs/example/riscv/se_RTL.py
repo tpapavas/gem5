@@ -36,17 +36,22 @@
 # a RISC-V SE system with NVDLA (same as configs/example/arm/se_RTL.py).
 import argparse
 import os
+import shlex
 import sys
 import m5
 import m5.util
 from m5.objects import *
+
 m5.util.addToPath("../../")
 from caches import *
 from common import FSConfig
 from common import SysPaths
 from common import ObjectList
 from common import Options
+
 default_mem_size = "1GB"
+
+
 def addOptions(parser):
     parser.add_argument(
         "--restore-from",
@@ -488,6 +493,28 @@ def addOptions(parser):
         help="Number of batches passed to the runtime (--batches)",
     )
     parser.add_argument(
+        "--sched",
+        type=str,
+        default=None,
+        choices=["naive", "batch", "stage"],
+        help="Multi-DLA batch-stage scheduler, passed to the runtime as "
+        "--sched (default: not passed, runtime default = batch)",
+    )
+    parser.add_argument(
+        "--mean",
+        type=str,
+        default=None,
+        help="Comma separated mean value of the input image, passed to the "
+        "runtime as --mean",
+    )
+    parser.add_argument(
+        "--runtime-args",
+        type=str,
+        default="",
+        help="Extra arguments appended as they are to the runtime command "
+        'line, e.g. --runtime-args="--sched naive"',
+    )
+    parser.add_argument(
         "--dla-arch",
         type=str,
         default=None,
@@ -507,8 +534,12 @@ def addOptions(parser):
         help="nvdla_runtime binary (default: the built-in path)",
     )
     return parser
+
+
 def generateDtb(root):
     root.system.generateDtb(os.path.join(m5.options.outdir, "system.dtb"))
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="RISC-V SE configuration with NVDLA"
@@ -520,7 +551,9 @@ def main():
         if not os.path.isfile(path):
             parser.error("--{}: file not found: {}".format(name, path))
     if options.dlas < 1 or options.dlas > 2:
-        parser.error("--dlas must be 1 or 2 (CPU has nvdla_port_plus_0/1 only)")
+        parser.error(
+            "--dlas must be 1 or 2 (CPU has nvdla_port_plus_0/1 only)"
+        )
     if options.dma_enable and options.add_accel_private_cache:
         parser.error(
             "--dma-enable and --add-accel-private-cache are mutually exclusive"
@@ -536,15 +569,23 @@ def main():
     if options.shared_spm and not options.dma_enable:
         parser.error("--shared-spm needs --dma-enable")
     if options.buffer_mode != "all" and not options.dma_enable:
-        parser.error("--buffer-mode pft/pft-cut needs --dma-enable (embedded buffer)")
+        parser.error(
+            "--buffer-mode pft/pft-cut needs --dma-enable (embedded buffer)"
+        )
     if options.buffer_mode != "all" and not options.pft_enable:
-        print("warning: --buffer-mode {} without --pft-enable: nothing is prefetched, "
-              "the buffer stays empty".format(options.buffer_mode))
+        print(
+            "warning: --buffer-mode {} without --pft-enable: nothing is prefetched, "
+            "the buffer stays empty".format(options.buffer_mode)
+        )
     print(
         "NVDLA memory mode:",
         (
             ("dma_spm_shared" if options.shared_spm else "dma_spm")
-            + ("" if options.buffer_mode == "all" else "_" + options.buffer_mode)
+            + (
+                ""
+                if options.buffer_mode == "all"
+                else "_" + options.buffer_mode
+            )
             + ("_pft" if options.pft_enable else "")
         )
         if options.dma_enable
@@ -773,6 +814,11 @@ def main():
         process.cmd += ["--arch", options.dla_arch]
     if options.rawdump:
         process.cmd += ["--rawdump"]
+    if options.sched is not None:
+        process.cmd += ["--sched", options.sched]
+    if options.mean is not None:
+        process.cmd += ["--mean", options.mean]
+    process.cmd += shlex.split(options.runtime_args)
     print("Runtime cmd:", " ".join(process.cmd))
 
     # Set the cpu to use the process as its workload and create thread contexts
@@ -793,5 +839,7 @@ def main():
             m5.curTick(), exit_event.getCause()
         )
     )
+
+
 if __name__ == "__m5_main__":
     main()
